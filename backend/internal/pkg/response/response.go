@@ -1,0 +1,45 @@
+package response
+
+import (
+	"fmt"
+	"net/http"
+)
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
+func BadRequest(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusBadRequest)
+	_, _ = fmt.Fprintf(w, `{ "error": "Bad request" }`)
+}
+
+func Unauthorized(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusUnauthorized)
+	_, _ = fmt.Fprintf(w, `{ "error": "Unauthorized" }`)
+}
+
+func InternalError(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusInternalServerError)
+	_, _ = fmt.Fprintf(w, `{ "error": "Internal server error" }`)
+}
+
+func StatusConflict(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusConflict)
+	_, _ = fmt.Fprintf(w, `{ "error": "Already exsist" }`)
+}
+
+func Forbidden(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusForbidden)
+	_, _ = fmt.Fprintf(w, `{ "error": "Don't have access" }`)
+}
+
+func NotFound(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNotFound)
+	_, _ = fmt.Fprintf(w, `{ "error": "Not found" }`)
+}
+
+func NotFoundWithMessage(w http.ResponseWriter, msg string) {
+	w.WriteHeader(http.StatusNotFound)
+	_, _ = fmt.Fprintf(w, `{ "error": %q }`, msg)
+}

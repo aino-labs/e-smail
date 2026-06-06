@@ -1,0 +1,118 @@
+.modal-overlay {
+    position: fixed;
+    z-index: 1000;
+    background-color: var(--color-sidebar-background);
+    display: flex;
+    justify-content: center;
+    border-radius: 20px;
+    width: 340px;
+    flex-direction: column;
+    gap: 16px;
+    padding: 30px 20px;
+    top: 90px;
+    right: 20px;
+}
+
+.overlay__title {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    width: 100%;
+
+    p {
+        flex: 1;
+        overflow: hidden;
+        text-align: center;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        max-width: 85%;
+        margin-left: 5%;
+        color: var(--tertiary-text);
+    }
+}
+
+.overlay__email {
+    width: 100%;
+    text-align: center;
+
+    p {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        margin: 0;
+        font-size: 14px;
+        color: var(--tertiary-text);
+    }
+}
+
+.overlay__close {
+    button {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        top: 30px;
+        right: 30px;
+        padding: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img {
+            width: 100%;
+            height: 100%;
+        }
+    }
+}
+
+.overlay__avatar {
+    display: flex;
+    justify-content: center;
+    img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+}
+
+.overlay-actions {
+    display: flex;
+    flex-direction: column;
+    button {
+        background-color: var(--color-sidebar-background);
+        color: var(--tertiary-text);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+
+        &[name="profile"] {
+            border: 2px solid var(--input-stroke);
+            border-radius: 20px 20px 0 0;
+
+            &:hover {
+                background-color: rgba(207, 207, 207, 0.302);
+            }
+        }
+
+        &[name="settings"] {
+            border-bottom: 2px solid var(--input-stroke);
+            border-left: 2px solid var(--input-stroke);
+            border-right: 2px solid var(--input-stroke);
+            border-radius: 0 0 20px 20px;
+
+            &:hover {
+                background-color: rgba(207, 207, 207, 0.302);
+            }
+        }
+    }
+}
+
+.button-exit {
+    button {
+        width: 100%;
+        background-color: #0055ff;
+    }
+}

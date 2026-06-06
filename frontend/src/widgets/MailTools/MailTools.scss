@@ -1,0 +1,115 @@
+.tools-container {
+    display: flex;
+    flex-direction: row;
+
+    .tools-left,
+    .tools-right {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        align-items: center;
+    }
+
+    button {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: var(--tertiary-text);
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        font-size: 16px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--color-main-background);
+        }
+    }
+
+    .tools-left {
+        padding-right: 15px;
+        position: relative;
+
+        &::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2px;
+            height: 40%;
+            background-color: var(--muted-text);
+        }
+
+        [name="favorite"]::before,
+        [name="unfavorite"]::before,
+        [name="spam"]::before,
+        [name="unspam"]::before,
+        [name="trash"]::before {
+            content: "";
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: var(--tertiary-text);
+            mask-size: contain;
+            mask-repeat: no-repeat;
+            mask-position: center;
+        }
+
+        [name="favorite"]::before {
+            mask-image: url("/assets/svg/SidebarFavorites.svg");
+        }
+
+        [name="favorite"][data-active="true"]::before {
+            mask-image: url("/assets/svg/StarOn.svg");
+        }
+
+        [name="spam"]::before {
+            mask-image: url("/assets/svg/Spam.svg");
+        }
+        [name="trash"]::before {
+            mask-image: url("/assets/svg/Trash.svg");
+        }
+    }
+
+    .tools-right {
+        padding-left: 15px;
+
+        button {
+            width: 150px;
+            border-radius: 30px;
+
+            span {
+                margin-left: 10px;
+            }
+        }
+
+        [name="answer"]::before,
+        [name="reply"]::before {
+            content: "";
+            margin-left: 5px;
+
+            display: block;
+            width: 24px;
+            height: 24px;
+            background-color: var(--tertiary-text);
+            mask-size: contain;
+            mask-repeat: no-repeat;
+            mask-position: center;
+        }
+        [name="answer"]::before {
+            margin-left: 10px;
+        }
+
+        [name="answer"]::before {
+            mask-image: url("/assets/svg/Answer.svg");
+        }
+        [name="reply"]::before {
+            mask-image: url("/assets/svg/Reply.svg");
+        }
+    }
+}

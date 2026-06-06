@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES6",
+    "moduleResolution": "bundler",
+    "reactNamespace": "Death13",
+    "jsx": "react",
+    "paths": {
+      "@react/*": ["./src/react/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./src/types"]
+  },
+  "include": ["src/**/*", "src/App.tsx"],
+  "exclude": ["node_modules"]
+}

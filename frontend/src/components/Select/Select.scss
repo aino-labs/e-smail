@@ -1,0 +1,91 @@
+.select {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    outline: none;
+    width: auto;
+    height: 48px;
+    background-color: transparent;
+    padding: 0 15px;
+    cursor: pointer;
+    position: relative;
+    color: var(--tritary-text);
+
+    .select__value {
+        font-size: 16px;
+        padding: 0 10px;
+        color: var(--tertiary-text);
+    }
+
+    .arrow-down {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.3s;
+        background-color: var(--tertiary-text);
+        mask-image: url("/assets/svg/ArrowDown.svg");
+        mask-size: contain;
+        mask-repeat: no-repeat;
+        mask-position: center;
+    }
+
+    .select__toggle {
+        &.open {
+            .arrow-down {
+                transform: rotate(180deg);
+            }
+        }
+    }
+
+    &[name="day"] {
+        border: 2px solid var(--input-stroke);
+        border-right: none;
+        border-radius: 20px 0 0 20px;
+    }
+
+    &[name="month"] {
+        border: 2px solid var(--input-stroke);
+        width: 181px;
+    }
+
+    &[name="year"] {
+        border: 2px solid var(--input-stroke);
+        border-left: none;
+        border-radius: 0 20px 20px 0;
+    }
+
+    &__dropdown {
+        position: absolute;
+        width: auto;
+        top: 50px;
+        z-index: 10;
+        border-radius: 20px;
+        overflow-y: scroll;
+        height: auto;
+        background-color: var(--color-sidebar-background);
+
+        .select__value {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 20px;
+
+            &:hover {
+                background-color: var(--color-main-background);
+            }
+        }
+
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: var(--mail-stroke);
+            border-radius: 3px;
+        }
+    }
+}
