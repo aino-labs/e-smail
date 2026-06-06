@@ -1,6 +1,9 @@
 # SSL
 certs
 
+# DS_Store
+.DS_Store
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
