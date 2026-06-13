@@ -41,7 +41,7 @@ services:
   # User service
   user-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: microservices/user/Dockerfile
     env_file:
       - .env
@@ -67,7 +67,7 @@ services:
   # Email service
   email-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: microservices/email/Dockerfile
     env_file:
       - .env
@@ -97,7 +97,7 @@ services:
   # Folder service
   folder-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: microservices/folder/Dockerfile
     env_file:
       - .env
@@ -116,7 +116,7 @@ services:
 
   support-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: microservices/support/Dockerfile
     env_file:
       - .env
@@ -171,7 +171,7 @@ services:
   # Postfix
   postfix:
     build:
-      context: .
+      context: ./backend
       dockerfile: microservices/postfix/Dockerfile
     volumes:
       - ./configs/postfix/main.cf:/etc/postfix/main.cf:ro
