@@ -1,5 +1,5 @@
 import "../styles/OfflineBanner.scss";
-import { AppStorage } from "../App";
+import { AppStorage } from "./AppStorage";
 
 class OfflineManager {
   private banner: HTMLDivElement | null = null;

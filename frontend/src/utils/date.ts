@@ -1,4 +1,4 @@
-import { AppStorage } from "../App";
+import { AppStorage } from "./AppStorage";
 
 export function formatTime(dateString: string) {
   if (!dateString) return "";

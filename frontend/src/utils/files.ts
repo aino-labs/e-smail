@@ -1,4 +1,4 @@
-import { AppStorage } from "../App";
+import { AppStorage } from "./AppStorage";
 
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return AppStorage.t("zero_bytes");

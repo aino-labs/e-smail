@@ -1,90 +1,103 @@
-import Death13 from "@react/stands";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import "./InputEmail.scss";
-import { AppStorage } from "../../App";
+import { AppStorage } from "../../utils/AppStorage";
+import { measureTextWidth } from "../../utils/textTruncation";
 
-class InputEmail extends Death13.Component {
-  tagsEl: HTMLElement | null = null;
-  lastClickTime: number = 0;
-  lastTapTime: number = 0;
+// ────────────── Types & helpers ──────────────
+interface InputEmailProps {
+  emails?: string[];
+  input_title?: string;
+  placeholder?: string;
+  onChange?: (validEmails: string[], invalidEmails: string[]) => void;
+}
 
-  constructor(props: any) {
-    super(props);
-    this.handleInput = this.handleInput.bind(this);
-    this.handleKeyDown = this.handleKeyDown.bind(this);
-    this.addEmail = this.addEmail.bind(this);
-    this.removeEmail = this.removeEmail.bind(this);
-    this.handleOnBlur = this.handleOnBlur.bind(this);
-    this.handleTagsScroll = this.handleTagsScroll.bind(this);
-    this.tagsEl = null;
-  }
-  state: any = {
-    emails: this.props.emails || [AppStorage.email],
-    invalidEmails:
-      this.props.emails.filter((e: any) => !this.validateEmail(e)) || [],
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[a-zA-Z0-9._-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
+
+const trimEmailToFit = (
+  email: string,
+  maxWidth = 240,
+  font = "16px system-ui, sans-serif",
+): string => {
+  return email;
+};
+
+// ────────────── Component ──────────────────────────────
+const InputEmail: React.FC<InputEmailProps> = ({
+  emails: initialEmails = [],
+  input_title,
+  placeholder,
+  onChange,
+}) => {
+  const [state, setState] = useState({
+    emails: initialEmails.length ? initialEmails : [AppStorage.email],
+    invalidEmails: initialEmails.filter((e) => !validateEmail(e)),
     currentInput: "",
     error: "",
-    editingIndex: null,
+    editingIndex: null as number | null,
     editValue: "",
-  };
+  });
 
-  componentDidMount() {
-    this.updateFadeState();
-  }
+  const updateState = useCallback(
+    (updates: Partial<typeof state>) =>
+      setState((prev) => ({ ...prev, ...updates })),
+    [],
+  );
 
-  componentDidUpdate() {
-    this.updateFadeState();
-  }
+  const tagsEl = useRef<HTMLDivElement | null>(null);
+  const lastClickTime = useRef(0);
+  const lastTapTime = useRef(0);
 
-  updateFadeState = () => {
-    const el = this.tagsEl;
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const updateFadeState = useCallback(() => {
+    const el = tagsEl.current;
     if (!el) return;
     const overflowing = el.scrollWidth > el.clientWidth;
     const isAtEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth;
-    const shouldShowFade = overflowing && !isAtEnd;
+    el.classList.toggle("has-overflow", overflowing && !isAtEnd);
+  }, []);
 
-    if (shouldShowFade) {
-      el.classList.add("has-overflow");
-    } else {
-      el.classList.remove("has-overflow");
-    }
-  };
+  useEffect(() => {
+    updateFadeState();
+  });
 
-  handleTagsScroll = () => {
-    this.updateFadeState();
-  };
+  const handleTagsScroll = useCallback(() => {
+    updateFadeState();
+  }, [updateFadeState]);
 
-  startEditing = (index: number) => {
-    this.setState({
-      editingIndex: index,
-      editValue: this.state.emails[index],
-    });
-  };
+  // ── Edit mode handlers ───────────────────────────────
+  const startEditing = useCallback(
+    (index: number) => {
+      updateState({
+        editingIndex: index,
+        editValue: stateRef.current.emails[index],
+      });
+    },
+    [updateState],
+  );
 
-  handleTagClick = (index: number) => {
-    const now = Date.now();
-    if (now - this.lastClickTime < 300) {
-      this.startEditing(index);
-    }
-    this.lastClickTime = now;
-  };
+  const cancelEdit = useCallback(() => {
+    updateState({ editingIndex: null, editValue: "", error: "" });
+  }, [updateState]);
 
-  cancelEdit = () => {
-    this.setState({ editingIndex: null, editValue: "", error: "" });
-  };
-
-  commitEdit = () => {
-    const { editingIndex, editValue, emails, invalidEmails } = this.state;
+  const commitEdit = useCallback(() => {
+    const { editingIndex, editValue, emails, invalidEmails } = stateRef.current;
     if (editingIndex === null) return;
 
     const trimmed = editValue.trim();
-
     if (!trimmed || trimmed === emails[editingIndex]) {
-      this.cancelEdit();
+      cancelEdit();
       return;
     }
 
-    if (!this.validateEmail(trimmed)) {
-      this.setState({
+    if (!validateEmail(trimmed)) {
+      updateState({
         error: "Некорректный email адрес",
         editingIndex: null,
         editValue: "",
@@ -92,263 +105,198 @@ class InputEmail extends Death13.Component {
       return;
     }
 
-    if (
-      emails.some((e: string, i: number) => i !== editingIndex && e === trimmed)
-    ) {
-      this.setState({ error: "Такой email уже добавлен" });
+    if (emails.some((e, i) => i !== editingIndex && e === trimmed)) {
+      updateState({ error: "Такой email уже добавлен" });
       return;
     }
 
     const newEmails = [...emails];
     newEmails[editingIndex] = trimmed;
-    const newInvalid = invalidEmails.filter(
-      (e: string) => e !== emails[editingIndex],
-    );
+    const newInvalid = invalidEmails.filter((e) => e !== emails[editingIndex]);
 
-    this.setState({
+    updateState({
       emails: newEmails,
       invalidEmails: newInvalid,
       editingIndex: null,
       editValue: "",
       error: "",
     });
-    this.props.onChange?.(newEmails, newInvalid);
-  };
 
-  handleEditKeyDown = (e: any) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      this.commitEdit();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      this.cancelEdit();
-    }
-  };
+    onChange?.(newEmails, newInvalid);
+  }, [updateState, cancelEdit, onChange]);
 
-  validateEmail(email: string) {
-    const emailRegex = /^[a-zA-Z0-9._-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
-  }
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commitEdit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        cancelEdit();
+      }
+    },
+    [commitEdit, cancelEdit],
+  );
 
-  addEmail(email: string) {
-    const trimmedEmail = email.trim();
+  // ── Tag click / touch for double‑tap editing ─────────
+  const handleTagClick = useCallback(
+    (index: number) => {
+      const now = Date.now();
+      if (now - lastClickTime.current < 300) startEditing(index);
+      lastClickTime.current = now;
+    },
+    [startEditing],
+  );
 
-    if (!trimmedEmail) {
-      return;
-    }
+  const handleTagTouchEnd = useCallback(
+    (index: number, e: React.TouchEvent) => {
+      if ((e.target as HTMLElement).closest(".remove-email")) return;
+      const now = Date.now();
+      if (now - lastTapTime.current < 300) {
+        e.preventDefault();
+        startEditing(index);
+      }
+      lastTapTime.current = now;
+    },
+    [startEditing],
+  );
 
-    if (!this.validateEmail(trimmedEmail)) {
-      const newEmails = [...this.state.emails, trimmedEmail];
-      const invalidEmails = [...this.state.invalidEmails, trimmedEmail];
+  // ── Main email input ──────────────────────────────────
+  const handleInput = useCallback(
+    (e: React.InputEvent<HTMLInputElement>) => {
+      updateState({
+        currentInput: e.currentTarget.value,
+        error: "",
+      });
+    },
+    [updateState],
+  );
 
-      this.setState({
+  // ── Core operations ———————————————————————————————————
+  const addEmail = useCallback(
+    (email: string) => {
+      const trimmed = email.trim();
+      if (!trimmed) return;
+
+      const { emails, invalidEmails } = stateRef.current;
+
+      if (!validateEmail(trimmed)) {
+        const newEmails = [...emails, trimmed];
+        const newInvalid = [...invalidEmails, trimmed];
+        updateState({
+          emails: newEmails,
+          invalidEmails: newInvalid,
+          currentInput: "",
+          error: "Некорректный email адрес",
+        });
+        onChange?.(newEmails, newInvalid);
+        return;
+      }
+
+      if (emails.includes(trimmed)) {
+        updateState({ error: "Такой email уже добавлен" });
+        return;
+      }
+
+      const newEmails = [...emails, trimmed];
+      updateState({
         emails: newEmails,
-        invalidEmails: invalidEmails,
         currentInput: "",
-        error: "Некорректный email адрес",
+        error: "",
       });
+      onChange?.(newEmails, invalidEmails);
+    },
+    [onChange],
+  );
 
-      if (this.props.onChange) {
-        this.props.onChange(this.state.emails, this.state.invalidEmails);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addEmail(stateRef.current.currentInput);
       }
-      return;
-    }
+    },
+    [addEmail],
+  );
 
-    if (this.state.emails.includes(trimmedEmail)) {
-      this.setState({
-        error: "Такой email уже добавлен",
-      });
-      return;
-    }
+  const removeEmail = useCallback(
+    (index: number) => {
+      const { emails, invalidEmails } = stateRef.current;
+      const newEmails = [...emails];
+      const removed = newEmails.splice(index, 1)[0];
+      const newInvalid = invalidEmails.filter((e) => e !== removed);
 
-    const newEmails = [...this.state.emails, trimmedEmail];
+      updateState({ emails: newEmails, invalidEmails: newInvalid, error: "" });
+      onChange?.(newEmails, newInvalid);
+    },
+    [onChange],
+  );
 
-    this.setState({
-      emails: newEmails,
-      currentInput: "",
-      error: "",
-    });
+  const handleOnBlur = useCallback(() => {
+    const { currentInput } = stateRef.current;
+    if (currentInput.trim()) addEmail(currentInput);
+  }, [addEmail]);
 
-    if (this.props.onChange) {
-      this.props.onChange(this.state.emails, this.state.invalidEmails);
-    }
-  }
+  const { emails, currentInput, invalidEmails, editingIndex, editValue } =
+    state;
 
-  handleInput(e: any) {
-    const value = e.target.value;
-    this.setState({
-      currentInput: value,
-      error: "",
-    });
-  }
+  return (
+    <div className="input-container">
+      <span className="input__title">{input_title}</span>
+      <div className="input-form">
+        <div
+          className="tags-scrollable"
+          ref={tagsEl}
+          onScroll={handleTagsScroll}
+        >
+          {emails.map((email, index) => {
+            const isInvalid = invalidEmails.includes(email);
+            const isEditing = index === editingIndex;
 
-  handleKeyDown(e: any) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      this.addEmail(this.state.currentInput);
-    }
-  }
-
-  removeEmail(index: number) {
-    const newEmails = [...this.state.emails];
-    const removedEmail = newEmails[index];
-    newEmails.splice(index, 1);
-
-    const invalidEmails = this.state.invalidEmails.filter(
-      (email: string) => email !== removedEmail,
-    );
-
-    this.setState({
-      emails: newEmails,
-      invalidEmails: invalidEmails,
-      error: "",
-    });
-
-    if (this.props.onChange) {
-      this.props.onChange(newEmails, this.state.invalidEmails);
-    }
-  }
-
-  handleOnBlur() {
-    if (this.state.currentInput.trim()) {
-      this.addEmail(this.state.currentInput);
-    }
-  }
-
-  measureTextWidth(text: string, font: string): number {
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d")!;
-    context.font = font;
-    return context.measureText(text).width;
-  }
-
-  trimEmailToFit(
-    email: string,
-    maxWidth: number = 240,
-    font: string = "16px system-ui, sans-serif",
-  ): string {
-    if (this.measureTextWidth(email, font) <= maxWidth) return email;
-
-    const atIdx = email.lastIndexOf("@");
-    if (atIdx <= 0) {
-      let truncated = email;
-      while (
-        this.measureTextWidth(truncated + "...", font) > maxWidth &&
-        truncated.length > 0
-      ) {
-        truncated = truncated.slice(0, -1);
-      }
-      return truncated + "...";
-    }
-
-    const localPart = email.substring(0, atIdx);
-    const domain = email.substring(atIdx);
-
-    if (this.measureTextWidth(domain, font) > maxWidth) {
-      return email.substring(0, maxWidth / 8) + "...";
-    }
-
-    const remainingWidth =
-      maxWidth -
-      this.measureTextWidth(domain, font) -
-      this.measureTextWidth("...", font);
-    if (remainingWidth <= 0) return "..." + domain;
-
-    let low = 0,
-      high = localPart.length;
-    let best = 0;
-    while (low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      const candidate = localPart.substring(0, mid);
-      if (this.measureTextWidth(candidate, font) <= remainingWidth) {
-        best = mid;
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-
-    const trimmedLocal = localPart.substring(0, best);
-    return trimmedLocal + "..." + domain;
-  }
-
-  render() {
-    const { emails, currentInput, invalidEmails, editingIndex, editValue } =
-      this.state;
-
-    return (
-      <div className="input-container">
-        <span className="input__title">{this.props.input_title}</span>
-        <div className="input-form">
-          <div
-            className="tags-scrollable"
-            ref={(el: any) => {
-              this.tagsEl = el;
-            }}
-            onScroll={this.handleTagsScroll}
-          >
-            {emails.map((email: string, index: number) => {
-              const isInvalid = invalidEmails.includes(email);
-              const isEditing = index === editingIndex;
-
-              return (
-                <span
-                  key={index}
-                  className={isInvalid ? "email-tag__error" : "email-tag"}
-                  onClick={() => this.handleTagClick(index)}
-                  onTouchEnd={(e: any) => {
-                    if (e.target.closest(".remove-email")) return;
-                    const now = Date.now();
-                    if (now - this.lastTapTime < 300) {
-                      e.preventDefault();
-                      this.startEditing(index);
-                    }
-                    this.lastTapTime = now;
-                  }}
-                >
-                  {isEditing ? (
-                    <input
-                      className="edit-input"
-                      value={editValue}
-                      onInput={(e: any) =>
-                        this.setState({ editValue: e.target.value })
-                      }
-                      onBlur={this.commitEdit}
-                      onKeyDown={this.handleEditKeyDown}
-                      autoFocus
-                    />
-                  ) : (
-                    [
-                      <span className="email-text" key="text">
-                        {this.trimEmailToFit(email)}
-                      </span>,
-                      <button
-                        key="remove"
-                        type="button"
-                        className="remove-email"
-                        onClick={() => this.removeEmail(index)}
-                      >
-                        ×
-                      </button>,
-                    ]
-                  )}
-                </span>
-              );
-            })}
-          </div>
-          <input
-            type="text"
-            value={currentInput}
-            onInput={this.handleInput}
-            onBlur={this.handleOnBlur}
-            onKeyDown={this.handleKeyDown}
-            placeholder={this.props.placeholder}
-            className="email-input"
-          />
+            return (
+              <span
+                key={index}
+                className={isInvalid ? "email-tag__error" : "email-tag"}
+                onClick={() => handleTagClick(index)}
+                onTouchEnd={(e) => handleTagTouchEnd(index, e)}
+              >
+                {isEditing ? (
+                  <input
+                    className="edit-input"
+                    value={editValue}
+                    onChange={(e) => updateState({ editValue: e.target.value })}
+                    onBlur={commitEdit}
+                    onKeyDown={handleEditKeyDown}
+                    autoFocus
+                  />
+                ) : (
+                  <>
+                    <span className="email-text">{trimEmailToFit(email)}</span>
+                    <button
+                      type="button"
+                      className="remove-email"
+                      onClick={() => removeEmail(index)}
+                    >
+                      ×
+                    </button>
+                  </>
+                )}
+              </span>
+            );
+          })}
         </div>
+        <input
+          type="text"
+          value={currentInput}
+          onInput={handleInput}
+          onBlur={handleOnBlur}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="email-input"
+        />
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 export default InputEmail;
