@@ -1,3 +1,5 @@
+name: smail
+
 services:
   # Postgres
   postgres:
@@ -46,8 +48,8 @@ services:
     env_file:
       - .env
     volumes:
-      - ./configs:/app/configs
-      - ./db/migrations:/app/db/migrations
+      - ./backend/configs:/app/configs
+      - ./backend/db/migrations:/app/db/migrations
     ports:
       - "8081:8081"
       - "50051:50051"
@@ -72,8 +74,8 @@ services:
     env_file:
       - .env
     volumes:
-      - ./configs:/app/configs
-      - ./db/migrations:/app/db/migrations
+      - ./backend/configs:/app/configs
+      - ./backend/db/migrations:/app/db/migrations
     ports:
       - "8082:8082"
       - "50052:50052"
@@ -102,8 +104,8 @@ services:
     env_file:
       - .env
     volumes:
-      - ./configs:/app/configs
-      - ./db/migrations:/app/db/migrations
+      - ./backend/configs:/app/configs
+      - ./backend/db/migrations:/app/db/migrations
     ports:
       - "8083:8083"
       - "50053:50053"
@@ -121,8 +123,8 @@ services:
     env_file:
       - .env
     volumes:
-      - ./configs:/app/configs
-      - ./db/migrations:/app/db/migrations
+      - ./backend/configs:/app/configs
+      - ./backend/db/migrations:/app/db/migrations
     ports:
       - "8084:8084"
     depends_on:
@@ -130,11 +132,25 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"
+      - "8443:443"
+    volumes:
+      - ./certs/e-smail.ru:/etc/nginx/ssl/e-smail.ru:ro
+    depends_on:
+      - minio
+    restart: unless-stopped
+
   # Prometheus
   prometheus:
     image: prom/prometheus:latest
     volumes:
-      - ./configs/prometheus/config.yml:/etc/prometheus/prometheus.yml:ro
+      - ./backend/configs/prometheus/config.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "9091:9090"
@@ -149,7 +165,7 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./configs/grafana:/etc/grafana/provisioning
+      - ./backend/configs/grafana:/etc/grafana/provisioning
     depends_on:
       - prometheus
     restart: unless-stopped
@@ -174,8 +190,8 @@ services:
       context: ./backend
       dockerfile: microservices/postfix/Dockerfile
     volumes:
-      - ./configs/postfix/main.cf:/etc/postfix/main.cf:ro
-      - ./configs/postfix/master.cf:/etc/postfix/master.cf:ro
+      - ./backend/configs/postfix/main.cf:/etc/postfix/main.cf:ro
+      - ./backend/configs/postfix/master.cf:/etc/postfix/master.cf:ro
       - ./certs/postfix:/etc/ssl/postfix:ro
       - postfix_queue:/var/spool/postfix
     ports:

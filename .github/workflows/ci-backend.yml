@@ -14,10 +14,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.25"
+          cache-dependency-path: backend/go.sum
       - uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           args: -c .golangci.yaml
+          working-directory: backend
 
   test:
     runs-on: ubuntu-latest
@@ -26,4 +28,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.25"
+          cache-dependency-path: backend/go.sum
       - run: make test
+        working-directory: backend

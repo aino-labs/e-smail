@@ -1,3 +1,5 @@
+name: smail
+
 services:
   postgres:
     image: postgres:16.3
@@ -32,15 +34,13 @@ services:
     restart: unless-stopped
 
   user-service:
-    image: ghcr.io/go-park-mail-ru/2026_1_pushtomain/user:latest
+    image: ghcr.io/aino-labs/e-smail/user:latest
     pull_policy: always
     env_file:
       - .env
     volumes:
       - ./configs:/app/configs:ro
       - ./db/migrations:/app/db/migrations:ro
-    ports:
-      - "8081:8081"
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,15 +55,13 @@ services:
     restart: unless-stopped
 
   email-service:
-    image: ghcr.io/go-park-mail-ru/2026_1_pushtomain/email:latest
+    image: ghcr.io/aino-labs/e-smail/email:latest
     pull_policy: always
     env_file:
       - .env
     volumes:
       - ./configs:/app/configs:ro
       - ./db/migrations:/app/db/migrations:ro
-    ports:
-      - "8082:8082"
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,15 +70,13 @@ services:
     restart: unless-stopped
 
   folder-service:
-    image: ghcr.io/go-park-mail-ru/2026_1_pushtomain/folder:latest
+    image: ghcr.io/aino-labs/e-smail/folder:latest
     pull_policy: always
     env_file:
       - .env
     volumes:
       - ./configs:/app/configs:ro
       - ./db/migrations:/app/db/migrations:ro
-    ports:
-      - "8083:8083"
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,8 +107,6 @@ services:
     image: grafana/grafana:latest
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
-    ports:
-      - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./configs/grafana:/etc/grafana/provisioning:ro
@@ -121,9 +115,8 @@ services:
     restart: unless-stopped
 
   postfix:
-    build:
-      context: ./backend
-      dockerfile: microservices/postfix/Dockerfile
+    image: ghcr.io/aino-labs/e-smail/postfix:latest
+    pull_policy: always
     volumes:
       - ./configs/postfix/main.cf:/etc/postfix/main.cf:ro
       - ./configs/postfix/master.cf:/etc/postfix/master.cf:ro
@@ -133,6 +126,18 @@ services:
       - "25:25"
       - "587:587"
     hostname: mail.e-smail.ru
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/aino-labs/e-smail/frontend:latest
+    pull_policy: always
+    volumes:
+      - ./certs/e-smail.ru:/etc/nginx/ssl/e-smail.ru:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - minio
     restart: unless-stopped
 
 volumes:
