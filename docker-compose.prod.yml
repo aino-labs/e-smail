@@ -84,6 +84,19 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  support-service:
+    image: ghcr.io/aino-labs/e-smail/support:latest
+    pull_policy: always
+    env_file:
+      - .env
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./db/migrations:/app/db/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus:latest
     volumes:
@@ -122,9 +135,11 @@ services:
       - ./configs/postfix/master.cf:/etc/postfix/master.cf:ro
       - ./certs/postfix:/etc/ssl/postfix:ro
       - postfix_queue:/var/spool/postfix
+    # Наружу торчит только 25 (MX, входящая почта от чужих серверов).
+    # 587 (submission) больше не публикуется: письма шлёт только email-service
+    # изнутри docker-сети, внешним клиентам submission не нужен.
     ports:
       - "25:25"
-      - "587:587"
     hostname: mail.e-smail.ru
     restart: unless-stopped
 
@@ -146,3 +161,9 @@ volumes:
   prometheus_data:
   grafana_data:
   postfix_queue:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

@@ -83,15 +83,9 @@ func (r *Repository) DeleteAvatar(ctx context.Context, userID int64) error {
 }
 
 func makeBucketPublic(client *s3.Client, bucket string) error {
-	// Политика, которую MinIO считает "public"
 	policy := `{
         "Version": "2012-10-17",
         "Statement": [{
-            "Effect": "Allow",
-            "Principal": {"AWS": "*"},
-            "Action": ["s3:GetBucketLocation", "s3:ListBucket"],
-            "Resource": ["arn:aws:s3:::` + bucket + `"]
-        },{
             "Effect": "Allow",
             "Principal": {"AWS": "*"},
             "Action": ["s3:GetObject"],
