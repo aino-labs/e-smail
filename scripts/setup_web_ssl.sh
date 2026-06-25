@@ -46,9 +46,6 @@ if ! command -v certbot >/dev/null 2>&1; then
   sudo apt-get update && sudo apt-get install -y certbot
 fi
 
-echo "stopping web container to free port 80..."
-docker compose stop web 2>/dev/null || true
-
 sudo certbot certonly --standalone \
   -d "${DOMAIN}" -d "${ALT_DOMAIN}" \
   --email "${EMAIL}" --agree-tos --no-eff-email --non-interactive
@@ -57,9 +54,6 @@ LE_DIR="/etc/letsencrypt/live/${DOMAIN}"
 sudo cp "${LE_DIR}/fullchain.pem" "${CERT_DIR}/fullchain.pem"
 sudo cp "${LE_DIR}/privkey.pem" "${CERT_DIR}/privkey.pem"
 sudo chown "$(id -u):$(id -g)" "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem"
-
-echo "starting web container..."
-docker compose up -d web
 
 echo "letsencrypt cert installed in ${CERT_DIR}"
 echo

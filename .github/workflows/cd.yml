@@ -99,14 +99,14 @@ jobs:
           ssh-keyscan -H ${{ secrets.SSH_HOSTNAME }} >> ~/.ssh/known_hosts
 
       - name: Setup backend dir
-        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }} "mkdir -p ~/backend ~/backend/scripts ~/backend/db"
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }} "mkdir -p ~/scripts ~/db"
 
       - name: Copy files
         run: |
-          scp docker-compose.prod.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/backend
-          scp scripts/deploy.sh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/backend/scripts/
-          scp -r backend/configs ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/backend/
-          scp -r backend/db/migrations ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/backend/db/
+          scp docker-compose.prod.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
+          scp scripts ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
+          scp -r backend/configs ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
+          scp -r backend/db/migrations ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/db/
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -116,7 +116,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: GITHUB_TOKEN,GITHUB_ACTOR
           script: |
-            cd ~/backend
+            cd ~
             echo "${{ secrets.PROD_ENV }}" > .env
             chmod +x scripts/deploy.sh
             ./scripts/deploy.sh $GITHUB_ACTOR $GITHUB_TOKEN
