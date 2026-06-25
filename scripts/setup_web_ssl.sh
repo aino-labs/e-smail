@@ -4,6 +4,7 @@ set -euo pipefail
 DOMAIN="${DOMAIN:-e-smail.ru}"
 ALT_DOMAIN="${ALT_DOMAIN:-www.e-smail.ru}"
 EMAIL="${EMAIL:-}"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 MODE="self-signed"
 
 while [ $# -gt 0 ]; do
@@ -15,7 +16,7 @@ while [ $# -gt 0 ]; do
     --email) EMAIL="$2"; shift ;;
     -h|--help)
       echo "usage: $0 [--self-signed|--letsencrypt] [--domain d] [--alt d] [--email a]"
-      echo "  env overrides: DOMAIN, ALT_DOMAIN, EMAIL, COMPOSE_FILE"
+      echo "  env: DOMAIN, ALT_DOMAIN, EMAIL, COMPOSE_FILE"
       exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
@@ -31,33 +32,49 @@ if [ "${MODE}" = "self-signed" ]; then
     -out "${CERT_DIR}/fullchain.pem" \
     -subj "/CN=${DOMAIN}" \
     -addext "subjectAltName=DNS:${DOMAIN},DNS:${ALT_DOMAIN}"
+  chmod 600 "${CERT_DIR}/privkey.pem"
   echo "self-signed cert written to ${CERT_DIR}"
-  echo "reload web: docker compose up -d web"
+  echo "apply: docker compose -f ${COMPOSE_FILE} up -d frontend"
   exit 0
 fi
 
 if [ -z "${EMAIL}" ]; then
-  echo "letsencrypt mode requires --email <addr> (or EMAIL env)" >&2
+  echo "letsencrypt mode requires --email <addr>" >&2
   exit 1
 fi
 
-if ! command -v certbot >/dev/null 2>&1; then
-  echo "certbot not found, installing via apt..."
-  sudo apt-get update && sudo apt-get install -y certbot
+command -v certbot >/dev/null 2>&1 || { apt-get update && apt-get install -y certbot; }
+
+DARGS=(-d "${DOMAIN}")
+if [ -n "${ALT_DOMAIN}" ] && getent ahosts "${ALT_DOMAIN}" >/dev/null 2>&1; then
+  DARGS+=(-d "${ALT_DOMAIN}")
+  echo "including ${ALT_DOMAIN} (resolves)"
+else
+  echo "skipping ${ALT_DOMAIN} (no DNS) — issuing for ${DOMAIN} only"
 fi
 
-sudo certbot certonly --standalone \
-  -d "${DOMAIN}" -d "${ALT_DOMAIN}" \
-  --email "${EMAIL}" --agree-tos --no-eff-email --non-interactive
+echo "stopping frontend to free port 80..."
+docker compose -f "${COMPOSE_FILE}" stop frontend 2>/dev/null || true
+
+if ! certbot certonly --standalone --non-interactive --agree-tos --no-eff-email \
+      --email "${EMAIL}" "${DARGS[@]}"; then
+  echo "certbot failed; bringing frontend back with existing cert" >&2
+  docker compose -f "${COMPOSE_FILE}" up -d frontend 2>/dev/null || true
+  echo "check: A-record ${DOMAIN} points here and port 80 is open" >&2
+  exit 1
+fi
 
 LE_DIR="/etc/letsencrypt/live/${DOMAIN}"
-sudo cp "${LE_DIR}/fullchain.pem" "${CERT_DIR}/fullchain.pem"
-sudo cp "${LE_DIR}/privkey.pem" "${CERT_DIR}/privkey.pem"
-sudo chown "$(id -u):$(id -g)" "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem"
+cp -fL "${LE_DIR}/fullchain.pem" "${CERT_DIR}/fullchain.pem"
+cp -fL "${LE_DIR}/privkey.pem"  "${CERT_DIR}/privkey.pem"
+chmod 600 "${CERT_DIR}/privkey.pem"
 
-echo "letsencrypt cert installed in ${CERT_DIR}"
+echo "starting frontend..."
+docker compose -f "${COMPOSE_FILE}" up -d frontend 2>/dev/null || \
+  echo "frontend not started yet (images not pulled) — certs are in ${CERT_DIR}, deploy will use them"
+
+echo "issuer:"
+openssl x509 -in "${CERT_DIR}/fullchain.pem" -noout -issuer
 echo
-echo "auto-renew (cron, runs ~daily, acts only when <30 days left):"
-echo "0 3 * * * certbot renew --standalone --quiet \\"
-echo "  --pre-hook 'docker compose -f /path/docker-compose.prod.yml stop web' \\"
-echo "  --post-hook 'cp /etc/letsencrypt/live/${DOMAIN}/fullchain.pem /path/${CERT_DIR}/fullchain.pem; cp /etc/letsencrypt/live/${DOMAIN}/privkey.pem /path/${CERT_DIR}/privkey.pem; docker compose -f /path/docker-compose.prod.yml up -d web'"
+echo "auto-renew — add to 'crontab -e' (runs from $(pwd)):"
+echo "0 3 * * * cd $(pwd) && certbot renew --standalone --quiet --pre-hook 'docker compose -f ${COMPOSE_FILE} stop frontend' --deploy-hook 'cp -fL ${LE_DIR}/fullchain.pem ${CERT_DIR}/fullchain.pem; cp -fL ${LE_DIR}/privkey.pem ${CERT_DIR}/privkey.pem; chmod 600 ${CERT_DIR}/privkey.pem' --post-hook 'docker compose -f ${COMPOSE_FILE} up -d frontend'"
