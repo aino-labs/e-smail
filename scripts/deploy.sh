@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-cd ~/backend
 
 echo "$2" | docker login ghcr.io -u "$1" --password-stdin
 
