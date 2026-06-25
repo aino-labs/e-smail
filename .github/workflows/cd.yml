@@ -104,7 +104,7 @@ jobs:
       - name: Copy files
         run: |
           scp docker-compose.prod.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
-          scp scripts ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
+          scp -r scripts ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
           scp -r backend/configs ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
           scp -r backend/db/migrations ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/db/
 
