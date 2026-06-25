@@ -135,9 +135,6 @@ services:
       - ./configs/postfix/master.cf:/etc/postfix/master.cf:ro
       - ./certs/postfix:/etc/ssl/postfix:ro
       - postfix_queue:/var/spool/postfix
-    # Наружу торчит только 25 (MX, входящая почта от чужих серверов).
-    # 587 (submission) больше не публикуется: письма шлёт только email-service
-    # изнутри docker-сети, внешним клиентам submission не нужен.
     ports:
       - "25:25"
     hostname: mail.e-smail.ru
