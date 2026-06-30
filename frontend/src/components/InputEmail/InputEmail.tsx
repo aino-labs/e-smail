@@ -21,7 +21,49 @@ const trimEmailToFit = (
   maxWidth = 240,
   font = "16px system-ui, sans-serif",
 ): string => {
-  return email;
+  if (measureTextWidth(email, font) <= maxWidth) return email;
+
+  const atIdx = email.lastIndexOf("@");
+
+  if (atIdx <= 0) {
+    let truncated = email;
+    while (
+      measureTextWidth(truncated + "...", font) > maxWidth &&
+      truncated.length > 0
+    ) {
+      truncated = truncated.slice(0, -1);
+    }
+    return truncated + "...";
+  }
+
+  const localPart = email.substring(0, atIdx);
+  const domain = email.substring(atIdx);
+
+  if (measureTextWidth(domain, font) > maxWidth) {
+    return email.substring(0, Math.floor(maxWidth / 8)) + "...";
+  }
+
+  const remainingWidth =
+    maxWidth - measureTextWidth(domain, font) - measureTextWidth("...", font);
+
+  if (remainingWidth <= 0) return "..." + domain;
+
+  let low = 0,
+    high = localPart.length;
+  let best = 0;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const candidate = localPart.substring(0, mid);
+    if (measureTextWidth(candidate, font) <= remainingWidth) {
+      best = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  const trimmedLocal = localPart.substring(0, best);
+  return trimmedLocal + "..." + domain;
 };
 
 // ────────────── Component ──────────────────────────────
