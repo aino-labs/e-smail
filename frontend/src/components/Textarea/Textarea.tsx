@@ -1,27 +1,32 @@
-import Death13 from "@react/stands";
 import "./Textarea.scss";
 
-class Textarea extends Death13.Component {
-  handleInput = (e: any) => {
-    if (this.props.onInput) {
-      this.props.onInput(e);
-    }
-  };
-
-  render() {
-    return (
-      <div className="text-area">
-        <span className="input__title">{this.props.input_title}</span>
-        <textarea
-          className={this.props.className}
-          readonly={this.props.readonly}
-          value={this.props.value || ""}
-          placeholder={this.props.placeholder}
-          onInput={this.handleInput}
-        />
-      </div>
-    );
-  }
+interface TextareaProps {
+  className?: string;
+  readonly?: boolean;
+  value?: string;
+  placeholder?: string;
+  inputTitle?: string;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
-export default Textarea;
+export default function Textarea({
+  className = "",
+  readonly = false,
+  value = "",
+  placeholder = "",
+  inputTitle = "",
+  onChange,
+}: TextareaProps) {
+  return (
+    <div className="text-area">
+      <span className="input__title">{inputTitle}</span>
+      <textarea
+        className={className}
+        readOnly={readonly}
+        value={value || ""}
+        placeholder={placeholder}
+        onChange={onChange}
+      />
+    </div>
+  );
+}

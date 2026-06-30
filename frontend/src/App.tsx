@@ -18,6 +18,7 @@ import SupportPage from "./pages/SupportPage/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage/AdminSupportPage";
 import NotificationManager from "./widgets/NotificationManager/NotificationManager";
 import { initEmailNotifications } from "./utils/emailNotifications";
+import { AppStorage } from "./utils/AppStorage";
 import "./utils/OfflineManager";
 
 const routes: Record<string, React.ComponentType<any>> = {

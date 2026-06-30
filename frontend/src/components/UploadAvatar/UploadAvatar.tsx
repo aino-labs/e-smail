@@ -1,76 +1,78 @@
-import Death13 from "@react/stands";
+import { useState } from "react";
 import "./UploadAvatar.scss";
-import { AppStorage } from "../../App";
+import { AppStorage } from "../../utils/AppStorage";
 import { uploadAvatar } from "../../api/ApiAuth";
 
-class UploadAvatar extends Death13.Component {
-  state = {
-    localPreview: null,
-    isLoading: false,
-  };
+const t = (key: string): string => {
+  return AppStorage.t(key);
+};
 
-  constructor(props: any) {
-    super(props);
-    this.handleImageChange = this.handleImageChange.bind(this);
-  }
+interface UploadAvatarProps {
+  image?: string;
+  onAvatarUpdate?: any;
+}
 
-  handleImageChange = async (e: any) => {
-    this.setState({ isLoading: true });
+export default function UploadAvatar({
+  image = AppStorage.getAvatarUrl() || "../../assets/svg/Avatar.svg",
+  onAvatarUpdate,
+}: UploadAvatarProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsLoading(true);
+
     const reader = new FileReader();
     reader.onload = (event: any) => {
-      this.setState({ localPreview: event.target.result });
+      if (typeof event.target?.result === "string") {
+        setLocalPreview(event.target.result);
+      }
     };
     reader.readAsDataURL(file);
 
-    const imagePath = await uploadAvatar(file);
-    if (imagePath) {
-      AppStorage.setImagePath(imagePath);
-      this.setState({ localPreview: null });
+    try {
+      const imagePath = await uploadAvatar(file);
+      if (imagePath) {
+        AppStorage.setImagePath(imagePath);
+        setLocalPreview(null);
 
-      if (this.props.onAvatarUpdate) {
-        this.props.onAvatarUpdate();
+        onAvatarUpdate?.();
       }
+    } catch (error) {
+      console.error("Avatar upload failed: ", error);
+    } finally {
+      setIsLoading(false);
     }
-
-    this.setState({ isLoading: false });
   };
 
-  t(key: string): string {
-    return AppStorage.t(key);
-  }
+  const src =
+    localPreview ||
+    image ||
+    AppStorage.getAvatarUrl() ||
+    "../../assets/svg/Avatar.svg";
 
-  render() {
-    const src =
-      this.state.localPreview ||
-      this.props.image ||
-      AppStorage.getAvatarUrl() ||
-      "../../assets/svg/Avatar.svg";
-
-    return (
-      <div className="upload">
-        <div className="upload__preview">
-          <img id="upload-image" src={src} alt="avatar" />
-          {this.state.isLoading && (
-            <div className="upload__overlay">
-              <div className="upload__spinner"></div>
-            </div>
-          )}
-        </div>
-        <input
-          id="file-input"
-          type="file"
-          name="file"
-          accept="image/*"
-          hidden
-          onChange={this.handleImageChange}
-        />
-        <label for="file-input">{this.t("change_avatar")}</label>
+  return (
+    <div className="upload">
+      <div className="upload__preview">
+        <img id="upload-image" src={src} alt="avatar" />
+        {isLoading && (
+          <div className="upload__overlay">
+            <div className="upload__spinner"></div>
+          </div>
+        )}
       </div>
-    );
-  }
+      <input
+        id="file-input"
+        type="file"
+        name="file"
+        accept="image/*"
+        hidden
+        onChange={handleImageChange}
+      />
+      <label htmlFor="file-input">{t("change_avatar")}</label>
+    </div>
+  );
 }
-
-export default UploadAvatar;
