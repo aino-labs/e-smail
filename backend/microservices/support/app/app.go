@@ -9,17 +9,17 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/go-park-mail-ru/2026_1_PushToMain/docs"
+	_ "smail/docs"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/postgres"
+	"smail/pkg/postgres"
 	"go.uber.org/zap"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/logger"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/metrics"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	supportHttp "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/support/delivery/http"
-	supportRepo "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/support/repository"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/support/service"
+	"smail/internal/pkg/logger"
+	"smail/internal/pkg/metrics"
+	"smail/internal/pkg/middleware"
+	supportHttp "smail/microservices/support/delivery/http"
+	supportRepo "smail/microservices/support/repository"
+	"smail/microservices/support/service"
 	"github.com/gorilla/mux"
 )
 

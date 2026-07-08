@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/delivery/lmtp"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/models"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/smtp"
+	"smail/microservices/email/delivery/lmtp"
+	"smail/microservices/email/models"
+	"smail/pkg/smtp"
 )
 
 type GetEmailsInput struct {

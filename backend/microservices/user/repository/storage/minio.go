@@ -9,7 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/minio"
+	"smail/pkg/minio"
 )
 
 var (
@@ -83,15 +83,9 @@ func (r *Repository) DeleteAvatar(ctx context.Context, userID int64) error {
 }
 
 func makeBucketPublic(client *s3.Client, bucket string) error {
-	// Политика, которую MinIO считает "public"
 	policy := `{
         "Version": "2012-10-17",
         "Statement": [{
-            "Effect": "Allow",
-            "Principal": {"AWS": "*"},
-            "Action": ["s3:GetBucketLocation", "s3:ListBucket"],
-            "Resource": ["arn:aws:s3:::` + bucket + `"]
-        },{
             "Effect": "Allow",
             "Principal": {"AWS": "*"},
             "Action": ["s3:GetObject"],

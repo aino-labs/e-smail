@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/grpcx"
-	emailpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/email"
+	"smail/internal/pkg/grpcx"
+	emailpb "smail/proto/email"
 
 	"google.golang.org/grpc"
 )

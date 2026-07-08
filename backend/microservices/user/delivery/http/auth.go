@@ -1,4 +1,4 @@
-//go:generate mockgen -destination=../../../../../mocks/app/user/mock_user_service.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/delivery/http Service
+//go:generate mockgen -destination=../../../../../mocks/app/user/mock_user_service.go -package=mocks smail/microservices/user/delivery/http Service
 
 package http
 
@@ -12,9 +12,9 @@ import (
 
 	"io"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/response"
+	"smail/microservices/user/service"
 )
 
 const sessionTokenCookie = "session_token"

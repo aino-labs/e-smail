@@ -9,25 +9,25 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/go-park-mail-ru/2026_1_PushToMain/docs"
+	_ "smail/docs"
 	"google.golang.org/grpc"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/postgres"
+	"smail/pkg/postgres"
 	"go.uber.org/zap"
 
-	folderHttp "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/delivery/http"
-	folderRepo "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/repository"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/service"
+	folderHttp "smail/microservices/folder/delivery/http"
+	folderRepo "smail/microservices/folder/repository"
+	"smail/microservices/folder/service"
 
 	"net"
 
-	grpcDelivery "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/delivery/grpc"
-	folderpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/folder"
+	grpcDelivery "smail/microservices/folder/delivery/grpc"
+	folderpb "smail/proto/folder"
 
-	emailClient "github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/clients/email"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/logger"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/metrics"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
+	emailClient "smail/internal/pkg/clients/email"
+	"smail/internal/pkg/logger"
+	"smail/internal/pkg/metrics"
+	"smail/internal/pkg/middleware"
 	"github.com/gorilla/mux"
 )
 

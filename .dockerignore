@@ -1,0 +1,8 @@
+backend
+scripts
+certs
+.github
+**/node_modules
+**/build
+**/.git
+*.md

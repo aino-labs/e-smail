@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/support/models"
+	"smail/microservices/support/models"
 )
 
 type Repository interface {

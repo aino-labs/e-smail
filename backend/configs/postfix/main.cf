@@ -5,17 +5,15 @@ mydestination =
 
 inet_interfaces = all
 inet_protocols = ipv4
-mynetworks = 127.0.0.0/8, 172.16.0.0/12, 10.0.0.0/8
+mynetworks = 127.0.0.0/8, 172.28.0.0/16
 
 relay_domains = $mydomain
 transport_maps = hash:/etc/postfix/transport
 
 smtpd_relay_restrictions =
-    permit_mynetworks,
     reject_unauth_destination
 
 smtpd_recipient_restrictions =
-    permit_mynetworks,
     reject_unauth_destination,
     reject_invalid_hostname,
     reject_non_fqdn_sender,

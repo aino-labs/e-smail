@@ -3,9 +3,9 @@ package grpc
 import (
 	"context"
 
-	emailpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/email"
+	emailpb "smail/proto/email"
 
-	emailService "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/service"
+	emailService "smail/microservices/email/service"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

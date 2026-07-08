@@ -6,8 +6,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/service"
-	pb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/folder"
+	"smail/microservices/folder/service"
+	pb "smail/proto/folder"
 )
 
 type FolderGrpcServer struct {

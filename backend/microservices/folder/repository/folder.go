@@ -7,7 +7,7 @@ import (
 
 	"errors"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/models"
+	"smail/microservices/folder/models"
 	"github.com/jackc/pgconn"
 )
 

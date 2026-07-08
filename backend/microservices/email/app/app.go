@@ -9,29 +9,29 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/go-park-mail-ru/2026_1_PushToMain/docs"
+	_ "smail/docs"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/minio"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/postgres"
-	smtp "github.com/go-park-mail-ru/2026_1_PushToMain/pkg/smtp"
+	"smail/pkg/minio"
+	"smail/pkg/postgres"
+	smtp "smail/pkg/smtp"
 	"go.uber.org/zap"
 
 	"net"
 
-	userClient "github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/clients/user"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/logger"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/metrics"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	emailHttp "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/delivery/http"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/delivery/lmtp"
-	emailRepo "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/repository/db"
-	emailStorage "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/repository/storage"
-	emailService "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/service"
+	userClient "smail/internal/pkg/clients/user"
+	"smail/internal/pkg/logger"
+	"smail/internal/pkg/metrics"
+	"smail/internal/pkg/middleware"
+	emailHttp "smail/microservices/email/delivery/http"
+	"smail/microservices/email/delivery/lmtp"
+	emailRepo "smail/microservices/email/repository/db"
+	emailStorage "smail/microservices/email/repository/storage"
+	emailService "smail/microservices/email/service"
 	"github.com/gorilla/mux"
 
-	grpcDelivery "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/delivery/grpc"
+	grpcDelivery "smail/microservices/email/delivery/grpc"
 
-	emailpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/email"
+	emailpb "smail/proto/email"
 
 	"google.golang.org/grpc"
 )

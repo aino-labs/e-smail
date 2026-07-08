@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"io"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/models"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/smtp"
-	userpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/user"
+	"smail/microservices/email/models"
+	"smail/pkg/smtp"
+	userpb "smail/proto/user"
 )
 
-//go:generate mockgen -destination=../../../mocks/app/email/mock_email_repository.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/service Repository
-//go:generate mockgen -destination=../../../mocks/app/email/mock_email_user_client.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/service UserClient
+//go:generate mockgen -destination=../../../mocks/app/email/mock_email_repository.go -package=mocks smail/microservices/email/service Repository
+//go:generate mockgen -destination=../../../mocks/app/email/mock_email_user_client.go -package=mocks smail/microservices/email/service UserClient
 
 type UserClient interface {
 	GetUserByID(ctx context.Context, userID int64) (*userpb.User, error)

@@ -1,4 +1,4 @@
-module github.com/go-park-mail-ru/2026_1_PushToMain
+module smail
 
 go 1.25.0
 
