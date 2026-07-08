@@ -4,9 +4,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/service"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/response"
+	"smail/microservices/email/service"
 )
 
 func draftToResponse(r *service.DraftResult) DraftResponse {

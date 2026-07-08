@@ -9,26 +9,26 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/go-park-mail-ru/2026_1_PushToMain/docs"
-	folderClient "github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/clients/folder"
-	authHttp "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/delivery/http"
-	profileDbRepo "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/repository/db"
-	profileS3Repo "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/repository/storage"
-	userService "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service"
+	_ "smail/docs"
+	folderClient "smail/internal/pkg/clients/folder"
+	authHttp "smail/microservices/user/delivery/http"
+	profileDbRepo "smail/microservices/user/repository/db"
+	profileS3Repo "smail/microservices/user/repository/storage"
+	userService "smail/microservices/user/service"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/minio"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/postgres"
+	"smail/pkg/minio"
+	"smail/pkg/postgres"
 	"go.uber.org/zap"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/logger"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/metrics"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
+	"smail/internal/pkg/logger"
+	"smail/internal/pkg/metrics"
+	"smail/internal/pkg/middleware"
 	"github.com/gorilla/mux"
 
 	"net"
 
-	grpcDelivery "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/delivery/grpc"
-	userpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/user"
+	grpcDelivery "smail/microservices/user/delivery/grpc"
+	userpb "smail/proto/user"
 
 	"google.golang.org/grpc"
 )

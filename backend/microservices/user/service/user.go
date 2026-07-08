@@ -1,6 +1,6 @@
-//go:generate mockgen -destination=../../../../mocks/app/user/mock_db_repository.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service DbRepository
-//go:generate mockgen -destination=../../../../mocks/app/user/mock_s3_repository.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service S3Repository
-//go:generate mockgen -destination=../../../../mocks/app/user/mock_jwt_manager.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service JWTManager
+//go:generate mockgen -destination=../../../../mocks/app/user/mock_db_repository.go -package=mocks smail/microservices/user/service DbRepository
+//go:generate mockgen -destination=../../../../mocks/app/user/mock_s3_repository.go -package=mocks smail/microservices/user/service S3Repository
+//go:generate mockgen -destination=../../../../mocks/app/user/mock_jwt_manager.go -package=mocks smail/microservices/user/service JWTManager
 
 package service
 
@@ -12,10 +12,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/utils"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/models"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/repository/db"
-	folderpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/folder"
+	"smail/internal/pkg/utils"
+	"smail/microservices/user/models"
+	"smail/microservices/user/repository/db"
+	folderpb "smail/proto/folder"
 	"golang.org/x/crypto/bcrypt"
 )
 

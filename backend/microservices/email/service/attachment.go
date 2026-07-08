@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/models"
+	"smail/microservices/email/models"
 )
 
 // ─── input / output types ────────────────────────────────────────────────────

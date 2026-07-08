@@ -9,9 +9,9 @@ import (
 	"slices"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/response"
+	"smail/microservices/user/service"
 )
 
 //easyjson:json

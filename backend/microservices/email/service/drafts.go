@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/models"
+	"smail/microservices/email/models"
 )
 
 type DraftResult struct {

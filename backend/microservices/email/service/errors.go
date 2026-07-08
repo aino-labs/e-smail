@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	repository "github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/repository/db"
+	repository "smail/microservices/email/repository/db"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
+	"smail/internal/pkg/response"
 	"github.com/gorilla/mux"
 )
 

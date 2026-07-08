@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/models"
+	"smail/microservices/user/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

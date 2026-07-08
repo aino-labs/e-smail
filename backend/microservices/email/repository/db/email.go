@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/models"
+	"smail/microservices/email/models"
 )
 
 func (r *Repository) InsertEmail(ctx context.Context, tx *sql.Tx, email models.Email) (int64, error) {

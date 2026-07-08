@@ -3,11 +3,11 @@ package app
 import (
 	"fmt"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/app"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/logger"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/utils"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/postgres"
+	"smail/internal/app"
+	"smail/internal/pkg/logger"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/utils"
+	"smail/pkg/postgres"
 
 	"github.com/spf13/viper"
 )

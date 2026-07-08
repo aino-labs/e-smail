@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/response"
 	"github.com/gorilla/mux"
 )
 

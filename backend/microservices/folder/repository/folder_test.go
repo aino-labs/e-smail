@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/models"
+	"smail/microservices/folder/models"
 	"github.com/jackc/pgconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

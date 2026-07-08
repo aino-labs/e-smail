@@ -1,4 +1,4 @@
-//go:generate mockgen -destination=../../../../mocks/app/email/mock_email_service.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/delivery/http Service
+//go:generate mockgen -destination=../../../../mocks/app/email/mock_email_service.go -package=mocks smail/microservices/email/delivery/http Service
 
 package handler
 
@@ -8,9 +8,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/service"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/response"
+	"smail/microservices/email/service"
 )
 
 // maxSendFormSize limits the entire multipart body when sending an email with attachments.

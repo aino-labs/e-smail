@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/utils"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/utils"
+	"smail/microservices/user/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"

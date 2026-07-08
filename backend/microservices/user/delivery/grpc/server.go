@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service"
-	userpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/user"
+	"smail/microservices/user/service"
+	userpb "smail/proto/user"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

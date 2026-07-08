@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service"
+	"smail/internal/pkg/response"
+	"smail/microservices/user/service"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
