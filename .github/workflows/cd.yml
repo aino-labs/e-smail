@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [user, folder, email]
+        service: [user, folder, email, support, postfix]
     steps:
       - uses: actions/checkout@v4
       - name: Lowercase image name
@@ -42,17 +42,52 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: . # DON'T TOUCH IT! OTHERWISE go.mod AND go.sum WILL BE BROKEN
-          file: ./microservices/${{ matrix.service }}/Dockerfile
+          context: ./backend
+          file: ./backend/microservices/${{ matrix.service }}/Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ env.SHORT_SHA }}
 
-  deploy:
-    needs: build
+  build-frontend:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lowercase image name
+        run: echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ env.SHORT_SHA }}
+
+  deploy:
+    needs: [build, build-frontend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
       packages: read
     steps:
       - uses: actions/checkout@v4
@@ -64,14 +99,14 @@ jobs:
           ssh-keyscan -H ${{ secrets.SSH_HOSTNAME }} >> ~/.ssh/known_hosts
 
       - name: Setup backend dir
-        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }} "mkdir -p ~/backend ~/backend/scripts"
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }} "mkdir -p ~/scripts ~/db"
 
       - name: Copy files
         run: |
-          scp docker-compose.prod.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/backend
-          scp scripts/deploy.sh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/backend/scripts/
-          scp -r configs ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/backend/
-          scp -r db/migrations ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/backend/
+          scp docker-compose.prod.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
+          scp -r scripts ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
+          scp -r backend/configs ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
+          scp -r backend/db/migrations ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/db/
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -81,7 +116,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: GITHUB_TOKEN,GITHUB_ACTOR
           script: |
-            cd ~/backend
+            cd ~
             echo "${{ secrets.PROD_ENV }}" > .env
             chmod +x scripts/deploy.sh
             ./scripts/deploy.sh $GITHUB_ACTOR $GITHUB_TOKEN
