@@ -1,6 +1,6 @@
 {
   "name": "2026_1_pushtomain",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Репозиторий команды PushToMain",
   "main": "server.js",

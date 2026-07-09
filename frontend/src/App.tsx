@@ -17,6 +17,7 @@ import AllEmailsPage from "./pages/AllEmailsPage/AllEmailsPage";
 import SupportPage from "./pages/SupportPage/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage/AdminSupportPage";
 import NotificationManager from "./widgets/NotificationManager/NotificationManager";
+import Footer from "./widgets/Footer/Footer";
 import { initEmailNotifications } from "./utils/emailNotifications";
 import "./utils/OfflineManager";
 
@@ -811,6 +812,7 @@ Death13.render(
     null,
     Death13.createElement(window.app.Router, {}),
     Death13.createElement(NotificationManager, {}),
+    Death13.createElement(Footer, {}),
   ),
   root,
 );
