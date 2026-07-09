@@ -2,8 +2,15 @@ import path, { dirname } from "path";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import CopyWebpackPlugin from "copy-webpack-plugin";
 import GeneratePrecacheManifest from "./webpack/GeneratePrecacheManifest.js";
+import webpack from "webpack";
+import { readFileSync } from "fs";
 
 const __dirname = dirname("./");
+
+// Service version
+const pkg = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
+);
 
 export default {
   entry: {
@@ -54,6 +61,9 @@ export default {
   },
 
   plugins: [
+    new webpack.DefinePlugin({
+      __APP_VERSION__: JSON.stringify(pkg.version),
+    }),
     new HtmlWebpackPlugin({
       template: "./public/index.html",
       filename: "index.html",
