@@ -11,13 +11,15 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
+var ErrMasterKeyLength = errors.New("master key is not of length 32")
+
 type Encryptor struct {
 	kekGCM cipher.AEAD
 }
 
 func New(masterKey []byte) (*Encryptor, error) {
 	if len(masterKey) != 32 {
-		return nil, MasterKeyLengthErr
+		return nil, ErrMasterKeyLength
 	}
 
 	// Create AES-256 Key Encryption Key (KEK)
