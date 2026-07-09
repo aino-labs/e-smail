@@ -11,9 +11,11 @@ import (
 
 	_ "smail/docs"
 
+	"smail/pkg/crypto"
 	"smail/pkg/minio"
 	"smail/pkg/postgres"
 	smtp "smail/pkg/smtp"
+
 	"go.uber.org/zap"
 
 	"net"
@@ -27,6 +29,7 @@ import (
 	emailRepo "smail/microservices/email/repository/db"
 	emailStorage "smail/microservices/email/repository/storage"
 	emailService "smail/microservices/email/service"
+
 	"github.com/gorilla/mux"
 
 	grpcDelivery "smail/microservices/email/delivery/grpc"
@@ -78,7 +81,12 @@ func (app *App) Run(configPath string) {
 		app.Logger.Errorf("migrations error: %v", err)
 	}
 
-	repo := emailRepo.New(db)
+	encryptor, err := crypto.New(app.Config.Encrypt.MasterKey)
+	if err != nil {
+		app.Logger.Errorf("encryption initialization error: %v", err)
+	}
+
+	repo := emailRepo.New(db, encryptor)
 
 	grpcUserClient, err := userClient.New(app.Config.GRPCClients.UserService)
 	if err != nil {

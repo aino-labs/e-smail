@@ -14,13 +14,24 @@ import (
 func (r *Repository) InsertEmail(ctx context.Context, tx *sql.Tx, email models.Email) (int64, error) {
 	const query = `
 		INSERT INTO emails
-			(sender_id, sender_email, header, body, is_draft)
-		VALUES ($1, $2, $3, $4, $5)
+			(sender_id, sender_email, header, body_enc, wrapped_dek, key_version, is_draft)
+		VALUES ($1, $2, $3, $4, $5, 1, $6)
 		RETURNING id
 	`
+
+	ciphertext, wrappedDEK, err := r.encryptor.Encrypt([]byte(email.Body))
+	if err != nil {
+		return 0, fmt.Errorf("encrypt body: %w", err)
+	}
+
 	var id int64
-	err := tx.QueryRowContext(ctx, query,
-		email.SenderID, email.SenderEmail, email.Header, email.Body, email.IsDraft,
+	err = tx.QueryRowContext(ctx, query,
+		email.SenderID,
+		email.SenderEmail,
+		email.Header,
+		ciphertext,
+		wrappedDEK,
+		email.IsDraft,
 	).Scan(&id)
 	if err != nil {
 		return 0, mapPgError(err)
@@ -96,6 +107,9 @@ func (r *Repository) GetEmailByID(ctx context.Context, emailID int64) (*models.E
 			e.sender_email,
 			e.header,
 			e.body,
+			e.body_enc,
+			e.wrapped_dek,
+			e.key_version,
 			e.is_draft,
 			e.created_at,
 			e.updated_at,
@@ -107,12 +121,19 @@ func (r *Repository) GetEmailByID(ctx context.Context, emailID int64) (*models.E
 	`
 	var em models.EmailWithAvatar
 	var recipients string
+	var plainBody sql.NullString
+	var bodyEnc, wrappedDEK []byte
+	var keyVersion int
+
 	err := r.db.QueryRowContext(ctx, query, emailID).Scan(
 		&em.ID,
 		&em.SenderID,
 		&em.SenderEmail,
 		&em.Header,
-		&em.Body,
+		&plainBody,
+		&bodyEnc,
+		&wrappedDEK,
+		&keyVersion,
 		&em.IsDraft,
 		&em.CreatedAt,
 		&em.UpdatedAt,
@@ -126,6 +147,11 @@ func (r *Repository) GetEmailByID(ctx context.Context, emailID int64) (*models.E
 		return nil, ErrQueryFail
 	}
 	em.Recipients = parsePgTextArray(recipients)
+
+	em.Body, err = r.resolveEncryptionKey(plainBody, bodyEnc, wrappedDEK, keyVersion)
+	if err != nil {
+		return nil, fmt.Errorf("email %d: %w", emailID, err)
+	}
 
 	return &em, nil
 }
@@ -157,24 +183,27 @@ func (r *Repository) queryUserMailbox(
 ) ([]models.EmailWithMetadata, error) {
 	query := fmt.Sprintf(`
 		SELECT
-			e.id,
-			e.sender_id,
-			e.sender_email,
-			e.header,
-			e.body,
-			e.is_draft,
-			e.created_at,
-			e.updated_at,
-			ue.is_read,
-			ue.is_starred,
-			ue.is_spam,
-			ue.is_deleted,
-			ue.created_at,
+			emails.id,
+			emails.sender_id,
+			emails.sender_email,
+			emails.header,
+			emails.body,
+			emails.body_enc,
+			emails.wrapped_dek,
+			emails.key_version,
+			emails.is_draft,
+			emails.created_at,
+			emails.updated_at,
+			user_emails.is_read,
+			user_emails.is_starred,
+			user_emails.is_spam,
+			user_emails.is_deleted,
+			user_emails.created_at,
 			COALESCE((SELECT string_agg(er.recipient_email, ',') FROM email_recipients er WHERE er.email_id = e.id), '')
-		FROM emails e
-		JOIN user_emails ue ON ue.email_id = e.id AND ue.user_id = $1
+		FROM emails
+		JOIN user_emails ON user_emails.email_id = emails.id AND user_emails.user_id = $1
 		WHERE %s
-		ORDER BY ue.created_at DESC
+		ORDER BY user_emails.created_at DESC
 		LIMIT $2 OFFSET $3
 	`, condition)
 
@@ -190,14 +219,38 @@ func (r *Repository) queryUserMailbox(
 	for rows.Next() {
 		var em models.EmailWithMetadata
 		var recipients string
+
+		var plainBody sql.NullString
+		var cipherBody []byte
+		var wrappedDEK []byte
+		var keyVersion int
+
 		if err := rows.Scan(
-			&em.ID, &em.SenderID, &em.SenderEmail,
-			&em.Header, &em.Body, &em.IsDraft, &em.CreatedAt, &em.UpdatedAt,
-			&em.IsRead, &em.IsStarred, &em.IsSpam, &em.IsDeleted, &em.ReceivedAt,
+			&em.ID,
+			&em.SenderID,
+			&em.SenderEmail,
+			&em.Header,
+			&plainBody,
+			&cipherBody,
+			&wrappedDEK,
+			&keyVersion,
+			&em.IsDraft,
+			&em.CreatedAt,
+			&em.UpdatedAt,
+			&em.IsRead,
+			&em.IsStarred,
+			&em.IsSpam,
+			&em.IsDeleted,
+			&em.ReceivedAt,
 			&recipients,
 		); err != nil {
 			return nil, ErrQueryFail
 		}
+		em.Body, err = r.resolveEncryptionKey(plainBody, cipherBody, wrappedDEK, keyVersion)
+		if err != nil {
+			return nil, mapPgError(err)
+		}
+
 		em.Recipients = parsePgTextArray(recipients)
 		out = append(out, em)
 	}
@@ -209,14 +262,29 @@ func (r *Repository) queryUserMailbox(
 
 func (r *Repository) GetInboxEmails(ctx context.Context, userID int64, limit, offset int) ([]models.EmailWithMetadata, error) {
 	limit, offset = normPage(limit, offset)
-	return r.queryUserMailbox(ctx, userID, limit, offset,
-		"ue.is_deleted = false AND ue.is_spam = false AND ue.is_inbox = true AND ue.is_sender = false")
+	return r.queryUserMailbox(
+		ctx,
+		userID,
+		limit,
+		offset,
+		"ue.is_deleted = false AND ue.is_spam = false AND ue.is_inbox = true AND ue.is_sender = false",
+	)
 }
 
-func (r *Repository) GetReceivedEmails(ctx context.Context, userID int64, limit, offset int) ([]models.EmailWithMetadata, error) {
+func (r *Repository) GetReceivedEmails(
+	ctx context.Context,
+	userID int64,
+	limit int,
+	offset int,
+) ([]models.EmailWithMetadata, error) {
 	limit, offset = normPage(limit, offset)
-	return r.queryUserMailbox(ctx, userID, limit, offset,
-		"ue.is_deleted = false AND ue.is_spam = false AND ue.is_sender = false")
+	return r.queryUserMailbox(
+		ctx,
+		userID,
+		limit,
+		offset,
+		"ue.is_deleted = false AND ue.is_spam = false AND ue.is_sender = false",
+	)
 }
 
 func (r *Repository) GetAllEmails(ctx context.Context, userID int64, limit, offset int) ([]models.EmailWithMetadata, error) {
@@ -267,21 +335,36 @@ func (r *Repository) GetFavoriteEmails(ctx context.Context, userID int64, limit,
 		"ue.is_starred = true AND ue.is_deleted = false")
 }
 
-func (r *Repository) GetSentEmails(ctx context.Context, userID int64, limit, offset int) ([]models.EmailWithMetadata, error) {
+func (r *Repository) GetSentEmails(
+	ctx context.Context,
+	userID int64,
+	limit int,
+	offset int,
+) ([]models.EmailWithMetadata, error) {
 	limit, offset = normPage(limit, offset)
 	const query = `
 		SELECT
-			e.id, e.sender_id, e.sender_email,
-			COALESCE(e.header, ''), COALESCE(e.body, ''),
-			e.is_draft, e.created_at, e.updated_at,
-			COALESCE(ue.is_read, false), COALESCE(ue.is_starred, false),
-			COALESCE(ue.is_spam, false), COALESCE(ue.is_deleted, false),
-			e.created_at,
+			emails.id,
+			emails.sender_id,
+			emails.sender_email,
+			emails.header,
+			emails.body,
+			emails.body_enc,
+			emails.wrapped_dek,
+			emails.key_version,
+			emails.is_draft,
+			emails.created_at,
+			emails.updated_at,
+			user_emails.is_read,
+			user_emails.is_starred,
+			user_emails.is_spam,
+			user_emailsd.is_deleted,
+			emails.created_at,
 			COALESCE((SELECT string_agg(er.recipient_email, ',') FROM email_recipients er WHERE er.email_id = e.id), '')
-		FROM emails e
-		LEFT JOIN user_emails ue ON ue.email_id = e.id AND ue.user_id = $1 AND ue.is_deleted = false
-		WHERE ue.user_id = $1 AND ue.is_sender = true AND e.is_draft = false
-		ORDER BY e.created_at DESC
+		FROM emails
+		LEFT JOIN user_emails ON user_emails.email_id = emails.id AND user_emails.user_id = $1 AND user_emails.is_deleted = false
+		WHERE user_emails.user_id = $1 AND user_emails.is_sender = true AND emails.is_draft = false
+		ORDER BY emails.created_at DESC
 		LIMIT $2 OFFSET $3
 	`
 	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
@@ -296,14 +379,39 @@ func (r *Repository) GetSentEmails(ctx context.Context, userID int64, limit, off
 	for rows.Next() {
 		var em models.EmailWithMetadata
 		var recipients string
+
+		var plainBody sql.NullString
+		var cipherBody []byte
+		var wrappedDEK []byte
+		var keyVersion int
+
 		if err := rows.Scan(
-			&em.ID, &em.SenderID, &em.SenderEmail,
-			&em.Header, &em.Body, &em.IsDraft, &em.CreatedAt, &em.UpdatedAt,
-			&em.IsRead, &em.IsStarred, &em.IsSpam, &em.IsDeleted, &em.ReceivedAt,
+			&em.ID,
+			&em.SenderID,
+			&em.SenderEmail,
+			&em.Header,
+			&plainBody,
+			&cipherBody,
+			&wrappedDEK,
+			&keyVersion,
+			&em.IsDraft,
+			&em.CreatedAt,
+			&em.UpdatedAt,
+			&em.IsRead,
+			&em.IsStarred,
+			&em.IsSpam,
+			&em.IsDeleted,
+			&em.ReceivedAt,
 			&recipients,
 		); err != nil {
 			return nil, ErrQueryFail
 		}
+
+		em.Body, err = r.resolveEncryptionKey(plainBody, cipherBody, wrappedDEK, keyVersion)
+		if err != nil {
+			return nil, mapPgError(err)
+		}
+
 		em.Recipients = parsePgTextArray(recipients)
 		out = append(out, em)
 	}
@@ -361,4 +469,19 @@ func (r *Repository) SwitchIsInbox(ctx context.Context, emailID int64, UserID in
 		return ErrQueryFail
 	}
 	return nil
+}
+
+func (r *Repository) resolveEncryptionKey(plainBody sql.NullString, bodyEnc, wrappedDEK []byte, keyVersion int) (string, error) {
+	switch keyVersion {
+	case 0:
+		return plainBody.String, nil
+	case 1:
+		plaintext, err := r.encryptor.Decrypt(bodyEnc, wrappedDEK)
+		if err != nil {
+			return "", fmt.Errorf("decrypt body: %w", err)
+		}
+		return string(plaintext), nil
+	default:
+		return "", fmt.Errorf("unknown key_version %d", keyVersion)
+	}
 }

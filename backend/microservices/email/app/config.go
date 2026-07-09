@@ -1,7 +1,9 @@
 package app
 
 import (
+	"encoding/base64"
 	"fmt"
+	"os"
 
 	"smail/internal/app"
 	"smail/internal/pkg/logger"
@@ -48,6 +50,10 @@ type LMTPConfig struct {
 	Addr string `mapstructure:"addr"`
 }
 
+type EncryptConfig struct {
+	MasterKey []byte
+}
+
 type Config struct {
 	ServerPort string `mapstructure:"port"`
 
@@ -66,6 +72,8 @@ type Config struct {
 	GRPC        GRPCConfig  `mapstructure:"grpc"`
 	GRPCClients GRPCClients `mapstructure:"grpc_clients"`
 	LMTP        LMTPConfig  `mapstructure:"lmtp"`
+
+	Encrypt EncryptConfig `mapstructure:"encryption"`
 }
 
 func Load(path string) (*Config, error) {
@@ -77,6 +85,19 @@ func Load(path string) (*Config, error) {
 	if err := viper.Unmarshal(cfg); err != nil {
 		return nil, fmt.Errorf("error unmarshaling config: %w", err)
 	}
+
+	rawKey := os.Getenv("MASTER_KEY")
+	if rawKey == "" {
+		return nil, fmt.Errorf("MASTER_KEY env var is not set")
+	}
+	key, err := base64.StdEncoding.DecodeString(rawKey)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding MASTER_KEY: %w", err)
+	}
+	if len(key) != 32 {
+		return nil, fmt.Errorf("MASTER_KEY must decode to 32 bytes, got %d", len(key))
+	}
+	cfg.Encrypt.MasterKey = key
 
 	return cfg, nil
 }

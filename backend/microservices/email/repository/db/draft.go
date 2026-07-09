@@ -19,12 +19,38 @@ func (r *Repository) CreateDraft(ctx context.Context, draft models.Draft) (*mode
 		_ = tx.Rollback()
 	}()
 
-	err = tx.QueryRowContext(ctx, `
-		INSERT INTO emails (sender_id, sender_email, header, body, is_draft)
-		SELECT $1, u.email, $2, $3, true FROM users u WHERE u.id = $1
+	const query = `
+		INSERT INTO emails (
+			sender_id,
+			sender_email,
+			header,
+			body_enc,
+			wrapped_dek,
+			key_version,
+			is_draft,
+			body
+		)
+		SELECT $1, users.email, $2, $3, $4, 1, true, NULL FROM users WHERE users.id = $1
 		RETURNING id, sender_email, created_at, updated_at
-	`, draft.SenderID, draft.Header, draft.Body).Scan(
-		&draft.ID, &draft.SenderEmail, &draft.CreatedAt, &draft.UpdatedAt,
+	`
+
+	cipherBody, wrappedDEK, err := r.encryptor.Encrypt([]byte(draft.Body))
+	if err != nil {
+		return nil, fmt.Errorf("encrypt body: %w", err)
+	}
+
+	err = tx.QueryRowContext(
+		ctx,
+		query,
+		draft.SenderID,
+		draft.Header,
+		cipherBody,
+		wrappedDEK,
+	).Scan(
+		&draft.ID,
+		&draft.SenderEmail,
+		&draft.CreatedAt,
+		&draft.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -52,11 +78,32 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 		_ = tx.Rollback()
 	}()
 
-	res, err := tx.ExecContext(ctx, `
+	const query = `
 		UPDATE emails
-		SET header = $1, body = $2, updated_at = NOW()
-		WHERE id = $3 AND sender_id = $4 AND is_draft = true
-	`, draft.Header, draft.Body, draft.ID, userID)
+		SET
+			header = $1,
+			body_enc = $2,
+			wrapped_dek = $3,
+			key_version = 1,
+			body = NULL,
+			updated_at = NOW()
+		WHERE id = $4 AND sender_id = $5 AND is_draft = true
+	`
+
+	cipherBody, wrappedDEK, err := r.encryptor.Encrypt([]byte(draft.Body))
+	if err != nil {
+		return mapPgError(err)
+	}
+
+	res, err := tx.ExecContext(
+		ctx,
+		query,
+		draft.Header,
+		cipherBody,
+		wrappedDEK,
+		draft.ID,
+		userID,
+	)
 	if err != nil {
 		return mapPgError(err)
 	}
@@ -84,16 +131,36 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 
 func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*models.Draft, error) {
 	var d models.Draft
-	err := r.db.QueryRowContext(ctx, `
-		SELECT id, sender_id, sender_email, header, body, created_at, updated_at
+	const query = `
+		SELECT
+			id,
+			sender_id,
+			sender_email,
+			header,
+			body,
+			body_enc,
+			wrapped_dek,
+			key_version,
+			created_at,
+			updated_at
 		FROM emails
 		WHERE id = $1 AND sender_id = $2 AND is_draft = true
-	`, draftID, userID).Scan(
+	`
+
+	var cipherBody []byte
+	var wrappedDEK []byte
+	var keyVersion int
+	var plainBody sql.NullString
+
+	err := r.db.QueryRowContext(ctx, query, draftID, userID).Scan(
 		&d.ID,
 		&d.SenderID,
 		&d.SenderEmail,
 		&d.Header,
-		&d.Body,
+		&plainBody,
+		&cipherBody,
+		&wrappedDEK,
+		&keyVersion,
 		&d.CreatedAt,
 		&d.UpdatedAt,
 	)
@@ -103,6 +170,8 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 	if err != nil {
 		return nil, ErrQueryFail
 	}
+
+	r.resolveEncryptionKey(sql.NullString{}, cipherBody, wrappedDEK, keyVersion)
 
 	drafts := []models.Draft{d}
 	if err := r.fillRecipients(ctx, drafts, []int64{d.ID}, map[int64]int{d.ID: 0}); err != nil {
@@ -114,7 +183,17 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 
 func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset int) ([]models.Draft, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, sender_id, sender_email, header, body, created_at, updated_at
+		SELECT
+			id,
+			sender_id,
+			sender_email,
+			header,
+			body,
+			body_enc,
+			wrapped_key,
+			key_version,
+			created_at,
+			updated_at
 		FROM emails
 		WHERE sender_id = $1 AND is_draft = true
 		ORDER BY created_at DESC
@@ -133,9 +212,32 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 
 	for rows.Next() {
 		var d models.Draft
-		if err := rows.Scan(&d.ID, &d.SenderID, &d.SenderEmail, &d.Header, &d.Body, &d.CreatedAt, &d.UpdatedAt); err != nil {
+
+		var plainBody sql.NullString
+		var cipherBody []byte
+		wrappedDEK := make([]byte, 60)
+		var keyVersion int
+
+		if err := rows.Scan(
+			&d.ID,
+			&d.SenderID,
+			&d.SenderEmail,
+			&d.Header,
+			&plainBody,
+			&cipherBody,
+			&wrappedDEK,
+			&keyVersion,
+			&d.CreatedAt,
+			&d.UpdatedAt,
+		); err != nil {
 			return nil, ErrQueryFail
 		}
+
+		d.Body, err = r.resolveEncryptionKey(plainBody, cipherBody, wrappedDEK, keyVersion)
+		if err != nil {
+			return nil, mapPgError(err)
+		}
+
 		idxByID[d.ID] = len(drafts)
 		drafts = append(drafts, d)
 		ids = append(ids, d.ID)
