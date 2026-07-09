@@ -129,7 +129,6 @@ jobs:
           envs: GITHUB_TOKEN,GITHUB_ACTOR
           script: |
             cd ~
-            echo "${{ secrets.PROD_ENV }}" > .env
             chmod +x scripts/deploy.sh
             ./scripts/deploy.sh $GITHUB_ACTOR $GITHUB_TOKEN
         env:
