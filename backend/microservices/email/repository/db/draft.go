@@ -171,7 +171,10 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 		return nil, ErrQueryFail
 	}
 
-	r.resolveEncryptionKey(sql.NullString{}, cipherBody, wrappedDEK, keyVersion)
+	d.Body, err = r.resolveEncryptionKey(sql.NullString{}, cipherBody, wrappedDEK, keyVersion)
+	if err != nil {
+		return nil, mapPgError(err)
+	}
 
 	drafts := []models.Draft{d}
 	if err := r.fillRecipients(ctx, drafts, []int64{d.ID}, map[int64]int{d.ID: 0}); err != nil {
@@ -190,7 +193,7 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 			header,
 			body,
 			body_enc,
-			wrapped_key,
+			wrapped_dek,
 			key_version,
 			created_at,
 			updated_at
