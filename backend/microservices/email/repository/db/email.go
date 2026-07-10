@@ -199,7 +199,7 @@ func (r *Repository) queryUserMailbox(
 			user_emails.is_spam,
 			user_emails.is_deleted,
 			user_emails.created_at,
-			COALESCE((SELECT string_agg(er.recipient_email, ',') FROM email_recipients er WHERE er.email_id = e.id), '')
+			COALESCE((SELECT string_agg(er.recipient_email, ',') FROM email_recipients er WHERE er.email_id = emails.id), '')
 		FROM emails
 		JOIN user_emails ON user_emails.email_id = emails.id AND user_emails.user_id = $1
 		WHERE %s
