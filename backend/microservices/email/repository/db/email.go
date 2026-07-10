@@ -144,7 +144,7 @@ func (r *Repository) GetEmailByID(ctx context.Context, emailID int64) (*models.E
 		return nil, nil
 	}
 	if err != nil {
-		return nil, ErrQueryFail
+		return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 	}
 	em.Recipients = parsePgTextArray(recipients)
 
@@ -168,7 +168,7 @@ func (r *Repository) CheckEmailAccess(ctx context.Context, userID, emailID int64
 	`
 	var ok bool
 	if err := r.db.QueryRowContext(ctx, query, userID, emailID).Scan(&ok); err != nil {
-		return ErrQueryFail
+		return fmt.Errorf("%w: %v", ErrQueryFail, err)
 	}
 	if !ok {
 		return ErrAccessDenied
@@ -209,7 +209,7 @@ func (r *Repository) queryUserMailbox(
 
 	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
 	if err != nil {
-		return nil, ErrQueryFail
+		return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 	}
 	defer func() {
 		_ = rows.Close()
@@ -244,7 +244,7 @@ func (r *Repository) queryUserMailbox(
 			&em.ReceivedAt,
 			&recipients,
 		); err != nil {
-			return nil, ErrQueryFail
+			return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 		}
 		em.Body, err = r.resolveEncryptionKey(plainBody, cipherBody, wrappedDEK, keyVersion)
 		if err != nil {
@@ -255,7 +255,7 @@ func (r *Repository) queryUserMailbox(
 		out = append(out, em)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, ErrQueryFail
+		return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 	}
 	return out, nil
 }
@@ -267,7 +267,7 @@ func (r *Repository) GetInboxEmails(ctx context.Context, userID int64, limit, of
 		userID,
 		limit,
 		offset,
-		"ue.is_deleted = false AND ue.is_spam = false AND ue.is_inbox = true AND ue.is_sender = false",
+		"user_emails.is_deleted = false AND user_emails.is_spam = false AND user_emails.is_inbox = true AND user_emails.is_sender = false",
 	)
 }
 
@@ -283,7 +283,7 @@ func (r *Repository) GetReceivedEmails(
 		userID,
 		limit,
 		offset,
-		"ue.is_deleted = false AND ue.is_spam = false AND ue.is_sender = false",
+		"user_emails.is_deleted = false AND user_emails.is_spam = false AND user_emails.is_sender = false",
 	)
 }
 
@@ -321,18 +321,18 @@ func (r *Repository) GetAllEmails(ctx context.Context, userID int64, limit, offs
 func (r *Repository) GetSpamEmails(ctx context.Context, userID int64, limit, offset int) ([]models.EmailWithMetadata, error) {
 	limit, offset = normPage(limit, offset)
 	return r.queryUserMailbox(ctx, userID, limit, offset,
-		"ue.is_spam = true AND ue.is_deleted = false")
+		"user_emails.is_spam = true AND user_emails.is_deleted = false")
 }
 
 func (r *Repository) GetTrashEmails(ctx context.Context, userID int64, limit, offset int) ([]models.EmailWithMetadata, error) {
 	limit, offset = normPage(limit, offset)
-	return r.queryUserMailbox(ctx, userID, limit, offset, "ue.is_deleted = true")
+	return r.queryUserMailbox(ctx, userID, limit, offset, "user_emails.is_deleted = true")
 }
 
 func (r *Repository) GetFavoriteEmails(ctx context.Context, userID int64, limit, offset int) ([]models.EmailWithMetadata, error) {
 	limit, offset = normPage(limit, offset)
 	return r.queryUserMailbox(ctx, userID, limit, offset,
-		"ue.is_starred = true AND ue.is_deleted = false")
+		"user_emails.is_starred = true AND user_emails.is_deleted = false")
 }
 
 func (r *Repository) GetSentEmails(
@@ -358,9 +358,9 @@ func (r *Repository) GetSentEmails(
 			user_emails.is_read,
 			user_emails.is_starred,
 			user_emails.is_spam,
-			user_emailsd.is_deleted,
+			user_emails.is_deleted,
 			emails.created_at,
-			COALESCE((SELECT string_agg(er.recipient_email, ',') FROM email_recipients er WHERE er.email_id = e.id), '')
+			COALESCE((SELECT string_agg(er.recipient_email, ',') FROM email_recipients er WHERE er.email_id = emails.id), '')
 		FROM emails
 		LEFT JOIN user_emails ON user_emails.email_id = emails.id AND user_emails.user_id = $1 AND user_emails.is_deleted = false
 		WHERE user_emails.user_id = $1 AND user_emails.is_sender = true AND emails.is_draft = false
@@ -369,7 +369,7 @@ func (r *Repository) GetSentEmails(
 	`
 	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
 	if err != nil {
-		return nil, ErrQueryFail
+		return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 	}
 	defer func() {
 		_ = rows.Close()
@@ -404,7 +404,7 @@ func (r *Repository) GetSentEmails(
 			&em.ReceivedAt,
 			&recipients,
 		); err != nil {
-			return nil, ErrQueryFail
+			return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 		}
 
 		em.Body, err = r.resolveEncryptionKey(plainBody, cipherBody, wrappedDEK, keyVersion)
@@ -416,7 +416,7 @@ func (r *Repository) GetSentEmails(
 		out = append(out, em)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, ErrQueryFail
+		return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 	}
 	return out, nil
 }
@@ -439,7 +439,7 @@ func (r *Repository) GetDeletedEmailIDs(ctx context.Context, userID int64, email
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, ErrQueryFail
+		return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 	}
 	defer func() {
 		_ = rows.Close()
@@ -449,12 +449,12 @@ func (r *Repository) GetDeletedEmailIDs(ctx context.Context, userID int64, email
 	for rows.Next() {
 		var id int64
 		if err := rows.Scan(&id); err != nil {
-			return nil, ErrQueryFail
+			return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 		}
 		out = append(out, id)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, ErrQueryFail
+		return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 	}
 	return out, nil
 }
@@ -466,7 +466,7 @@ func (r *Repository) SwitchIsInbox(ctx context.Context, emailID int64, UserID in
 		WHERE user_id = $1 AND email_id =$2 AND is_spam = false
 	`
 	if _, err := r.db.ExecContext(ctx, query, UserID, emailID); err != nil {
-		return ErrQueryFail
+		return fmt.Errorf("%w: %v", ErrQueryFail, err)
 	}
 	return nil
 }
