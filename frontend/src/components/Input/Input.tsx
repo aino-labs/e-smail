@@ -71,7 +71,7 @@ const Input: React.FC<InputProps> = (props) => {
       >
         {svg && <img src={svg} alt="" />}
         <input
-          type={inputType}
+          type={inputType} 
           className={className}
           id={id}
           name={name}

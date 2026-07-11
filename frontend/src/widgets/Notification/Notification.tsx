@@ -1,64 +1,74 @@
-import Death13 from "@react/stands";
-import { AppStorage } from "../../App";
+import { useRef, useEffect } from 'react'
+import { AppStorage } from "../../utils/AppStorage";
 import "./Notification.scss";
 
-class Notification extends Death13.Component {
-  private timer: any = null;
-
-  constructor(props: any) {
-    super(props);
-  }
-
-  handleClose = () => {
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-    this.props.onClose();
-  };
-
-  t(key: string): string {
-    return AppStorage.t(key);
-  }
-
-  render() {
-    const { isOpen } = this.props;
-
-    const popupLength = window.innerWidth < 769 ? 2000 : 4000;
-
-    if (!isOpen) {
-      if (this.timer) {
-        clearTimeout(this.timer);
-        this.timer = null;
-      }
-      return null;
-    }
-
-    if (!this.timer) {
-      this.timer = setTimeout(() => {
-        this.timer = null;
-        this.props.onClose();
-      }, popupLength);
-    }
-
-    const { isStatus, message, index } = this.props;
-
-    const bottomOffset = 40 + index * 60;
-
-    return (
-      <div
-        className={`confirmation-modal ${isStatus ? "access" : "error"}`}
-        onClick={this.handleClose}
-        style={{ bottom: `${bottomOffset}px` }}
-      >
-        <div className="__title">
-          {isStatus
-            ? this.t(message || "saved_successfully")
-            : this.t(message || "server_error")}
-        </div>
-      </div>
-    );
-  }
+const t = (key: string): string => {
+  return AppStorage.t(key);
 }
 
-export default Notification;
+interface NotificationProps {
+  onClose: () => void;
+  isOpen: boolean;
+  isStatus?: boolean;
+  message?: string;
+  index: number;
+}
+
+export default function Notification({
+  onClose,
+  isOpen,
+  isStatus,
+  message,
+  index
+}: NotificationProps) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
+    }
+
+    const popupLength = window.innerWidth < 769 ? 2000 : 4000;
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      onClose();
+    }, popupLength);
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  })
+
+  const handleClose = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  const bottomOffset = 40 + index * 60;
+
+  return (<div
+    className={`confirmation-modal ${isStatus ? "access" : "error"}`}
+    onClick={handleClose}
+    style={{ bottom: `${bottomOffset}px` }}
+  >
+    <div className="__title">
+      {isStatus
+        ? t(message || "saved_successfully")
+        : t(message || "server_error")}
+    </div>
+  </div>
+);
+}

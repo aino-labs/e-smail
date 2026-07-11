@@ -469,7 +469,6 @@ export default function BaseEmailPage({
               offset={state.offset}
               selectedCount={selectedArray.length}
               selectedEmails={selectedArray}
-              hasUnreadSelected={hasUnreadSelected()}
               onMarkAsRead={handleMarkAsRead}
               onMoveToFolder={handleMoveToFolder}
               onDelete={handleDeleteSelected}
@@ -524,6 +523,7 @@ export default function BaseEmailPage({
           onClose={handleCloseModal}
           onProfileClick={handleProfileClick}
           onSettingsClick={handleSettingsClick}
+          navigate={navigate}
         />
       </div>
 
