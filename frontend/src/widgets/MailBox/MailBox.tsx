@@ -29,7 +29,7 @@ interface MailBoxProps {
   currentView: string;
   isFavorite: boolean;
   isAnonymous: boolean;
-  selectedFolderId?: number;
+  selectedFolderId?: number | null;
 }
 
 export default function MailBox({
