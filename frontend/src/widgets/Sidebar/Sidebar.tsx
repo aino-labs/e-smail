@@ -286,7 +286,7 @@ export default function Sidebar({
               isSelect={isPressProfile === 0}
               onClick={(event: any) => {
                 event.preventDefault();
-                changeProfile();
+                changeProfile?.();
                 toggleSidebar();
               }}
             />
@@ -296,7 +296,7 @@ export default function Sidebar({
               isSelect={isPressProfile === 1}
               onClick={(event: any) => {
                 event.preventDefault();
-                changePassword();
+                changePassword?.();
                 toggleSidebar();
               }}
             />
@@ -306,7 +306,7 @@ export default function Sidebar({
               isSelect={isPressProfile === 2}
               onClick={(event: any) => {
                 event.preventDefault();
-                handleSetting();
+                handleSetting?.();
                 toggleSidebar();
               }}
             />
@@ -316,7 +316,7 @@ export default function Sidebar({
               isSelect={isPressProfile === 3}
               onClick={(event: any) => {
                 event.preventDefault();
-                handleFolder();
+                handleFolder?.();
                 toggleSidebar();
               }}
             />
@@ -326,7 +326,7 @@ export default function Sidebar({
               isSelect={isPressProfile === 4}
               onClick={(event: any) => {
                 event.preventDefault();
-                handleSupport();
+                handleSupport?.();
                 toggleSidebar();
               }}
             />
