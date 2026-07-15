@@ -110,7 +110,6 @@ export default function BaseEmailPage({
     }
   }, [currentView, currentFolderId]);
 
-
   // --- Core Methods ---
 
   const getSelectedArray = (): number[] => {
@@ -213,7 +212,10 @@ export default function BaseEmailPage({
     let success = false;
     if (AppStorage.currentView === "drafts") {
       success = await deleteDraft([emailId]);
-    } else if (AppStorage.currentView === "folder" && currentFolderId !== null) {
+    } else if (
+      AppStorage.currentView === "folder" &&
+      currentFolderId !== null
+    ) {
       success = await deleteEmailsFromFolder(currentFolderId, [emailId]);
     } else {
       success = await trash([emailId]);
@@ -233,7 +235,10 @@ export default function BaseEmailPage({
 
       if (AppStorage.currentView === "drafts") {
         success = await deleteDraft(selectedArray);
-      } else if (AppStorage.currentView === "folder" && currentFolderId !== null) {
+      } else if (
+        AppStorage.currentView === "folder" &&
+        currentFolderId !== null
+      ) {
         success = await deleteEmailsFromFolder(currentFolderId, selectedArray);
       } else {
         success = await trash(selectedArray);
@@ -251,7 +256,10 @@ export default function BaseEmailPage({
     }
   };
 
-  const handleToggleReadSingle = async (emailId: number, newReadState: boolean) => {
+  const handleToggleReadSingle = async (
+    emailId: number,
+    newReadState: boolean,
+  ) => {
     if (!showUnreadToggle) return;
 
     try {
@@ -262,7 +270,7 @@ export default function BaseEmailPage({
       }
 
       const updatedEmails = state.emails.map((email: any) =>
-        email.id === emailId ? { ...email, is_read: newReadState } : email
+        email.id === emailId ? { ...email, is_read: newReadState } : email,
       );
 
       updateState({ emails: updatedEmails });
@@ -271,7 +279,10 @@ export default function BaseEmailPage({
     }
   };
 
-  const handleToggleFavoriteSingle = async (emailId: number, newState: boolean) => {
+  const handleToggleFavoriteSingle = async (
+    emailId: number,
+    newState: boolean,
+  ) => {
     try {
       if (newState) {
         await sendFavorite([emailId]);
@@ -280,7 +291,7 @@ export default function BaseEmailPage({
       }
 
       const updatedEmails = state.emails.map((email: any) =>
-        email.id === emailId ? { ...email, is_starred: newState } : email
+        email.id === emailId ? { ...email, is_starred: newState } : email,
       );
 
       updateState({ emails: updatedEmails });
@@ -300,7 +311,7 @@ export default function BaseEmailPage({
     if (unreadIds.length > 0) {
       await readEmail(unreadIds);
       const updatedEmails = state.emails.map((email: any) =>
-        unreadIds.includes(email.id) ? { ...email, is_read: true } : email
+        unreadIds.includes(email.id) ? { ...email, is_read: true } : email,
       );
 
       updateState({ emails: updatedEmails });
@@ -316,7 +327,8 @@ export default function BaseEmailPage({
       newSet.add(emailId);
     }
 
-    const allSelected = state.emails.length > 0 && newSet.size === state.emails.length;
+    const allSelected =
+      state.emails.length > 0 && newSet.size === state.emails.length;
 
     updateState({
       selectedEmails: newSet,
@@ -391,7 +403,8 @@ export default function BaseEmailPage({
 
   // --- Render Layout Setup ---
   const selectedArray = getSelectedArray();
-  const mobileHeaderTitle = currentView === "folder" ? currentFolderName : t(currentView);
+  const mobileHeaderTitle =
+    currentView === "folder" ? currentFolderName : t(currentView);
 
   return (
     <div className="main-page" onClick={handleCloseModal}>
@@ -401,25 +414,14 @@ export default function BaseEmailPage({
       <aside className="sidebar">
         <Sidebar
           isProfile={0}
-          isPress={0}
           name={AppStorage.name}
           surname={AppStorage.surname}
           avatarUrl={AppStorage.getAvatarUrl()}
           email={AppStorage.email}
           newMail={handleNewMail}
           backToMail={handleGoToMain}
-          updateMail={() => loadEmails(state.offset)}
-          handleGetDrafts={() => navigate("/drafts")}
-          handleGetSendEmail={() => navigate("/sent")}
-          handleGetSpam={() => navigate("/spam")}
-          handleGetTrash={() => navigate("/trash")}
-          handleGetFavorite={() => navigate("/favorite")}
-          loadEmailFromFolder={(offset: number, folderId: number) => {
-            AppStorage.setCurrentFolderId(folderId);
-            navigate(`/folder/${folderId}`);
-          }}
-          selectedFolderId={currentFolderId || null}
-          currentView={currentView}
+          selectedFolderId={currentFolderId}
+          navigate={navigate}
         />
       </aside>
 
@@ -492,22 +494,34 @@ export default function BaseEmailPage({
                   <MailBox
                     key={`${email.id}-${email.is_starred}`}
                     id={email.id}
-                    sender_name={email.sender_name || email.receivers_emails?.[0]}
+                    sender_name={
+                      email.sender_name || email.receivers_emails?.[0]
+                    }
                     sender_surname={email.sender_surname}
-                    sender_email={email.sender_email || email.receivers_emails?.[0]}
-                    receivers_emails={currentView === "drafts" ? email.receivers : email.receivers_emails}
+                    sender_email={
+                      email.sender_email || email.receivers_emails?.[0]
+                    }
+                    receivers_emails={
+                      currentView === "drafts"
+                        ? email.receivers
+                        : email.receivers_emails
+                    }
                     theme={email.header}
                     title={email.body}
                     date={formatTime(email.created_at)}
                     isSelected={selectedArray.includes(email.id)}
                     onSelect={handleSelectEmail}
                     isRead={email.is_read !== undefined ? email.is_read : true}
-                    isFavorite={email.is_starred !== undefined ? email.is_starred : false}
+                    isFavorite={
+                      email.is_starred !== undefined ? email.is_starred : false
+                    }
                     isAnonymous={email.is_anonymous}
                     pageMain={currentView === "inbox"}
                     currentView={currentView}
                     onClick={() => handleReadMail(email)}
-                    onToggleRead={showUnreadToggle ? handleToggleReadSingle : undefined}
+                    onToggleRead={
+                      showUnreadToggle ? handleToggleReadSingle : undefined
+                    }
                     onToggleFavorite={handleToggleFavoriteSingle}
                     onTrash={handleTrashSingle}
                     selectedFolderId={currentFolderId}
