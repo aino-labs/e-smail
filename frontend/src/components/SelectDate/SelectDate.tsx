@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "./SelectDate.scss";
 import Select from "../Select/Select";
-import { AppStorage } from "../../utils/AppStorage";
+import { AppStorage } from "../../stores/AppStorage";
 
 const daysInMonth = (month: number, year: number): number => {
   return new Date(year, month, 0).getDate();

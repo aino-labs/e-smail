@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import "./MailHeader.scss";
-import { AppStorage } from "../../utils/AppStorage";
+import { AppStorage } from "../../stores/AppStorage";
 import { getEmailsSpam, sendSpam, unSpam } from "../../api/ApiSpam";
 import { sendFavorite, unFavorite } from "../../api/ApiFavorite";
 import { getEmailsTrash, untrash } from "../../api/ApiTrash";

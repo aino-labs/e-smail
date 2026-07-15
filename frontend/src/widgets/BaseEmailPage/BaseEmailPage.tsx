@@ -9,7 +9,7 @@ import { readEmail, seacrhEmail, unReadEmail } from "../../api/ApiEmail";
 import "./BaseEmailPage.scss";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
 import SupportModal from "../../widgets/SupportModal/SupportModal";
-import { AppStorage } from "../../utils/AppStorage";
+import { AppStorage } from "../../stores/AppStorage";
 import { addEmailsInFolder, deleteEmailsFromFolder } from "../../api/ApiFolder";
 import { deleteDraft } from "../../api/ApiDraft";
 import { trash } from "../../api/ApiTrash";

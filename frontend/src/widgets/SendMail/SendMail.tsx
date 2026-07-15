@@ -4,7 +4,7 @@ import InputEmail from "../../components/InputEmail/InputEmail";
 import Input from "../../components/Input/Input";
 import Textarea from "../../components/Textarea/Textarea";
 import Button from "../../components/Button/Button";
-import NotificationManager from "../NotificationManager/NotificationManager";
+import NotificationManager from "../Toaster/Toaster";
 import ConfirmationDialog from "../../widgets/ConfirmationDialog/ConfirmationDialog";
 import HorizontalScroller from "../../components/HorizontalScroller/HorizontalScroller";
 import { sendEmail, replyToEmail } from "../../api/ApiEmail";

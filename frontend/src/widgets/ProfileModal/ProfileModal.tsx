@@ -1,7 +1,7 @@
 import "./ProfileModal.scss";
 import Button from "../../components/Button/Button";
 import { logOut } from "../../api/ApiAuth";
-import { AppStorage } from "../../utils/AppStorage";
+import { AppStorage } from "../../stores/AppStorage";
 
 interface ProfileModalProps {
   onClose: () => void;

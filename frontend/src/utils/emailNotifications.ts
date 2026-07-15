@@ -1,6 +1,6 @@
 // src/utils/emailNotifications.ts
 import { getInbox } from "../api/ApiEmail";
-import { AppStorage } from "./AppStorage";
+import { AppStorage } from "../stores/AppStorage";
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 let lastEmailId: string | number | null = null;

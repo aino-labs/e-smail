@@ -4,7 +4,7 @@ import Button from "../../components/Button/Button";
 import SendMail from "../../widgets/SendMail/SendMail";
 import "./SendEmailPage.scss";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
-import NotificationManager from "../../widgets/NotificationManager/NotificationManager";
+import NotificationManager from "../../widgets/Toaster/Toaster";
 import Input from "../../components/Input/Input";
 import { AppStorage } from "../../App";
 import { getProfile } from "../../api/ApiAuth";

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import "./InputEmail.scss";
-import { AppStorage } from "../../utils/AppStorage";
+import { AppStorage } from "../../stores/AppStorage";
 import { measureTextWidth } from "../../utils/textTruncation";
 
 // ────────────── Types & helpers ──────────────

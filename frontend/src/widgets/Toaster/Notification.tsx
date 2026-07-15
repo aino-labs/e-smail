@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { AppStorage } from "../../utils/AppStorage";
+import { AppStorage } from "../../stores/AppStorage";
 import "./Notification.scss";
 
 const t = (key: string): string => {

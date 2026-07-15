@@ -12,7 +12,7 @@ import { AppStorage } from "../../App";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
 import SelectDate from "../../components/SelectDate/SelectDate";
 import FolderChange from "../../widgets/FolderChange/FolderChange";
-import NotificationManager from "../../widgets/NotificationManager/NotificationManager";
+import NotificationManager from "../../widgets/Toaster/Toaster";
 import SupportModal from "../../widgets/SupportModal/SupportModal";
 import { requestNotificationPermission } from "../../utils/emailNotifications";
 

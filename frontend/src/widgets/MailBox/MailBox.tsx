@@ -1,4 +1,4 @@
-import { AppStorage } from "../../utils/AppStorage";
+import { AppStorage } from "../../stores/AppStorage";
 import "./MailBox.scss";
 
 const t = (key: string): string => {

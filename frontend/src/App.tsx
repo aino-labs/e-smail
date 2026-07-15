@@ -16,10 +16,10 @@ import FolderPage from "./pages/FolderPage/FolderPage";
 import AllEmailsPage from "./pages/AllEmailsPage/AllEmailsPage";
 import SupportPage from "./pages/SupportPage/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage/AdminSupportPage";
-import NotificationManager from "./widgets/NotificationManager/NotificationManager";
+import Toaster from "./widgets/Toaster/Toaster";
 import { initEmailNotifications } from "./utils/emailNotifications";
-import { AppStorage } from "./utils/AppStorage";
-import "./utils/OfflineManager";
+import { AppStorage } from "./stores/AppStorage";
+import "./stores/OfflineManager";
 
 const routes: Record<string, React.ComponentType<any>> = {
   "/login": LoginPage,
@@ -116,6 +116,6 @@ const root = createRoot(rootElement);
 root.render(
   <>
     <App />
-    <NotificationManager />
+    <Toaster />
   </>,
 );

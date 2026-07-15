@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./UploadAvatar.scss";
-import { AppStorage } from "../../utils/AppStorage";
+import { AppStorage } from "../../stores/AppStorage";
 import { uploadAvatar } from "../../api/ApiAuth";
 
 const t = (key: string): string => {
