@@ -1,4 +1,4 @@
-import Death13 from "@react/stands";
+import { useState, useRef, useMemo, useEffect } from "react";
 import "./SendMail.scss";
 import InputEmail from "../../components/InputEmail/InputEmail";
 import Input from "../../components/Input/Input";
@@ -13,7 +13,8 @@ import {
   getAttachments,
   deleteAttachments,
 } from "../../api/ApiAttachments";
-import { AppStorage } from "../../App";
+import { AppStorage } from "../../stores/AppStorage";
+import { toast } from "../../stores/toastStore";
 import { createDraft, sendDraft, updateDraft } from "../../api/ApiDraft";
 import {
   formatFileSize,
@@ -21,258 +22,151 @@ import {
   trimFileName,
 } from "../../utils/files";
 
-class SendMail extends Death13.Component {
-  fileInputRef: HTMLInputElement | null = null;
-  filesListRef: HTMLDivElement | null = null;
-  private targetScroll = 0;
-  private currentScroll = 0;
-  private velocity = 0;
-  private rafId: number | null = null;
+interface SendMailProps {
+  actionData?: any;
+  backToMail?: () => void;
+}
 
-  state: any = {
-    header: "",
-    body: "",
-    receivers: [],
-    invalidReceivers: [],
-    buttonBlock: true,
-    files: [],
-    draftId: null,
-    emailId: AppStorage.emailReplyingId || null,
-    uploadingFiles: false,
-    sending: false,
-    isAnonymous: false,
-    replyingToAnonymous: AppStorage.replyingToAnonymous,
-  };
+const t = (key: string): string => {
+  return AppStorage.t(key);
+};
 
-  constructor(props: any) {
-    super(props);
-
-    const actionData = props.actionData;
+export default function SendMail({ actionData, backToMail }: SendMailProps) {
+  const initialData = useMemo(() => {
     const draftData = AppStorage.getDraftData();
 
-    const newState: any = {
-      ...this.state,
-    };
+    let header = "";
+    let body = "";
+    let receivers: string[] = [];
+    let draftId: number | null = null;
 
     if (actionData) {
       if (actionData.type === "reply") {
-        newState.header = actionData.subject || "";
-        newState.body = actionData.body || "";
-        newState.receivers = actionData.to ? [actionData.to] : [];
+        header = actionData.subject || "";
+        body = actionData.body || "";
+        receivers = actionData.to ? [actionData.to] : [];
       } else if (actionData.type === "forward") {
-        newState.header = actionData.subject || "";
-        newState.body = actionData.body || "";
-        newState.receivers = [];
+        header = actionData.subject || "";
+        body = actionData.body || "";
+        receivers = [];
       }
     } else if (draftData) {
-      newState.header = draftData.header || "";
-      newState.body = draftData.body || "";
-      newState.receivers = draftData.receivers || [];
-      newState.draftId = draftData.id || null;
+      header = draftData.header || "";
+      body = draftData.body || "";
+      receivers = draftData.receivers || [];
+      draftId = draftData.id || null;
     }
 
-    const isValid = this.isFormValid(
-      newState.body,
-      newState.receivers,
-      newState.invalidReceivers,
-      newState.replyingToAnonymous,
-    );
-    newState.buttonBlock = !isValid;
+    return { header, body, receivers, draftId };
+  }, [actionData]);
 
-    this.state = newState;
+  const [header, setHeader] = useState(initialData.header);
+  const [body, setBody] = useState(initialData.body);
+  const [receivers, setReceivers] = useState<string[]>(initialData.receivers);
+  const [invalidReceivers, setInvalidReceivers] = useState<string[]>([]);
+  const [files, setFiles] = useState<any[]>([]);
+  const [draftId, setDraftId] = useState<number | null>(initialData.draftId);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [showDraftConfirm, setShowDraftConfirm] = useState(false);
 
-    this.handleWheel = this.handleWheel.bind(this);
-  }
+  const [emailId] = useState<number | null>(
+    () => AppStorage.emailReplyingId || null,
+  );
+  const [replyingToAnonymous] = useState<boolean>(
+    () => !!AppStorage.replyingToAnonymous,
+  );
 
-  private startScrollLoop = () => {
-    if (this.rafId !== null) return;
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 769;
 
-    const step = () => {
-      const el = this.filesListRef;
-      if (!el) return;
+  const isFormValid =
+    body.trim().length > 0 &&
+    (receivers.length > 0 || replyingToAnonymous) &&
+    invalidReceivers.length === 0;
 
-      const diff = this.targetScroll - this.currentScroll;
+  const buttonBlock = !isFormValid;
 
-      if (Math.abs(diff) < 0.3 && Math.abs(this.velocity) < 0.1) {
-        this.currentScroll = this.targetScroll;
-        el.scrollLeft = this.currentScroll;
-        this.rafId = null;
-        return;
-      }
-
-      this.currentScroll += diff * 0.3;
-      this.velocity *= 0.52;
-      this.currentScroll += this.velocity;
-
-      const max = el.scrollWidth - el.clientWidth;
-      this.currentScroll = Math.max(0, Math.min(max, this.currentScroll));
-      this.targetScroll = this.currentScroll;
-
-      el.scrollLeft = this.currentScroll;
-      this.rafId = requestAnimationFrame(step);
-    };
-
-    this.rafId = requestAnimationFrame(step);
-  };
-
-  private addScrollDelta = (delta: number) => {
-    const el = this.filesListRef;
-    if (!el) return;
-
-    const max = el.scrollWidth - el.clientWidth;
-    this.targetScroll += delta;
-    this.targetScroll = Math.max(0, Math.min(max, this.targetScroll));
-    this.velocity += delta * 0.08;
-
-    if (this.rafId === null) {
-      this.startScrollLoop();
-    }
-  };
-
-  touchStartX = 0;
-
-  handleTouchStart = (e: TouchEvent) => {
-    this.touchStartX = e.touches[0].clientX;
-    this.velocity = 0;
-  };
-
-  handleTouchMove = (e: TouchEvent) => {
-    e.preventDefault();
-    const dx = this.touchStartX - e.touches[0].clientX;
-    this.touchStartX = e.touches[0].clientX;
-    this.addScrollDelta(dx);
-  };
-
-  handleTouchEnd = () => {};
-
-  handleWheel = (event: WheelEvent) => {
-    event.preventDefault();
-
-    const isMouseWheel = event.deltaMode === 1;
-
-    let rawDelta = event.deltaY + event.deltaX;
-
-    if (isMouseWheel) {
-      rawDelta *= 16;
-    }
-    this.addScrollDelta(rawDelta * 2);
-  };
-
-  componentDidMount() {
-    if (this.state.draftId) {
-      this.fetchDraftAttachments();
-    }
-  }
-
-  componentWillUnmount() {
-    if (this.filesListRef) {
-      this.filesListRef.removeEventListener("wheel", this.handleWheel);
-      this.filesListRef.removeEventListener(
-        "touchstart",
-        this.handleTouchStart,
-      );
-      this.filesListRef.removeEventListener("touchmove", this.handleTouchMove);
-      this.filesListRef.removeEventListener("touchend", this.handleTouchEnd);
-    }
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId);
-    }
-  }
-
-  isFormValid = (
-    body: string,
-    receivers: string[],
-    invalidReceivers: string[],
-    replyingToAnonymous: boolean,
-  ): boolean => {
-    return (
-      body.trim().length > 0 &&
-      (receivers.length > 0 || replyingToAnonymous) &&
-      (invalidReceivers || []).length === 0
-    );
-  };
-
-  updateButtonState = () => {
-    const { body, receivers, invalidReceivers, replyingToAnonymous } =
-      this.state;
-    const isValid = this.isFormValid(
-      body,
-      receivers,
-      invalidReceivers,
-      replyingToAnonymous,
-    );
-    this.setState({ buttonBlock: !isValid });
-  };
-
-  handleHeaderChange = (e: any) => {
-    this.setState({ header: e.target.value });
-    this.updateButtonState();
-  };
-
-  handleBodyChange = (e: any) => {
-    this.setState({ body: e.target.value });
-    this.updateButtonState();
-  };
-
-  handleReceiversChange = (emails: string[], invalidEmails: string[]) => {
-    this.setState({ receivers: emails, invalidReceivers: invalidEmails });
-    this.updateButtonState();
-  };
-
-  fetchDraftAttachments = async () => {
-    const { draftId } = this.state;
+  useEffect(() => {
     if (!draftId) return;
 
+    const fetchDraftAttachments = async () => {
+      try {
+        const data = await getAttachments(draftId);
+
+        if (!data) return;
+
+        let attachmentsArray = [];
+        if (Array.isArray(data)) {
+          attachmentsArray = data;
+        } else if (data && Array.isArray(data.attachments)) {
+          attachmentsArray = data.attachments;
+        } else if (data && Array.isArray(data.data)) {
+          attachmentsArray = data.data;
+        } else if (data && typeof data === "object") {
+          attachmentsArray = [data];
+        }
+
+        const draftFiles = attachmentsArray.map((att: any) => ({
+          id: att.id || Math.random(),
+          name: att.file_name || att.fileName,
+          size: att.size_bytes || att.sizeBytes,
+          type:
+            att.content_type || att.contentType || "application/octet-stream",
+          attachmentId: att.id,
+          uploaded: true,
+          file: null,
+        }));
+
+        setFiles([...files, ...draftFiles]);
+      } catch (err) {
+        console.error("Failed to fetch draft attachments", err);
+      }
+    };
+
+    fetchDraftAttachments();
+  }, [draftId]);
+
+  const uploadFiles = async (emailId: number) => {
+    const newFiles = files.filter((f: any) => !f.uploaded);
+
+    if (newFiles.length === 0) return true;
+
+    setUploadingFiles(true);
+    setSending(true);
+
     try {
-      const data = await getAttachments(draftId);
+      const uploadPromises = newFiles.map((fileItem: any) =>
+        uploadAttachment(emailId, fileItem.file),
+      );
 
-      if (!data) return;
+      const results = await Promise.all(uploadPromises);
 
-      let attachmentsArray = [];
-      if (Array.isArray(data)) {
-        attachmentsArray = data;
-      } else if (data && Array.isArray(data.attachments)) {
-        attachmentsArray = data.attachments;
-      } else if (data && Array.isArray(data.data)) {
-        attachmentsArray = data.data;
-      } else if (data && typeof data === "object") {
-        attachmentsArray = [data];
+      const allSuccessful = results.every((result) => result !== null);
+
+      if (!allSuccessful) {
+        toast.show("file_upload_error", "error");
+        return false;
       }
 
-      const draftFiles = attachmentsArray.map((att: any) => ({
-        id: att.id || Math.random(),
-        name: att.file_name || att.fileName,
-        size: att.size_bytes || att.sizeBytes,
-        type: att.content_type || att.contentType || "application/octet-stream",
-        attachmentId: att.id,
-        uploaded: true,
-        file: null,
-      }));
-
-      this.setState({ files: [...this.state.files, ...draftFiles] });
-    } catch (err) {
-      console.error("Failed to fetch draft attachments", err);
+      return true;
+    } catch {
+      toast.show("file_upload_error", "error");
+      return false;
+    } finally {
+      setUploadingFiles(false);
+      setSending(false);
     }
   };
 
-  async handleSubmit(e: any) {
-    const {
-      emailId,
-      header,
-      body,
-      receivers,
-      draftId,
-      files,
-      isAnonymous,
-      replyingToAnonymous,
-    } = this.state;
-    e.preventDefault();
-
-    this.setState({ buttonBlock: true, sending: true });
+  const handleSubmit = async (e?: React.SubmitEvent) => {
+    if (e) e.preventDefault();
+    setSending(true);
 
     let responseSend;
 
-    if (replyingToAnonymous) {
+    if (replyingToAnonymous && emailId !== null) {
       responseSend = await replyToEmail(emailId, {
         header: header.trim(),
         body: body.trim(),
@@ -289,7 +183,7 @@ class SendMail extends Death13.Component {
         draftId,
       );
 
-      this.uploadFiles(draftId);
+      uploadFiles(draftId);
       responseSend = await sendDraft(
         {
           header: header.trim(),
@@ -310,34 +204,32 @@ class SendMail extends Death13.Component {
     }
 
     if (!responseSend.error) {
-      window.AppStorage.clearMailActionData();
-      this.props.backToMail();
-      NotificationManager.show(true, "message_sent");
+      AppStorage.clearMailActionData();
+      backToMail?.();
+      toast.show("message_sent", "success");
     } else {
-      this.setState({ buttonBlock: false, sending: false });
+      setSending(false);
       if (responseSend.error.includes("recipient not found")) {
-        NotificationManager.show(false, "recipient_not_found");
+        toast.show("recipient_not_found", "error");
       } else if (
         responseSend.error.includes(
           "some recipients do not accept anonymous emails",
         )
       ) {
-        NotificationManager.show(false, "anonymous_forbidden");
+        toast.show("anonymous_forbidden", "error");
       } else {
-        NotificationManager.show(false, "email_send_error");
+        toast.show("email_send_error", "error");
       }
     }
-  }
-
-  handleCancel = () => {
-    window.AppStorage.clearMailActionData();
-    this.setState({ showDraftConfirm: false });
-    this.props.backToMail();
   };
 
-  handleSaveDraft = async () => {
-    const { header, body, receivers, draftId, files } = this.state;
+  const handleCancel = () => {
+    AppStorage.clearMailActionData();
+    setShowDraftConfirm(false);
+    backToMail?.();
+  };
 
+  const handleSaveDraft = async () => {
     let savedDraftId: number | null = null;
 
     if (draftId) {
@@ -360,7 +252,7 @@ class SendMail extends Death13.Component {
         receivers.length === 0 &&
         files.length === 0
       ) {
-        this.props.backToMail();
+        backToMail?.();
         return;
       }
       const response = await createDraft({
@@ -375,23 +267,23 @@ class SendMail extends Death13.Component {
     }
 
     if (savedDraftId && files.length > 0) {
-      await this.uploadFiles(savedDraftId);
+      await uploadFiles(savedDraftId);
     }
 
     if (savedDraftId) {
-      window.AppStorage.clearMailActionData();
-      this.props.backToMail();
-      NotificationManager.show(true, "draft_saved");
+      AppStorage.clearMailActionData();
+      backToMail?.();
+      toast.show("draft_saved", "error");
     }
 
-    this.setState({ showDraftConfirm: false });
+    setShowDraftConfirm(false);
   };
 
-  handleFileChange = (e: any) => {
+  const handleFileChange = (e: any) => {
     const newFiles: File[] = Array.from(e.target.files || []);
 
-    if (this.fileInputRef) {
-      this.fileInputRef.value = "";
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
 
     if (newFiles.length === 0) return;
@@ -399,7 +291,7 @@ class SendMail extends Death13.Component {
     const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
     const validFiles = newFiles.filter((file) => {
       if (file.size > MAX_FILE_SIZE) {
-        NotificationManager.show(false, "file_too_large");
+        toast.show("file_too_large", "error");
         return false;
       }
       return true;
@@ -416,276 +308,206 @@ class SendMail extends Death13.Component {
       uploaded: false,
     }));
 
-    this.setState({
-      files: [...processedFiles, ...this.state.files],
-    });
+    setFiles((prev) => [...processedFiles, ...prev]);
   };
 
-  handleFileButtonClick = () => {
-    if (this.fileInputRef) {
-      this.fileInputRef.click();
-    }
+  const handleFileButtonClick = () => {
+    if (uploadingFiles) return;
+    fileInputRef.current?.click();
   };
 
-  removeFile = async (fileId: number) => {
-    const { files } = this.state;
+  const removeFile = async (fileId: number) => {
     const fileItem = files.find((f: any) => f.id === fileId);
     if (!fileItem) return;
 
-    if (fileItem.uploaded && fileItem.attachmentId && this.state.draftId) {
+    if (fileItem.uploaded && fileItem.attachmentId && draftId) {
       try {
-        await deleteAttachments(this.state.draftId, [fileItem.attachmentId]);
+        await deleteAttachments(draftId, [fileItem.attachmentId]);
       } catch (err) {
         console.error("Failed to delete attachment", err);
       }
     }
 
-    this.setState({
-      files: this.state.files.filter((file: any) => file.id !== fileId),
-    });
+    setFiles((prev) => prev.filter((file: any) => file.id !== fileId));
   };
 
-  uploadFiles = async (emailId: number) => {
-    const { files } = this.state;
-
-    const newFiles = files.filter((f: any) => !f.uploaded);
-
-    if (newFiles.length === 0) return true;
-
-    this.setState({ uploadingFiles: true, sending: true });
-
-    try {
-      const uploadPromises = newFiles.map((fileItem: any) =>
-        uploadAttachment(emailId, fileItem.file),
-      );
-
-      const results = await Promise.all(uploadPromises);
-
-      const allSuccessful = results.every((result) => result !== null);
-
-      if (!allSuccessful) {
-        NotificationManager.show(false, "file_upload_error");
-        return false;
-      }
-
-      return true;
-    } catch {
-      NotificationManager.show(false, "file_upload_error");
-      return false;
-    } finally {
-      this.setState({ uploadingFiles: false, sending: false });
-    }
-  };
-
-  handleMobileCloseButton = () => {
-    const { header, body, receivers, files } = this.state;
+  const handleMobileCloseButton = () => {
     if (
       header === "" &&
       body === "" &&
       receivers.length === 0 &&
       files.length === 0
     ) {
-      this.handleCancel();
+      handleCancel();
       return;
     }
-
-    this.setState({ showDraftConfirm: true });
+    setShowDraftConfirm(true);
   };
 
-  handleSetAnonymous = () => {
-    this.setState({ isAnonymous: !this.state.isAnonymous });
-  };
-
-  t(key: string): string {
-    return AppStorage.t(key);
-  }
-
-  render() {
-    try {
-      const {
-        body,
-        header,
-        receivers,
-        buttonBlock,
-        files,
-        uploadingFiles,
-        sending,
-        replyingToAnonymous,
-      } = this.state;
-      const isMobile = window.innerWidth < 769;
-
-      return (
-        <div className="send-mail">
-          {isMobile ? (
-            sending ? (
-              <div className="send-mail-mobile-buttons">
-                <div className="close-button" disabled></div>
-                <div className="sending-loader">
-                  <div className="spinner" />
-                </div>
-              </div>
-            ) : (
-              <div className="send-mail-mobile-buttons">
-                <div
-                  className="close-button"
-                  onClick={this.handleMobileCloseButton}
-                ></div>
-                <div
-                  className="send-button"
-                  block={buttonBlock}
-                  onClick={(event: any) => {
-                    this.handleSubmit(event);
-                  }}
-                ></div>
-              </div>
-            )
-          ) : null}
-          <div className="send-mail-header">
-            <span className="send-mail-header__text">
-              {this.t("new_letter")}
-            </span>
-          </div>
-          <form action="" className="send-form">
-            <div className="send-inputs">
-              {replyingToAnonymous ? (
-                <span className="input-container" name="anonymous">
-                  {this.t("to")}
-                  {"\t"}
-                  {this.t("anonymous")}
-                </span>
-              ) : (
-                <InputEmail
-                  input_title={this.t("to")}
-                  placeholder={this.t("enter_email")}
-                  emails={receivers}
-                  onChange={this.handleReceiversChange.bind(this)}
-                />
-              )}
-              <Input
-                type="text"
-                placeholder={this.t("enter_subject")}
-                input_title={this.t("subject")}
-                name="theme"
-                maxLength="255"
-                value={header}
-                onInput={this.handleHeaderChange.bind(this)}
-              />
+  return (
+    <div className="send-mail">
+      {isMobile ? (
+        sending ? (
+          <div className="send-mail-mobile-buttons">
+            <div className="close-button disabled"></div>
+            <div className="sending-loader">
+              <div className="spinner" />
             </div>
-            {files.length > 0 ? (
-              <HorizontalScroller className="files-list">
-                {files.map((fileItem: any) => (
-                  <div key={fileItem.id} className="file-item">
-                    <div
-                      className={`file-icon ${getIconByContentType(fileItem.type)}`}
-                    />
-                    <div className="file-info">
-                      <span className="file-name">
-                        {trimFileName(fileItem.name)}
-                      </span>
-                      <span className="file-size">
-                        {formatFileSize(fileItem.size)}
-                      </span>
-                    </div>
-                    <div
-                      className="file-remove-btn"
-                      onClick={() => this.removeFile(fileItem.id)}
-                      disabled={uploadingFiles}
-                    />
-                  </div>
-                ))}
-              </HorizontalScroller>
-            ) : null}
-            {isMobile && (
+          </div>
+        ) : (
+          <div className="send-mail-mobile-buttons">
+            <div
+              className="close-button"
+              onClick={handleMobileCloseButton}
+            ></div>
+            <div
+              className={`send-button${buttonBlock ? " disabled" : ""}`}
+              onClick={() => handleSubmit()}
+            ></div>
+          </div>
+        )
+      ) : null}
+      <div className="send-mail-header">
+        <span className="send-mail-header__text">{t("new_letter")}</span>
+      </div>
+      <form action="" className="send-form">
+        <div className="send-inputs">
+          {replyingToAnonymous ? (
+            <span className="input-container" data-name="anonymous">
+              {t("to")}
+              {"\t"}
+              {t("anonymous")}
+            </span>
+          ) : (
+            <InputEmail
+              input_title={t("to")}
+              placeholder={t("enter_email")}
+              emails={receivers}
+              onChange={(emails: string[], invalid: string[]) => {
+                setReceivers(emails);
+                setInvalidReceivers(invalid);
+              }}
+            />
+          )}
+          <Input
+            type="text"
+            placeholder={t("enter_subject")}
+            input_title={t("subject")}
+            name="theme"
+            maxLength={255}
+            value={header}
+            onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setHeader(e.target.value)
+            }
+          />
+        </div>
+        {files.length > 0 ? (
+          <HorizontalScroller className="files-list">
+            {files.map((fileItem: any) => (
+              <div key={fileItem.id} className="file-item">
+                <div
+                  className={`file-icon ${getIconByContentType(fileItem.type)}`}
+                />
+                <div className="file-info">
+                  <span className="file-name">
+                    {trimFileName(fileItem.name)}
+                  </span>
+                  <span className="file-size">
+                    {formatFileSize(fileItem.size)}
+                  </span>
+                </div>
+                <div
+                  className={`file-remove-btn ${uploadingFiles ? "disabled" : ""}`}
+                  onClick={() => removeFile(fileItem.id)}
+                />
+              </div>
+            ))}
+          </HorizontalScroller>
+        ) : null}
+        {isMobile && (
+          <div className="anonymous-radio">
+            <input
+              id="anon-toggle"
+              type="checkbox"
+              name="radio-anonymous"
+              checked={isAnonymous}
+              onChange={() => setIsAnonymous((prev) => !prev)}
+            />
+            <label htmlFor="anon-toggle">{t("toggle_anon")}</label>
+          </div>
+        )}
+        <Textarea
+          readonly={false}
+          value={body}
+          onInput={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+            setBody(e.target.value)
+          }
+        />
+      </form>
+      <div className="send-down">
+        <div className="send-tools">
+          <input
+            type="file"
+            hidden
+            multiple
+            onChange={handleFileChange}
+            accept="*/*"
+            disabled={uploadingFiles}
+            title={t("add_attachment")}
+          />
+          <div
+            className={`upload-attachments-button ${uploadingFiles ? "disabled" : ""}`}
+            onClick={handleFileButtonClick}
+          />
+        </div>
+        {!isMobile ? (
+          sending ? (
+            <div className="send-actions">
+              <div className="sending-loader">
+                <div className="spinner" />
+                <span>{t("sending")}...</span>
+              </div>
+            </div>
+          ) : (
+            <div className="send-actions">
               <div className="anonymous-radio">
                 <input
                   id="anon-toggle"
                   type="checkbox"
                   name="radio-anonymous"
-                  checked={this.state.isAnonymous}
-                  onChange={this.handleSetAnonymous}
+                  checked={isAnonymous}
+                  onChange={() => setIsAnonymous((prev) => !prev)}
                 />
-                <label htmlFor="anon-toggle">{this.t("toggle_anon")}</label>
+                <label htmlFor="anon-toggle">{t("toggle_anon")}</label>
               </div>
-            )}
-            <Textarea
-              readonly={false}
-              value={body}
-              onInput={this.handleBodyChange}
-            />
-          </form>
-          <div className="send-down">
-            <div className="send-tools">
-              <input
-                type="file"
-                ref={(ref: any) => (this.fileInputRef = ref)}
-                hidden
-                multiple
-                onChange={this.handleFileChange}
-                accept="*/*"
-                disabled={uploadingFiles}
-                title={this.t("add_attachment")}
+              <Button
+                title={t("save")}
+                name="save-mail"
+                onClick={handleSaveDraft}
+                block={sending}
               />
-              <div
-                className="upload-attachments-button"
-                onClick={this.handleFileButtonClick}
-                block={uploadingFiles}
+              <Button
+                title={t("send")}
+                name="send-mail"
+                block={buttonBlock || sending}
+                onClick={(event: any) => {
+                  handleSubmit(event);
+                }}
               />
             </div>
-            {!isMobile ? (
-              sending ? (
-                <div className="send-actions">
-                  <div className="sending-loader">
-                    <div className="spinner" />
-                    <span>{this.t("sending")}...</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="send-actions">
-                  <div className="anonymous-radio">
-                    <input
-                      id="anon-toggle"
-                      type="checkbox"
-                      name="radio-anonymous"
-                      checked={this.state.isAnonymous}
-                      onChange={this.handleSetAnonymous}
-                    />
-                    <label htmlFor="anon-toggle">{this.t("toggle_anon")}</label>
-                  </div>
-                  <Button
-                    title={this.t("save")}
-                    name="save-mail"
-                    onClick={this.handleSaveDraft}
-                    block={sending}
-                  />
-                  <Button
-                    title={this.t("send")}
-                    name="send-mail"
-                    block={buttonBlock || sending}
-                    onClick={(event: any) => {
-                      this.handleSubmit(event);
-                    }}
-                  />
-                </div>
-              )
-            ) : null}
-          </div>
-          {this.state.showDraftConfirm && (
-            <ConfirmationDialog
-              text={this.t("confirm_save_draft")}
-              cancelButtonTitle={this.t("delete_draft")}
-              confirmButtonTitle={this.t("save_draft")}
-              callbackCancel={this.handleCancel}
-              callbackConfirm={this.handleSaveDraft}
-              highlightCancel={false}
-            />
-          )}
-        </div>
-      );
-    } catch (e) {
-      console.error("SendMail render crashed", e);
-      return <div>Something went wrong</div>;
-    }
-  }
+          )
+        ) : null}
+      </div>
+      {showDraftConfirm && (
+        <ConfirmationDialog
+          text={t("confirm_save_draft")}
+          cancelButtonTitle={t("delete_draft")}
+          confirmButtonTitle={t("save_draft")}
+          callbackCancel={handleCancel}
+          callbackConfirm={handleSaveDraft}
+          highlightCancel={false}
+        />
+      )}
+    </div>
+  );
 }
-
-export default SendMail;

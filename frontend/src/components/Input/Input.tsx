@@ -19,8 +19,8 @@ interface InputProps {
   maxLength?: number; // default was 100
 
   // Events
-  onInput?: (_e: React.FormEvent<HTMLInputElement>) => void; // for text inputs
-  onChange?: (_e: React.ChangeEvent<HTMLInputElement>) => void; // for checkboxes/radios
+  onInput?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Standard React type for onInput
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
   // Feedback
   error?: string;
@@ -71,14 +71,13 @@ const Input: React.FC<InputProps> = (props) => {
       >
         {svg && <img src={svg} alt="" />}
         <input
-          type={inputType} 
+          type={inputType}
           className={className}
           id={id}
           name={name}
           placeholder={placeholder}
-          onInput={!isCheckbox && !isRadio ? onInput : undefined}
-          onChange={isCheckbox || isRadio ? onChange : undefined}
-          checked={isCheckbox || isRadio ? checked : undefined}
+          onChange={onChange}
+          onInput={onInput ? (e: any) => onInput(e) : undefined}
           readOnly={readonly || false}
           maxLength={maxLength || 100}
           value={!isCheckbox && !isRadio ? value || "" : undefined}

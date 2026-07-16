@@ -15,17 +15,6 @@ interface FolderChangeProps {
   isEditMode: boolean;
 }
 
-interface FolderChangeState {
-  folders: Array<any>;
-  newFolderName: string;
-  editingFolderId: number | null;
-  editingFolderName: string;
-  showDeleteConfirm: boolean;
-  folderToDeleteId: number | null;
-  folderToDeleteName: string;
-  error: string | null;
-}
-
 const t = (key: string) => {
   return AppStorage.t ? AppStorage.t(key) : key;
 };

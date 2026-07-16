@@ -75,9 +75,13 @@ function getComponent(path: string) {
 
 const App = () => {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [previousPath, setPreviousPath] = useState<string | null>(null);
 
   useEffect(() => {
-    const handlePopState = () => setCurrentPath(window.location.pathname);
+    const handlePopState = () => {
+      setPreviousPath(currentPath);
+      setCurrentPath(window.location.pathname);
+    };
     window.addEventListener("popstate", handlePopState);
 
     return () => window.removeEventListener("popstate", handlePopState);
@@ -85,13 +89,16 @@ const App = () => {
 
   const navigate = (path: string) => {
     if (path === currentPath) return;
+    setPreviousPath(currentPath);
     window.history.pushState({}, "", path);
     setCurrentPath(path);
   };
 
   const { Component, props } = getComponent(currentPath);
 
-  return <Component {...props} navigate={navigate} />;
+  return (
+    <Component {...props} navigate={navigate} previousPath={previousPath} />
+  );
 };
 
 const rootElement = document.getElementById("root");

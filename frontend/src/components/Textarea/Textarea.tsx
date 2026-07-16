@@ -6,7 +6,7 @@ interface TextareaProps {
   value?: string;
   placeholder?: string;
   inputTitle?: string;
-  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onInput?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
 export default function Textarea({
@@ -15,7 +15,7 @@ export default function Textarea({
   value = "",
   placeholder = "",
   inputTitle = "",
-  onChange,
+  onInput,
 }: TextareaProps) {
   return (
     <div className="text-area">
@@ -25,7 +25,7 @@ export default function Textarea({
         readOnly={readonly}
         value={value || ""}
         placeholder={placeholder}
-        onChange={onChange}
+        onChange={onInput}
       />
     </div>
   );
