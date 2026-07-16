@@ -1,5 +1,3 @@
-import "crypto";
-
 export interface ToastItem {
   id: string;
   message: string;
@@ -14,7 +12,7 @@ let listeners: Listener[] = [];
 
 export const toast = {
   show(message: string, type: "success" | "error" = "success") {
-    const id = crypto.randomUUID();
+    const id = self.crypto.randomUUID();
     const newToast = { id, message, type };
 
     if (memoryStore.length >= MAX_TOASTS) {

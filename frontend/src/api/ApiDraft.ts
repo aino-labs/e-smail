@@ -1,5 +1,5 @@
 import { EMAIL_URL } from "./config";
-import { AppStorage } from "../App";
+import { AppStorage } from "../stores/AppStorage";
 
 // private.HandleFunc("/drafts/{id}", h.UpdateDraft).Methods(http.MethodPut, http.MethodOptions);
 // private.HandleFunc("/drafts/{id}/send", h.SendDraft).Methods(http.MethodPost, http.MethodOptions);

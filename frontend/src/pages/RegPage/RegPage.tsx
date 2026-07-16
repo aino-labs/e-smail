@@ -1,49 +1,55 @@
-import Death13 from "@react/stands";
+import { useState } from "react";
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
 import { postDataReg, getProfile } from "../../api/ApiAuth";
 import "./RegPage.scss";
-import { AppStorage } from "../../App";
+import { AppStorage } from "../../stores/AppStorage";
 
-class RegPage extends Death13.Component {
-  state: any = {
-    step: 1,
-    formData: {
-      name: "",
-      surname: "",
-      email: "",
-      password: "",
-    },
-    errors: {},
-  };
+interface RegPageProps {
+  navigate: (path: string) => void;
+}
 
-  handleInputChange = (field: string, value: string) => {
-    const error = this.validateField(field, value);
+const t = (key: string): string => {
+  return AppStorage.t(key);
+};
 
-    this.setState({
-      formData: {
-        ...this.state.formData,
-        [field]: value,
-      },
-      errors: {
-        ...this.state.errors,
-        [field]: error,
-      },
-    });
-  };
+export default function RegPage({ navigate }: RegPageProps) {
+  const [step, setStep] = useState<number>(1);
+  const [formData, setFormData] = useState<Record<string, string>>({
+    name: "",
+    surname: "",
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
-  validateField = (field: string, value: string) => {
-    const suffix = "@e-smail.ru";
-    const data: any = {
-      name: field === "name" ? value : this.state.formData.name,
-      surname: field === "surname" ? value : this.state.formData.surname,
-      email:
-        field === "email" ? value + suffix : this.state.formData.email + suffix,
-      password: field === "password" ? value : this.state.formData.password,
+  const handleInputChange = (field: string, value: string) => {
+    const nextFormData = {
+      ...formData,
+      [field]: value,
     };
 
-    const result = validation(data, this.t);
+    const error = validateField(field, nextFormData);
+
+    setFormData(nextFormData);
+    setErrors((prev) => ({
+      ...prev,
+      [field]: error,
+    }));
+  };
+
+  const validateField = (
+    field: string,
+    currentFormData: Record<string, string>,
+  ) => {
+    const suffix = "@e-smail.ru";
+    const data: any = {
+      ...currentFormData,
+      email: currentFormData.email ? currentFormData.email + suffix : "",
+    };
+
+    const result = validation(data, t);
 
     if (!result.isValid) {
       const fieldError = result.errors.find((err: any) => err.field === field);
@@ -51,16 +57,16 @@ class RegPage extends Death13.Component {
         return fieldError.message;
       }
     }
-    return undefined;
+    return "";
   };
 
-  validateStep1 = () => {
+  const validateStep1 = () => {
     const data = {
-      name: this.state.formData.name,
-      surname: this.state.formData.surname,
+      name: formData.name,
+      surname: formData.surname,
     };
 
-    const result = validation(data, this.t);
+    const result = validation(data, t);
     const newErrors: any = {};
 
     if (!result.isValid) {
@@ -71,18 +77,18 @@ class RegPage extends Death13.Component {
       });
     }
 
-    this.setState({ errors: newErrors });
+    setErrors(newErrors);
     return result.isValid;
   };
 
-  validateStep2 = () => {
-    const fullEmail = this.state.formData.email + "@e-smail.ru";
+  const validateStep2 = () => {
+    const fullEmail = formData.email + "@e-smail.ru";
     const data = {
       email: fullEmail,
-      password: this.state.formData.password,
+      password: formData.password,
     };
 
-    const result = validation(data, this.t);
+    const result = validation(data, t);
     const newErrors: any = {};
 
     if (!result.isValid) {
@@ -93,29 +99,29 @@ class RegPage extends Death13.Component {
       });
     }
 
-    this.setState({ errors: newErrors });
+    setErrors(newErrors);
     return result.isValid;
   };
 
-  handleNextStep = (event: Event) => {
+  const handleNextStep = (event: React.MouseEvent) => {
     event.preventDefault();
 
-    const isValid = this.validateStep1();
+    const isValid = validateStep1();
 
     if (isValid) {
-      this.setState({ step: 2 });
+      setStep(2);
     }
   };
 
-  handleBackStep = (event: Event) => {
+  const handleBackStep = (event: React.MouseEvent) => {
     event.preventDefault();
-    this.setState({ step: 1 });
+    setStep(1);
   };
 
-  handleRegister = async (event: Event) => {
+  const handleRegister = async (event: React.MouseEvent) => {
     event.preventDefault();
 
-    const isValid = this.validateStep2();
+    const isValid = validateStep2();
 
     if (!isValid) {
       return;
@@ -123,15 +129,15 @@ class RegPage extends Death13.Component {
 
     try {
       const payload = {
-        ...this.state.formData,
-        email: this.state.formData.email + "@e-smail.ru",
+        ...formData,
+        email: formData.email + "@e-smail.ru",
       };
       const response = await postDataReg(payload);
 
       if (response && response.isValid) {
         const data = await getProfile();
         AppStorage.setProfileData(data);
-        window.app.handleRoute("/");
+        navigate("/");
       } else if (response && !response.isValid) {
         const serverErrors: any = {};
         response.errors?.forEach((err: any) => {
@@ -139,137 +145,125 @@ class RegPage extends Death13.Component {
             serverErrors[err.field] = err.message;
           }
         });
-        this.setState({ errors: serverErrors });
+        setErrors(serverErrors);
       }
     } catch (error) {
       console.error("Registration error:", error);
-      this.setState({
-        errors: {
-          email: "Ошибка соединения",
-          password: "Ошибка соединения",
-        },
+      setErrors({
+        email: "Ошибка соединения",
+        password: "Ошибка соединения",
       });
     }
   };
 
-  t(key: string): string {
-    return AppStorage.t(key);
-  }
-
-  render() {
-    const { step, formData, errors } = this.state;
-
-    return (
-      <div className="auth-page">
-        <div className="auth-container">
-          <div className="auth-page__form-container">
-            <div className="logo-container">
-              <img src="../../assets/svg/Logo.svg" />
-              <h1 className="logo__title">SMail</h1>
-            </div>
-            <h1 className="auth-form__subtitle">{this.t("auth_subtitle")}</h1>
-            <h1 className="auth-form__title">{this.t("auth_title2")}</h1>
-            <form action="" className="auth-form">
-              <div className="auth-form__inputs">
-                {step === 1 && (
-                  <div className="auth-form__inputs">
-                    <Input
-                      key="name-input"
-                      type="text"
-                      placeholder={this.t("enter_name")}
-                      input_title={this.t("name")}
-                      name="name"
-                      error={errors.name}
-                      value={formData.name}
-                      onInput={(e: any) => {
-                        this.handleInputChange("name", e.target.value);
-                      }}
-                    />
-                    <Input
-                      key="surname-input"
-                      type="text"
-                      placeholder={this.t("enter_surname")}
-                      input_title={this.t("surname")}
-                      name="surname"
-                      error={errors.surname}
-                      value={formData.surname}
-                      onInput={(e: any) => {
-                        this.handleInputChange("surname", e.target.value);
-                      }}
-                    />
-                  </div>
-                )}
-                {step === 2 && (
-                  <div className="auth-form__inputs">
-                    <Input
-                      type="email"
-                      placeholder={this.t("enter_email")}
-                      input_title={this.t("email")}
-                      name="email"
-                      suffix="@e-smail.ru"
-                      error={errors.email}
-                      value={formData.email}
-                      onInput={(e: any) => {
-                        const raw = e.target.value;
-                        const atIndex = raw.indexOf("@");
-                        const clean =
-                          atIndex !== -1 ? raw.substring(0, atIndex) : raw;
-                        this.handleInputChange("email", clean);
-                      }}
-                    />
-                    <Input
-                      type="password"
-                      placeholder={this.t("enter_password")}
-                      input_title={this.t("password")}
-                      name="password"
-                      error={errors.password}
-                      value={formData.password}
-                      onInput={(e: any) => {
-                        this.handleInputChange("password", e.target.value);
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="auth-form__actions">
-                {step === 1 && (
-                  <div className="auth-form__actions">
-                    <Button
-                      title={this.t("continue")}
-                      name="button-reg-for-reg"
-                      onClick={this.handleNextStep}
-                    />
-                    <Button
-                      title={this.t("enter")}
-                      name="button-login-for-reg"
-                      onClick={(event: Event) => {
-                        event.preventDefault();
-                        window.app.handleRoute("/login");
-                      }}
-                    />
-                  </div>
-                )}
-                {step === 2 && (
-                  <div className="auth-form__actions">
-                    <Button
-                      title={this.t("register")}
-                      name="button-reg-for-reg"
-                      onClick={this.handleRegister}
-                    />
-                    <Button
-                      title={this.t("back")}
-                      name="button-login-for-reg"
-                      onClick={this.handleBackStep}
-                    />
-                  </div>
-                )}
-              </div>
-            </form>
+  return (
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-page__form-container">
+          <div className="logo-container">
+            <img src="../../assets/svg/Logo.svg" />
+            <h1 className="logo__title">SMail</h1>
           </div>
+          <h1 className="auth-form__subtitle">{t("auth_subtitle")}</h1>
+          <h1 className="auth-form__title">{t("auth_title2")}</h1>
+          <form action="" className="auth-form">
+            <div className="auth-form__inputs">
+              {step === 1 && (
+                <div className="auth-form__inputs">
+                  <Input
+                    key="name-input"
+                    type="text"
+                    placeholder={t("enter_name")}
+                    input_title={t("name")}
+                    name="name"
+                    error={errors.name}
+                    value={formData.name}
+                    onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      handleInputChange("name", e.target.value);
+                    }}
+                  />
+                  <Input
+                    key="surname-input"
+                    type="text"
+                    placeholder={t("enter_surname")}
+                    input_title={t("surname")}
+                    name="surname"
+                    error={errors.surname}
+                    value={formData.surname}
+                    onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      handleInputChange("surname", e.target.value);
+                    }}
+                  />
+                </div>
+              )}
+              {step === 2 && (
+                <div className="auth-form__inputs">
+                  <Input
+                    type="email"
+                    placeholder={t("enter_email")}
+                    input_title={t("email")}
+                    name="email"
+                    suffix="@e-smail.ru"
+                    error={errors.email}
+                    value={formData.email}
+                    onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const raw = e.target.value;
+                      const atIndex = raw.indexOf("@");
+                      const clean =
+                        atIndex !== -1 ? raw.substring(0, atIndex) : raw;
+                      handleInputChange("email", clean);
+                    }}
+                  />
+                  <Input
+                    type="password"
+                    placeholder={t("enter_password")}
+                    input_title={t("password")}
+                    name="password"
+                    error={errors.password}
+                    value={formData.password}
+                    onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      handleInputChange("password", e.target.value);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="auth-form__actions">
+              {step === 1 && (
+                <div className="auth-form__actions">
+                  <Button
+                    title={t("continue")}
+                    name="button-reg-for-reg"
+                    onClick={handleNextStep}
+                  />
+                  <Button
+                    title={t("enter")}
+                    name="button-login-for-reg"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate("/login");
+                    }}
+                  />
+                </div>
+              )}
+              {step === 2 && (
+                <div className="auth-form__actions">
+                  <Button
+                    title={t("register")}
+                    name="button-reg-for-reg"
+                    onClick={handleRegister}
+                  />
+                  <Button
+                    title={t("back")}
+                    name="button-login-for-reg"
+                    onClick={handleBackStep}
+                  />
+                </div>
+              )}
+            </div>
+          </form>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 }
-
-export default RegPage;

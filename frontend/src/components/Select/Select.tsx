@@ -44,7 +44,7 @@ const getDaysInMonth = (monthStr: string, year: number) => {
 
 interface SelectProps {
   id?: string;
-  name: string;
+  name?: string;
   value?: string;
   label?: string;
   placeholder?: string;

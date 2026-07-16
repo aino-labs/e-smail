@@ -23,7 +23,7 @@ interface InputProps {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
   // Feedback
-  error?: string;
+  error?: string | undefined;
   success?: boolean;
 }
 

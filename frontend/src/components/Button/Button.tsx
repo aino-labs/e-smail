@@ -16,7 +16,7 @@ interface ButtonProps {
   onClick?: (_event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-const Button: React.FC<ButtonProps> = (props) => {
+const Button: React.FC<ButtonProps> = (props: ButtonProps) => {
   const {
     svg,
     className,
