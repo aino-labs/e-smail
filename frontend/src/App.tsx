@@ -18,7 +18,6 @@ import SupportPage from "./pages/SupportPage/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage/AdminSupportPage";
 import NotificationManager from "./widgets/NotificationManager/NotificationManager";
 import Footer from "./widgets/Footer/Footer";
-import { initEmailNotifications } from "./utils/emailNotifications";
 import "./utils/OfflineManager";
 
 export const AppStorage = {
@@ -53,7 +52,6 @@ export const AppStorage = {
   forwardData: null as any,
   theme: "light" as "light" | "dark",
   language: "ru" as "ru" | "en",
-  notificationsEnabled: false as boolean,
   anonymousEnabled: true as boolean,
   replyingToAnonymous: false as boolean,
   emailReplyingId: -1,
@@ -149,7 +147,6 @@ export const AppStorage = {
       incorrect_credentials: "Неверная почта или пароль",
       recipient_not_found: "Получатель не найден",
       email_send_error: "Ошибка отправки письма, попробуйте позже",
-      notifs_not_supported: "Ваш браузер не поддерживает уведомления.",
       auth_error: "Ошибка авторизации, попробуйте еще раз",
       file_too_large: "Файл слишком большой (макс. 25 Мбайт)",
       file_upload_error: "Не удалось загрузить файл",
@@ -176,14 +173,9 @@ export const AppStorage = {
       add_a_folder: "Добавить папку...",
       new_folder: "Новая папка",
       confirm_delete_folder: "Вы точно хотите удалить папку",
-      notifications: "Уведомления в браузере",
       new_mail_notification: "У вас новое письмо",
-      on: "Вкл",
-      off: "Выкл",
       new_email_from: "Новое письмо от",
       from_unknown: "неизвестного",
-      notifications_enabled: "Уведомления в браузере включены",
-      notifications_disabled: "Уведомления в браузере выключены",
       anonymous_enabled: "Анонимные письма разрешены",
       anonymous_disabled: "Анонимные письма запрещены",
       enable_anonymous: "Анонимные письма",
@@ -306,7 +298,6 @@ export const AppStorage = {
       incorrect_credentials: "Incorrect email or password",
       recipient_not_found: "Recipient not found",
       email_send_error: "Could not send email, try again later",
-      notifs_not_supported: "Your browser does not support notifications",
       auth_error: "Could not authorize the user, please log in",
       file_too_large: "File is too large (25 MB max)",
       file_upload_error: "Could not upload file, try again later",
@@ -333,14 +324,9 @@ export const AppStorage = {
       add_a_folder: "Add a folder...",
       new_folder: "New folder",
       confirm_delete_folder: "Are you sure you want to delete folder",
-      notifications: "Browser notifications",
       new_mail_notification: "You have a new email",
-      on: "On",
-      off: "Off",
       new_email_from: "New mail from",
       from_unknown: "unknown account",
-      notifications_enabled: "Browser notifications enabled",
-      notifications_disabled: "Browser notifications disabled",
       anonymous_enabled: "Anonymous emails enabled",
       anonymous_disabled: "Anonymous emails disabled",
       enable_anonymous: "Anonymous emails",
@@ -424,10 +410,6 @@ export const AppStorage = {
 
       document.documentElement.setAttribute("data-theme", this.theme);
 
-      const savedNotif = localStorage.getItem("notificationsEnabled");
-      if (savedNotif !== null) {
-        this.notificationsEnabled = savedNotif === "true";
-      }
     } catch (e) {
       console.warn("Failed to load profile from localStorage", e);
     }
@@ -442,7 +424,13 @@ export const AppStorage = {
   },
 
   _notify() {
-    this._subscribers.forEach((cb) => cb());
+    this._subscribers.forEach((cb) => {
+      try {
+        cb();
+      } catch (err) {
+        console.error("AppStorage subscriber error:", err);
+      }
+    });
   },
 
   t(key: string): string {
@@ -528,10 +516,6 @@ export const AppStorage = {
       localStorage.setItem("language", this.language);
       localStorage.setItem("unReadCount", this.unReadCount.toString());
       localStorage.setItem("theme", this.theme);
-      localStorage.setItem(
-        "notificationsEnabled",
-        String(this.notificationsEnabled),
-      );
     } catch {}
   },
 
@@ -667,12 +651,6 @@ export const AppStorage = {
     return "/assets/svg/Avatar.svg";
   },
 
-  setNotificationsEnabled(value: boolean) {
-    this.notificationsEnabled = value;
-    this._saveToStorage();
-    this._notify();
-  },
-
   setAnonymousEnabled(value: boolean) {
     this.anonymousEnabled = value;
     this._saveToStorage();
@@ -801,8 +779,6 @@ if ("serviceWorker" in navigator) {
       .catch((err) => console.error("SW registration failed:", err));
   });
 }
-
-initEmailNotifications();
 
 window.app = new App();
 
