@@ -14,7 +14,6 @@ import SelectDate from "../../components/SelectDate/SelectDate";
 import FolderChange from "../../widgets/FolderChange/FolderChange";
 import NotificationManager from "../../widgets/NotificationManager/NotificationManager";
 import SupportModal from "../../widgets/SupportModal/SupportModal";
-import { requestNotificationPermission } from "../../utils/emailNotifications";
 
 class ProfilePage extends Death13.Component {
   private unsubscribe: (() => void) | null = null;
@@ -360,17 +359,6 @@ class ProfilePage extends Death13.Component {
     if (sidebar) {
       sidebar.classList.toggle("open");
     }
-  };
-
-  handleEnableNotifs = () => {
-    AppStorage.setNotificationsEnabled(true);
-    requestNotificationPermission();
-    NotificationManager.show(true, "notifications_enabled");
-  };
-
-  handleDisableNotifs = () => {
-    AppStorage.setNotificationsEnabled(false);
-    NotificationManager.show(true, "notifications_disabled");
   };
 
   handleEnableAnons = async () => {
@@ -786,31 +774,6 @@ class ProfilePage extends Death13.Component {
                             onChange={() => AppStorage.setLanguage("en")}
                           />
                           <label for="en">{this.t("english")}</label>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="profile__checkbox">
-                      <span>{this.t("notifications")}</span>
-                      <div className="checkbox-actions">
-                        <div className="checkbox-form">
-                          <Input
-                            id="notif-on"
-                            type="radio"
-                            name="radio-notifications"
-                            checked={AppStorage.notificationsEnabled === true}
-                            onChange={() => this.handleEnableNotifs()}
-                          />
-                          <label for="notif-on">{this.t("on")}</label>
-                        </div>
-                        <div className="checkbox-form">
-                          <Input
-                            id="notif-off"
-                            type="radio"
-                            name="radio-notifications"
-                            checked={AppStorage.notificationsEnabled === false}
-                            onChange={() => this.handleDisableNotifs()}
-                          />
-                          <label for="notif-off">{this.t("off")}</label>
                         </div>
                       </div>
                     </div>
