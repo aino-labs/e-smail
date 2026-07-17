@@ -14,11 +14,14 @@ import (
 func (r *Repository) InsertEmail(ctx context.Context, tx *sql.Tx, email models.Email) (int64, error) {
 	const query = `
 		INSERT INTO emails
-			(sender_id, sender_email, header, body_enc, wrapped_dek, key_version, is_draft)
-		VALUES ($1, $2, $3, $4, $5, 1, $6)
+			(sender_id, sender_email, header, body_enc, wrapped_dek, key_version,
+			 is_draft, is_anonymous, parent_email_id)
+		VALUES ($1, $2, $3, $4, $5, 1, $6, $7, $8)
 		RETURNING id
 	`
 
+	// Анонимные письма шифруются ровно тем же путём, что и обычные:
+	// key_version = 1, тело только в body_enc, plaintext body остаётся NULL.
 	ciphertext, wrappedDEK, err := r.encryptor.Encrypt([]byte(email.Body))
 	if err != nil {
 		return 0, fmt.Errorf("encrypt body: %w", err)
@@ -32,6 +35,8 @@ func (r *Repository) InsertEmail(ctx context.Context, tx *sql.Tx, email models.E
 		ciphertext,
 		wrappedDEK,
 		email.IsDraft,
+		email.IsAnonymous,
+		email.ParentEmailID,
 	).Scan(&id)
 	if err != nil {
 		return 0, mapPgError(err)
@@ -111,6 +116,8 @@ func (r *Repository) GetEmailByID(ctx context.Context, emailID int64) (*models.E
 			e.wrapped_dek,
 			e.key_version,
 			e.is_draft,
+			e.is_anonymous,
+			e.parent_email_id,
 			e.created_at,
 			e.updated_at,
 			COALESCE(u.image_path, ''),
@@ -135,6 +142,8 @@ func (r *Repository) GetEmailByID(ctx context.Context, emailID int64) (*models.E
 		&wrappedDEK,
 		&keyVersion,
 		&em.IsDraft,
+		&em.IsAnonymous,
+		&em.ParentEmailID,
 		&em.CreatedAt,
 		&em.UpdatedAt,
 		&em.SenderImagePath,
@@ -192,6 +201,8 @@ func (r *Repository) queryUserMailbox(
 			emails.wrapped_dek,
 			emails.key_version,
 			emails.is_draft,
+			emails.is_anonymous,
+			emails.parent_email_id,
 			emails.created_at,
 			emails.updated_at,
 			user_emails.is_read,
@@ -235,6 +246,8 @@ func (r *Repository) queryUserMailbox(
 			&wrappedDEK,
 			&keyVersion,
 			&em.IsDraft,
+			&em.IsAnonymous,
+			&em.ParentEmailID,
 			&em.CreatedAt,
 			&em.UpdatedAt,
 			&em.IsRead,
@@ -353,6 +366,8 @@ func (r *Repository) GetSentEmails(
 			emails.wrapped_dek,
 			emails.key_version,
 			emails.is_draft,
+			emails.is_anonymous,
+			emails.parent_email_id,
 			emails.created_at,
 			emails.updated_at,
 			user_emails.is_read,
@@ -395,6 +410,8 @@ func (r *Repository) GetSentEmails(
 			&wrappedDEK,
 			&keyVersion,
 			&em.IsDraft,
+			&em.IsAnonymous,
+			&em.ParentEmailID,
 			&em.CreatedAt,
 			&em.UpdatedAt,
 			&em.IsRead,

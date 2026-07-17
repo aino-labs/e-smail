@@ -55,6 +55,9 @@ func (h *Handler) InitRoutes(public, private *mux.Router) {
 	private.HandleFunc("/emails/{id:[0-9]+}/attachments", h.UploadAttachment).Methods(http.MethodPost, http.MethodOptions)
 	private.HandleFunc("/emails/{id:[0-9]+}/attachments", h.DeleteAttachments).Methods(http.MethodDelete, http.MethodOptions)
 
+	// Reply регистрируется до общего /emails/{id}, иначе gorilla/mux
+	// не дотянется до него по префиксу.
+	private.HandleFunc("/emails/{id:[0-9]+}/reply", h.Reply).Methods(http.MethodPost, http.MethodOptions)
 	private.HandleFunc("/emails/{id:[0-9]+}", h.GetEmailByID).Methods(http.MethodGet, http.MethodOptions)
 
 	// Attachment routes — note: specific path /attachments/{attachment_id} must be
@@ -86,6 +89,25 @@ func parseCommonErrors(err error, w http.ResponseWriter) {
 		return
 	}
 
+	var errAnonRejected *service.ErrAnonymousRejected
+	if errors.As(err, &errAnonRejected) {
+		// 409: письмо не отправлено, но сохранено черновиком draft_id.
+		resp := AnonymousRejectedResponse{
+			Error:          "some recipients do not accept anonymous emails",
+			RejectedEmails: errAnonRejected.Emails,
+			DraftID:        errAnonRejected.DraftID,
+		}
+		b, mErr := resp.MarshalJSON()
+		if mErr != nil {
+			response.InternalError(w)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write(b)
+		return
+	}
+
 	var errRecipientNotFound *service.ErrRecipientNotFound
 	if errors.As(err, &errRecipientNotFound) {
 		response.NotFoundWithMessage(w, "recipient not found: "+errRecipientNotFound.Email)
@@ -93,6 +115,18 @@ func parseCommonErrors(err error, w http.ResponseWriter) {
 	}
 
 	switch {
+	case errors.Is(err, service.ErrAnonymousExternal):
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{
+			"error": "anonymous emails are allowed only within e-smail.ru",
+		})
+	case errors.Is(err, service.ErrReplyTargetNotAnonymous):
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{
+			"error": "reply endpoint is allowed only on anonymous emails",
+		})
+	case errors.Is(err, service.ErrReplyByOriginalSender):
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{
+			"error": "cannot reply to your own anonymous email; use /send instead",
+		})
 	case errors.Is(err, service.ErrConflict),
 		errors.Is(err, service.ErrDraftsLimit):
 		response.StatusConflict(w)

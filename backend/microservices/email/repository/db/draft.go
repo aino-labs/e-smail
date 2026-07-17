@@ -28,9 +28,10 @@ func (r *Repository) CreateDraft(ctx context.Context, draft models.Draft) (*mode
 			wrapped_dek,
 			key_version,
 			is_draft,
+			is_anonymous,
 			body
 		)
-		SELECT $1, users.email, $2, $3, $4, 1, true, NULL FROM users WHERE users.id = $1
+		SELECT $1, users.email, $2, $3, $4, 1, true, $5, NULL FROM users WHERE users.id = $1
 		RETURNING id, sender_email, created_at, updated_at
 	`
 
@@ -46,6 +47,7 @@ func (r *Repository) CreateDraft(ctx context.Context, draft models.Draft) (*mode
 		draft.Header,
 		cipherBody,
 		wrappedDEK,
+		draft.IsAnonymous,
 	).Scan(
 		&draft.ID,
 		&draft.SenderEmail,
@@ -86,8 +88,9 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 			wrapped_dek = $3,
 			key_version = 1,
 			body = NULL,
+			is_anonymous = $4,
 			updated_at = NOW()
-		WHERE id = $4 AND sender_id = $5 AND is_draft = true
+		WHERE id = $5 AND sender_id = $6 AND is_draft = true
 	`
 
 	cipherBody, wrappedDEK, err := r.encryptor.Encrypt([]byte(draft.Body))
@@ -101,6 +104,7 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 		draft.Header,
 		cipherBody,
 		wrappedDEK,
+		draft.IsAnonymous,
 		draft.ID,
 		userID,
 	)
@@ -141,6 +145,7 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 			body_enc,
 			wrapped_dek,
 			key_version,
+			is_anonymous,
 			created_at,
 			updated_at
 		FROM emails
@@ -161,6 +166,7 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 		&cipherBody,
 		&wrappedDEK,
 		&keyVersion,
+		&d.IsAnonymous,
 		&d.CreatedAt,
 		&d.UpdatedAt,
 	)
@@ -195,6 +201,7 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 			body_enc,
 			wrapped_dek,
 			key_version,
+			is_anonymous,
 			created_at,
 			updated_at
 		FROM emails
@@ -230,6 +237,7 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 			&cipherBody,
 			&wrappedDEK,
 			&keyVersion,
+			&d.IsAnonymous,
 			&d.CreatedAt,
 			&d.UpdatedAt,
 		); err != nil {
