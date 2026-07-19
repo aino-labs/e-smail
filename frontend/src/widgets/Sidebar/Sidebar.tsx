@@ -18,7 +18,7 @@ interface SidebarProps {
   handleSetting?: () => void;
   handleFolder?: () => void;
   handleSupport?: () => void;
-  selectedFolderId: number | null;
+  selectedFolderId?: number | null;
   navigate: (path: string) => void;
 }
 

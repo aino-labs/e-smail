@@ -27,7 +27,7 @@ interface SelectDateProps {
   birthDay?: string;
   birthMonth?: string;
   birthYear?: string;
-  onChange?: (date: DateObject) => null;
+  onChange?: (date: DateObject) => void;
 }
 
 export default function SelectDate({

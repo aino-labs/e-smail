@@ -13,14 +13,14 @@ interface ProfileModalProps {
 
 const t = (key: string): string => {
   return AppStorage.t(key);
-}
+};
 
 export default function ProfileModal({
   onClose,
   onProfileClick,
   onSettingsClick,
   navigate,
-  isOpen
+  isOpen,
 }: ProfileModalProps) {
   const handleExit = async () => {
     await logOut();
@@ -67,10 +67,7 @@ export default function ProfileModal({
           {t("hello")}, {AppStorage.name}!
         </p>
         <div className="overlay__close">
-          <Button
-            svg="../../assets/svg/Close.svg"
-            onClick={onClose}
-          />
+          <Button svg="../../assets/svg/Close.svg" onClick={onClose} />
         </div>
       </div>
       <div className="overlay__avatar">

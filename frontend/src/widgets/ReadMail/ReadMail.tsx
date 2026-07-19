@@ -23,7 +23,7 @@ interface ReadMailProps {
   reloadMail?: () => void;
   backToMail?: () => void;
   backToSent?: () => void;
-  onFavoriteToggled?: () => void;
+  onFavoriteToggled?: (newState: boolean) => void;
   navigate: (path: string) => void;
   selectedFolderId: number | null;
   previousPath?: string | null;
