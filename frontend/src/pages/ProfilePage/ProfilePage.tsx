@@ -339,6 +339,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     toast.show(enabled ? "anonymous_enabled" : "anonymous_disabled", "success");
   };
 
+  const handleSupport = () => {
+    document.querySelector(".support-modal")?.classList.toggle("show");
+  };
+
   const handleSendMessage = async () => {
     if (!selectedTicketId || !chatInputText.trim()) return;
 
@@ -653,13 +657,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       <div className="profile-content">
         <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
           <FolderChange isEditMode={isFolderEditMode} />
-          <div className="profile-actions" style={{ marginTop: "20px" }}>
-            <Button
-              title={isFolderEditMode ? t("save") : t("edit")}
-              name="toggle-folder-edit"
-              onClick={handleToggleFolderEditMode}
-            />
-          </div>
         </form>
       </div>
     </div>
@@ -687,7 +684,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                 svg="../../assets/svg/Compose.svg"
                 className="small-text"
                 name="new-ticket"
-                onClick={() => setIsSupportModalOpen(!isSupportModalOpen)}
+                onClick={handleSupport}
               />
             </div>
 
@@ -781,7 +778,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
 
   return (
     <div className="profile-page" onClick={() => setIsModalOpen(false)}>
-      {isSupportModalOpen && <SupportModal />}
+      <SupportModal />
       <aside className={`sidebar ${isMobile || isSidebarOpen ? "open" : ""}`}>
         <Sidebar
           isProfile={1}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import RegPage from "./pages/RegPage/RegPage";
@@ -121,8 +121,8 @@ initEmailNotifications();
 
 const root = createRoot(rootElement);
 root.render(
-  <>
+  <StrictMode>
     <App />
     <Toaster />
-  </>,
+  </StrictMode>,
 );

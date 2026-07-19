@@ -1,10 +1,10 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect } from "react";
 import { AppStorage } from "../../stores/AppStorage";
 import "./Notification.scss";
 
 const t = (key: string): string => {
   return AppStorage.t(key);
-}
+};
 
 interface NotificationProps {
   onClose: () => void;
@@ -19,7 +19,7 @@ export default function Notification({
   isOpen,
   isStatus,
   message,
-  index
+  index,
 }: NotificationProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -43,8 +43,8 @@ export default function Notification({
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-    }
-  })
+    };
+  });
 
   const handleClose = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -59,16 +59,17 @@ export default function Notification({
 
   const bottomOffset = 40 + index * 60;
 
-  return (<div
-    className={`confirmation-modal ${isStatus ? "access" : "error"}`}
-    onClick={handleClose}
-    style={{ bottom: `${bottomOffset}px` }}
-  >
-    <div className="__title">
-      {isStatus
-        ? t(message || "saved_successfully")
-        : t(message || "server_error")}
+  return (
+    <div
+      className={`confirmation-modal ${isStatus ? "access" : "error"}`}
+      onClick={handleClose}
+      style={{ bottom: `${bottomOffset}px` }}
+    >
+      <div className="__title">
+        {isStatus
+          ? t(message || "saved_successfully")
+          : t(message || "server_error")}
+      </div>
     </div>
-  </div>
-);
+  );
 }

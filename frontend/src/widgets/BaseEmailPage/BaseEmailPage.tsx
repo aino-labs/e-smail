@@ -15,6 +15,7 @@ import { deleteDraft } from "../../api/ApiDraft";
 import { trash } from "../../api/ApiTrash";
 import { sendFavorite, unFavorite } from "../../api/ApiFavorite";
 import { formatTime } from "../../utils/date";
+import { getDraftByID } from "../../api/ApiDraft";
 
 interface BaseEmailProps {
   currentView: string;
@@ -194,7 +195,21 @@ export default function BaseEmailPage({
 
   const handleReadMail = async (email: any) => {
     if (currentView === "drafts") {
-      navigate("/send");
+      try {
+        const response = await getDraftByID(email.id);
+        if (response) {
+          const draft = await response.json();
+          AppStorage.setDraftData({
+            id: draft.id,
+            header: draft.header,
+            body: draft.body,
+            receivers: draft.receivers || [],
+          });
+          navigate("/send");
+        }
+      } catch (error) {
+        console.error("Failed to load draft:", error);
+      }
       return;
     }
 
