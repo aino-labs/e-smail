@@ -139,6 +139,10 @@ services:
       - "25:25"
     hostname: mail.e-smail.ru
     restart: unless-stopped
+    networks:
+          default:
+            aliases:
+              - mail.e-smail.ru
 
   frontend:
     image: ghcr.io/aino-labs/e-smail/frontend:latest
