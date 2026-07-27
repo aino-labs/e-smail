@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"io"
 
 	"golang.org/x/crypto/hkdf"
@@ -41,6 +42,41 @@ func New(masterKey []byte) (*Encryptor, error) {
 	return &Encryptor{
 		kekGCM: gcm,
 	}, nil
+}
+
+func (e *Encryptor) EncryptMultiple(blobs ...[]byte) ([][]byte, []byte, error) {
+	// Fill Data Encryption Key (DEK) length 32 with random values
+	dek := make([]byte, 32)
+	_, err := rand.Read(dek)
+	if err != nil {
+		return nil, nil, errors.New("failed to read DEK")
+	}
+
+	block, err := aes.NewCipher(dek)
+	if err != nil {
+		return nil, nil, errors.New("failed to create cipher for block")
+	}
+
+	blockGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, nil, errors.New("failed to create GCM for block")
+	}
+
+	encryptedTexts := make([][]byte, len(blobs))
+	for i, blob := range blobs {
+		encryptedText, err := seal(blockGCM, blob)
+		if err != nil {
+			return nil, nil, fmt.Errorf("seal blob %d: %w", i, err)
+		}
+		encryptedTexts[i] = encryptedText
+	}
+
+	wrappedDEK, err := seal(e.kekGCM, dek)
+	if err != nil {
+		return nil, nil, errors.New("failed to wrapp (seal) the DEK")
+	}
+
+	return encryptedTexts, wrappedDEK, nil
 }
 
 func (e *Encryptor) Encrypt(plaintext []byte) ([]byte, []byte, error) {
