@@ -351,6 +351,21 @@ func (m *MockService) SendEmail(arg0 context.Context, arg1 service.SendEmailInpu
 	return ret0, ret1
 }
 
+// Reply mocks base method.
+func (m *MockService) Reply(arg0 context.Context, arg1 service.ReplyInput) (*service.SendEmailResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reply", arg0, arg1)
+	ret0, _ := ret[0].(*service.SendEmailResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Reply indicates an expected call of Reply.
+func (mr *MockServiceMockRecorder) Reply(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reply", reflect.TypeOf((*MockService)(nil).Reply), arg0, arg1)
+}
+
 // SendEmail indicates an expected call of SendEmail.
 func (mr *MockServiceMockRecorder) SendEmail(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

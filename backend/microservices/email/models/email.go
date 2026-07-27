@@ -14,8 +14,18 @@ type Email struct {
 	Header      string
 	Body        string
 	IsDraft     bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+
+	// IsAnonymous — письмо отправлено анонимно. sender_id при этом всегда
+	// заполнен (см. CHECK anonymous_requires_internal_sender), маскировка
+	// отправителя происходит на уровне service, а не хранилища.
+	IsAnonymous bool
+
+	// ParentEmailID — оригинал, на который отвечают через /emails/{id}/reply.
+	// nil для обычных писем.
+	ParentEmailID *int64
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
 	Attachments []Attachment
 }
@@ -48,6 +58,7 @@ type Draft struct {
 	SenderEmail string
 	Header      string
 	Body        string
+	IsAnonymous bool
 	Recipients  []string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

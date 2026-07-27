@@ -14,7 +14,6 @@ export default class GeneratePrecacheManifest {
           },
           (assets) => {
             const svgUrls = [];
-            const fontUrls = [];
 
             for (const assetName of Object.keys(assets)) {
               if (
@@ -22,15 +21,10 @@ export default class GeneratePrecacheManifest {
                 assetName.endsWith(".svg")
               ) {
                 svgUrls.push("/" + assetName);
-              } else if (
-                assetName.startsWith("assets/font/") &&
-                assetName.endsWith(".ttf")
-              ) {
-                fontUrls.push("/" + assetName);
               }
             }
 
-            const allAssets = ["/index.html", ...svgUrls, ...fontUrls];
+            const allAssets = ["/index.html", ...svgUrls];
             const source = `const APP_SHELL = ${JSON.stringify(allAssets, null, 2)};\n`;
 
             compilation.emitAsset(

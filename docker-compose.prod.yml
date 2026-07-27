@@ -62,6 +62,7 @@ services:
     volumes:
       - ./configs:/app/configs:ro
       - ./db/migrations:/app/db/migrations:ro
+      - ./certs/postfix/fullchain.pem:/etc/ssl/certs/postfix-internal.pem:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -139,6 +140,10 @@ services:
       - "25:25"
     hostname: mail.e-smail.ru
     restart: unless-stopped
+    networks:
+          default:
+            aliases:
+              - mail.e-smail.ru
 
   frontend:
     image: ghcr.io/aino-labs/e-smail/frontend:latest

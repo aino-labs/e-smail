@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	repository "smail/microservices/email/repository/db"
 	"google.golang.org/grpc/codes"
@@ -23,6 +24,12 @@ var (
 	ErrDraftsLimit        = errors.New("drafts limit reached")
 	ErrAttachmentNotFound = errors.New("attachment not found")
 	ErrStorageUnavailable = errors.New("object storage is not configured")
+
+	// Анонимные письма.
+	ErrAnonymousExternal = errors.New("anonymous emails are allowed only within e-smail.ru")
+
+	ErrReplyTargetNotAnonymous = errors.New("reply endpoint allowed only on anonymous emails")
+	ErrReplyByOriginalSender   = errors.New("original sender cannot reply to own anonymous email")
 )
 
 // ErrSavedAsDraft возвращается когда письмо не удалось отправить через Postfix,
@@ -41,6 +48,20 @@ type ErrRecipientNotFound struct {
 
 func (e *ErrRecipientNotFound) Error() string {
 	return fmt.Sprintf("recipient not found: %s", e.Email)
+}
+
+// ErrAnonymousRejected — получатель(и) не принимают анонимки.
+// Письмо не потеряно: DraftID указывает на сохранённый черновик.
+type ErrAnonymousRejected struct {
+	Emails  []string
+	DraftID int64
+}
+
+func (e *ErrAnonymousRejected) Error() string {
+	return fmt.Sprintf(
+		"recipients reject anonymous emails: %s; saved as draft %d",
+		strings.Join(e.Emails, ", "), e.DraftID,
+	)
 }
 
 func MapRepositoryError(err error) error {

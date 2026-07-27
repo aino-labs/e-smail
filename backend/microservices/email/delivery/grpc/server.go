@@ -55,11 +55,12 @@ func (s *Server) GetEmailById(
 
 	return &emailpb.GetEmailByIdResponse{
 		Email: &emailpb.Email{
-			Id:        email.ID,
-			SenderId:  email.SenderID,
-			Header:    email.Header,
-			Body:      email.Body,
-			CreatedAt: email.CreatedAt.String(),
+			Id:          email.ID,
+			SenderId:    email.SenderID,
+			Header:      email.Header,
+			Body:        email.Body,
+			CreatedAt:   email.CreatedAt.String(),
+			IsAnonymous: email.IsAnonymous,
 		},
 	}, nil
 }
@@ -167,6 +168,7 @@ func (s *Server) GetEmailsByIds(
 			Body:          em.Body,
 			CreatedAt:     timestamppb.New(em.CreatedAt),
 			IsRead:        em.IsRead,
+			IsAnonymous:   em.IsAnonymous,
 		})
 	}
 

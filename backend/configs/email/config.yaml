@@ -46,7 +46,7 @@ drafts:
   max_per_user: 100
 
 smtp:
-  host: postfix
+  host: mail.e-smail.ru
   port: "587"
 
 lmtp:

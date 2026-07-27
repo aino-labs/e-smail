@@ -101,12 +101,24 @@ jobs:
       - name: Setup backend dir
         run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }} "mkdir -p ~/scripts ~/db"
 
+      - name: Build .env
+        env:
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: |
+          printf '%s' "$SECRETS_JSON" \
+            | jq -r 'to_entries[]
+                | select(.key | startswith("SM_"))
+                | "\(.key | ltrimstr("SM_"))=\(.value)"' \
+            > .env
+          chmod 600 .env
+
       - name: Copy files
         run: |
           scp docker-compose.prod.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
           scp -r scripts ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
           scp -r backend/configs ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
           scp -r backend/db/migrations ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/db/
+          scp .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOSTNAME }}:~/
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -117,7 +129,6 @@ jobs:
           envs: GITHUB_TOKEN,GITHUB_ACTOR
           script: |
             cd ~
-            echo "${{ secrets.PROD_ENV }}" > .env
             chmod +x scripts/deploy.sh
             ./scripts/deploy.sh $GITHUB_ACTOR $GITHUB_TOKEN
         env:
