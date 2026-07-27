@@ -44,6 +44,7 @@ func New(masterKey []byte) (*Encryptor, error) {
 	}, nil
 }
 
+// Encrypted blobs are given in the same order as given original
 func (e *Encryptor) EncryptMultiple(blobs ...[]byte) ([][]byte, []byte, error) {
 	// Fill Data Encryption Key (DEK) length 32 with random values
 	dek := make([]byte, 32)

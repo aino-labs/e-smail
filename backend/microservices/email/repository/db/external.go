@@ -14,17 +14,20 @@ func (r *Repository) InsertExternalEmail(
 		INSERT INTO emails (
 			sender_id,
 			sender_email,
-			header,
+			header_enc,
 			body_enc,
 			wrapped_dek,
 			key_version,
 			is_draft
 		)
-		VALUES (NULL, $1, $2, $3, $4, 1, false)
+		VALUES (NULL, $1, $2, $3, $4, 2, false)
 		RETURNING id
 	`
 	var id int64
-	cipherBody, wrappedDEK, err := r.encryptor.Encrypt([]byte(body))
+	encryptedTexts, wrappedDEK, err := r.encryptor.EncryptMultiple(
+		[]byte(header),
+		[]byte(body),
+	)
 	if err != nil {
 		return 0, mapPgError(err)
 	}
@@ -33,8 +36,8 @@ func (r *Repository) InsertExternalEmail(
 		ctx,
 		query,
 		senderEmail,
-		header,
-		cipherBody,
+		encryptedTexts[0],
+		encryptedTexts[1],
 		wrappedDEK,
 	).Scan(&id); err != nil {
 		return 0, mapPgError(err)

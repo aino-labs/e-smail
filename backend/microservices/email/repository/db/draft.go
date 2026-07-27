@@ -23,7 +23,7 @@ func (r *Repository) CreateDraft(ctx context.Context, draft models.Draft) (*mode
 		INSERT INTO emails (
 			sender_id,
 			sender_email,
-			header,
+			header_enc,
 			body_enc,
 			wrapped_dek,
 			key_version,
@@ -31,11 +31,14 @@ func (r *Repository) CreateDraft(ctx context.Context, draft models.Draft) (*mode
 			is_anonymous,
 			body
 		)
-		SELECT $1, users.email, $2, $3, $4, 1, true, $5, NULL FROM users WHERE users.id = $1
+		SELECT $1, users.email, $2, $3, $4, 2, true, $5, NULL FROM users WHERE users.id = $1
 		RETURNING id, sender_email, created_at, updated_at
 	`
 
-	cipherBody, wrappedDEK, err := r.encryptor.Encrypt([]byte(draft.Body))
+	encryptedTexts, wrappedDEK, err := r.encryptor.EncryptMultiple(
+		[]byte(draft.Header),
+		[]byte(draft.Body),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("encrypt body: %w", err)
 	}
@@ -44,8 +47,8 @@ func (r *Repository) CreateDraft(ctx context.Context, draft models.Draft) (*mode
 		ctx,
 		query,
 		draft.SenderID,
-		draft.Header,
-		cipherBody,
+		encryptedTexts[0], // Encrypted header
+		encryptedTexts[1], // Encrypted body
 		wrappedDEK,
 		draft.IsAnonymous,
 	).Scan(
@@ -83,7 +86,7 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 	const query = `
 		UPDATE emails
 		SET
-			header = $1,
+			header_enc = $1,
 			body_enc = $2,
 			wrapped_dek = $3,
 			key_version = 1,
@@ -93,7 +96,10 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 		WHERE id = $5 AND sender_id = $6 AND is_draft = true
 	`
 
-	cipherBody, wrappedDEK, err := r.encryptor.Encrypt([]byte(draft.Body))
+	encryptedTexts, wrappedDEK, err := r.encryptor.EncryptMultiple(
+		[]byte(draft.Header),
+		[]byte(draft.Body),
+	)
 	if err != nil {
 		return mapPgError(err)
 	}
@@ -101,8 +107,8 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 	res, err := tx.ExecContext(
 		ctx,
 		query,
-		draft.Header,
-		cipherBody,
+		encryptedTexts[0], // Encrypted header
+		encryptedTexts[1], // Encrypted bodys
 		wrappedDEK,
 		draft.IsAnonymous,
 		draft.ID,
@@ -141,6 +147,7 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 			sender_id,
 			sender_email,
 			header,
+			header_enc,s
 			body,
 			body_enc,
 			wrapped_dek,
@@ -152,18 +159,19 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 		WHERE id = $1 AND sender_id = $2 AND is_draft = true
 	`
 
-	var cipherBody []byte
+	var encryptedBody, encryptedHeader []byte
 	var wrappedDEK []byte
 	var keyVersion int
-	var plainBody sql.NullString
+	var plainBody, plainHeader sql.NullString
 
 	err := r.db.QueryRowContext(ctx, query, draftID, userID).Scan(
 		&d.ID,
 		&d.SenderID,
 		&d.SenderEmail,
-		&d.Header,
+		&plainHeader,
+		&encryptedHeader,
 		&plainBody,
-		&cipherBody,
+		&encryptedBody,
 		&wrappedDEK,
 		&keyVersion,
 		&d.IsAnonymous,
@@ -177,7 +185,12 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 		return nil, ErrQueryFail
 	}
 
-	d.Body, err = r.resolveEncryptionKey(sql.NullString{}, cipherBody, wrappedDEK, keyVersion)
+	d.Body, err = r.resolveEncryptionKey(plainBody, encryptedBody, wrappedDEK, keyVersion)
+	if err != nil {
+		return nil, mapPgError(err)
+	}
+
+	d.Header, err = r.resolveEncryptionKey(plainHeader, encryptedHeader, wrappedDEK, keyVersion)
 	if err != nil {
 		return nil, mapPgError(err)
 	}
@@ -197,6 +210,7 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 			sender_id,
 			sender_email,
 			header,
+			header_enc,
 			body,
 			body_enc,
 			wrapped_dek,
@@ -223,8 +237,8 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 	for rows.Next() {
 		var d models.Draft
 
-		var plainBody sql.NullString
-		var cipherBody []byte
+		var plainBody, plainHeader sql.NullString
+		var encryptedBody, encryptedHeader []byte
 		wrappedDEK := make([]byte, 60)
 		var keyVersion int
 
@@ -232,9 +246,10 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 			&d.ID,
 			&d.SenderID,
 			&d.SenderEmail,
-			&d.Header,
+			&plainHeader,
+			&encryptedHeader,
 			&plainBody,
-			&cipherBody,
+			&encryptedBody,
 			&wrappedDEK,
 			&keyVersion,
 			&d.IsAnonymous,
@@ -244,7 +259,12 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 			return nil, ErrQueryFail
 		}
 
-		d.Body, err = r.resolveEncryptionKey(plainBody, cipherBody, wrappedDEK, keyVersion)
+		d.Body, err = r.resolveEncryptionKey(plainBody, encryptedBody, wrappedDEK, keyVersion)
+		if err != nil {
+			return nil, mapPgError(err)
+		}
+
+		d.Header, err = r.resolveEncryptionKey(plainHeader, encryptedHeader, wrappedDEK, keyVersion)
 		if err != nil {
 			return nil, mapPgError(err)
 		}

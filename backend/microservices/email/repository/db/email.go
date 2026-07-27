@@ -14,15 +14,19 @@ import (
 func (r *Repository) InsertEmail(ctx context.Context, tx *sql.Tx, email models.Email) (int64, error) {
 	const query = `
 		INSERT INTO emails
-			(sender_id, sender_email, header, body_enc, wrapped_dek, key_version,
+			(sender_id, sender_email, header_enc, body_enc, wrapped_dek, key_version,
 			 is_draft, is_anonymous, parent_email_id)
-		VALUES ($1, $2, $3, $4, $5, 1, $6, $7, $8)
+		VALUES ($1, $2, $3, $4, $5, 2, $6, $7, $8)
 		RETURNING id
 	`
 
 	// Анонимные письма шифруются ровно тем же путём, что и обычные:
 	// key_version = 1, тело только в body_enc, plaintext body остаётся NULL.
-	ciphertext, wrappedDEK, err := r.encryptor.Encrypt([]byte(email.Body))
+	// key_version = 2, body and header are encrypted with the same DEK
+	encryptedTexts, wrappedDEK, err := r.encryptor.EncryptMultiple(
+		[]byte(email.Header),
+		[]byte(email.Body),
+	)
 	if err != nil {
 		return 0, fmt.Errorf("encrypt body: %w", err)
 	}
@@ -31,8 +35,8 @@ func (r *Repository) InsertEmail(ctx context.Context, tx *sql.Tx, email models.E
 	err = tx.QueryRowContext(ctx, query,
 		email.SenderID,
 		email.SenderEmail,
-		email.Header,
-		ciphertext,
+		encryptedTexts[0], // Encrypted header
+		encryptedTexts[1], // Encrypted body
 		wrappedDEK,
 		email.IsDraft,
 		email.IsAnonymous,
@@ -111,6 +115,7 @@ func (r *Repository) GetEmailByID(ctx context.Context, emailID int64) (*models.E
 			e.sender_id,
 			e.sender_email,
 			e.header,
+			e.header_enc,
 			e.body,
 			e.body_enc,
 			e.wrapped_dek,
@@ -128,17 +133,18 @@ func (r *Repository) GetEmailByID(ctx context.Context, emailID int64) (*models.E
 	`
 	var em models.EmailWithAvatar
 	var recipients string
-	var plainBody sql.NullString
-	var bodyEnc, wrappedDEK []byte
+	var plainBody, plainHeader sql.NullString
+	var encryptedBody, encryptedHeader, wrappedDEK []byte
 	var keyVersion int
 
 	err := r.db.QueryRowContext(ctx, query, emailID).Scan(
 		&em.ID,
 		&em.SenderID,
 		&em.SenderEmail,
-		&em.Header,
+		&plainHeader,
+		&encryptedHeader,
 		&plainBody,
-		&bodyEnc,
+		&encryptedBody,
 		&wrappedDEK,
 		&keyVersion,
 		&em.IsDraft,
@@ -157,7 +163,11 @@ func (r *Repository) GetEmailByID(ctx context.Context, emailID int64) (*models.E
 	}
 	em.Recipients = parsePgTextArray(recipients)
 
-	em.Body, err = r.resolveEncryptionKey(plainBody, bodyEnc, wrappedDEK, keyVersion)
+	em.Body, err = r.resolveEncryptionKey(plainBody, encryptedBody, wrappedDEK, keyVersion)
+	if err != nil {
+		return nil, fmt.Errorf("email %d: %w", emailID, err)
+	}
+	em.Header, err = r.resolveEncryptionKey(plainHeader, encryptedHeader, wrappedDEK, keyVersion)
 	if err != nil {
 		return nil, fmt.Errorf("email %d: %w", emailID, err)
 	}
@@ -196,6 +206,7 @@ func (r *Repository) queryUserMailbox(
 			emails.sender_id,
 			emails.sender_email,
 			emails.header,
+			emails.header_enc,
 			emails.body,
 			emails.body_enc,
 			emails.wrapped_dek,
@@ -231,8 +242,8 @@ func (r *Repository) queryUserMailbox(
 		var em models.EmailWithMetadata
 		var recipients string
 
-		var plainBody sql.NullString
-		var cipherBody []byte
+		var plainBody, plainHeader sql.NullString
+		var encryptedBody, encryptedHeader []byte
 		var wrappedDEK []byte
 		var keyVersion int
 
@@ -240,9 +251,10 @@ func (r *Repository) queryUserMailbox(
 			&em.ID,
 			&em.SenderID,
 			&em.SenderEmail,
-			&em.Header,
+			&plainHeader,
+			&encryptedHeader,
 			&plainBody,
-			&cipherBody,
+			&encryptedBody,
 			&wrappedDEK,
 			&keyVersion,
 			&em.IsDraft,
@@ -259,7 +271,12 @@ func (r *Repository) queryUserMailbox(
 		); err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 		}
-		em.Body, err = r.resolveEncryptionKey(plainBody, cipherBody, wrappedDEK, keyVersion)
+		em.Body, err = r.resolveEncryptionKey(plainBody, encryptedBody, wrappedDEK, keyVersion)
+		if err != nil {
+			return nil, mapPgError(err)
+		}
+
+		em.Header, err = r.resolveEncryptionKey(plainHeader, encryptedHeader, wrappedDEK, keyVersion)
 		if err != nil {
 			return nil, mapPgError(err)
 		}
@@ -361,6 +378,7 @@ func (r *Repository) GetSentEmails(
 			emails.sender_id,
 			emails.sender_email,
 			emails.header,
+			emails.header_enc,s
 			emails.body,
 			emails.body_enc,
 			emails.wrapped_dek,
@@ -395,8 +413,8 @@ func (r *Repository) GetSentEmails(
 		var em models.EmailWithMetadata
 		var recipients string
 
-		var plainBody sql.NullString
-		var cipherBody []byte
+		var plainBody, plainHeader sql.NullString
+		var encryptedBody, encryptedHeader []byte
 		var wrappedDEK []byte
 		var keyVersion int
 
@@ -404,9 +422,10 @@ func (r *Repository) GetSentEmails(
 			&em.ID,
 			&em.SenderID,
 			&em.SenderEmail,
-			&em.Header,
+			&plainHeader,
+			&encryptedHeader,
 			&plainBody,
-			&cipherBody,
+			&encryptedBody,
 			&wrappedDEK,
 			&keyVersion,
 			&em.IsDraft,
@@ -424,7 +443,12 @@ func (r *Repository) GetSentEmails(
 			return nil, fmt.Errorf("%w: %v", ErrQueryFail, err)
 		}
 
-		em.Body, err = r.resolveEncryptionKey(plainBody, cipherBody, wrappedDEK, keyVersion)
+		em.Body, err = r.resolveEncryptionKey(plainBody, encryptedBody, wrappedDEK, keyVersion)
+		if err != nil {
+			return nil, mapPgError(err)
+		}
+
+		em.Header, err = r.resolveEncryptionKey(plainHeader, encryptedHeader, wrappedDEK, keyVersion)
 		if err != nil {
 			return nil, mapPgError(err)
 		}
@@ -488,16 +512,21 @@ func (r *Repository) SwitchIsInbox(ctx context.Context, emailID int64, UserID in
 	return nil
 }
 
-func (r *Repository) resolveEncryptionKey(plainBody sql.NullString, bodyEnc, wrappedDEK []byte, keyVersion int) (string, error) {
+func (r *Repository) resolveEncryptionKey(
+	plainText sql.NullString,
+	encryptedText []byte,
+	wrappedDEK []byte,
+	keyVersion int,
+) (string, error) {
 	switch keyVersion {
 	case 0:
-		return plainBody.String, nil
+		return plainText.String, nil
 	case 1:
-		plaintext, err := r.encryptor.Decrypt(bodyEnc, wrappedDEK)
+		decryptedText, err := r.encryptor.Decrypt(encryptedText, wrappedDEK)
 		if err != nil {
 			return "", fmt.Errorf("decrypt body: %w", err)
 		}
-		return string(plaintext), nil
+		return string(decryptedText), nil
 	default:
 		return "", fmt.Errorf("unknown key_version %d", keyVersion)
 	}
