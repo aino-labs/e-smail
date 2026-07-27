@@ -79,35 +79,13 @@ func (e *Encryptor) EncryptMultiple(blobs ...[]byte) ([][]byte, []byte, error) {
 	return encryptedTexts, wrappedDEK, nil
 }
 
-func (e *Encryptor) Encrypt(plaintext []byte) ([]byte, []byte, error) {
-	// Fill Data Encryption Key (DEK) length 32 with random values
-	dek := make([]byte, 32)
-	_, err := rand.Read(dek)
+func (e *Encryptor) Encrypt(blob []byte) ([]byte, []byte, error) {
+	encryptedTexts, wrappedDEK, err := e.EncryptMultiple(blob)
 	if err != nil {
-		return nil, nil, errors.New("failed to read DEK")
+		return nil, nil, err
 	}
 
-	block, err := aes.NewCipher(dek)
-	if err != nil {
-		return nil, nil, errors.New("failed to create cipher for block")
-	}
-
-	blockGCM, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, nil, errors.New("failed to create GCM for block")
-	}
-
-	encryptedText, err := seal(blockGCM, plaintext)
-	if err != nil {
-		return nil, nil, errors.New("failed to seal the block")
-	}
-
-	wrappedDEK, err := seal(e.kekGCM, dek)
-	if err != nil {
-		return nil, nil, errors.New("failed to wrapp (seal) the DEK")
-	}
-
-	return encryptedText, wrappedDEK, nil
+	return encryptedTexts[0], wrappedDEK, nil
 }
 
 func (e *Encryptor) Decrypt(ciphertext []byte, wrappedDEK []byte) ([]byte, error) {
