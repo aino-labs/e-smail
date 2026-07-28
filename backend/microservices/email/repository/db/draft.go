@@ -89,7 +89,7 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 			header_enc = $1,
 			body_enc = $2,
 			wrapped_dek = $3,
-			key_version = 1,
+			key_version = 2,
 			body = NULL,
 			is_anonymous = $4,
 			updated_at = NOW()
