@@ -14,7 +14,7 @@
     "lint:fix": "eslint --fix ./src",
     "preview-dev": "webpack serve --config webpack.dev.js",
     "preview-prod": "npm run build && serve -s build -l 3000",
-    "build": "webpack --config webpack.prod.js"
+    "build": "webpack --config webpack.prod.js && node scripts/check-build.js"
   },
   "repository": {
     "type": "git",
