@@ -22,7 +22,7 @@ func (r *Repository) InsertEmail(ctx context.Context, tx *sql.Tx, email models.E
 
 	// Анонимные письма шифруются ровно тем же путём, что и обычные:
 	// key_version = 1, тело только в body_enc, plaintext body остаётся NULL.
-	// key_version = 2, body and header are encrypted with the same DEK
+	// key_version = 2, body and header are encrypted !WITH THE SAME DEK!
 	encryptedTexts, wrappedDEK, err := r.encryptor.EncryptMultiple(
 		[]byte(email.Header),
 		[]byte(email.Body),
@@ -521,7 +521,7 @@ func (r *Repository) resolveEncryptionKey(
 	switch keyVersion {
 	case 0:
 		return plainText.String, nil
-	case 1:
+	case 1, 2:
 		decryptedText, err := r.encryptor.Decrypt(encryptedText, wrappedDEK)
 		if err != nil {
 			return "", fmt.Errorf("decrypt body: %w", err)
