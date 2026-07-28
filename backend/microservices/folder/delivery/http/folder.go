@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/service"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/response"
+	"smail/microservices/folder/service"
 	"github.com/gorilla/mux"
 )
 

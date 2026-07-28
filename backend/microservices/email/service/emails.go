@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/delivery/lmtp"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/models"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/pkg/smtp"
+	"smail/microservices/email/delivery/lmtp"
+	"smail/microservices/email/models"
+	"smail/pkg/smtp"
+	userpb "smail/proto/user"
 )
 
 type GetEmailsInput struct {
@@ -46,6 +47,8 @@ type EmailResult struct {
 	CreatedAt     time.Time
 	IsRead        bool
 	IsStarred     bool
+	IsAnonymous   bool
+	ParentEmailID *int64
 }
 
 type GetMyEmailsResult struct {
@@ -63,6 +66,8 @@ type MyEmailResult struct {
 	CreatedAt       time.Time
 	IsRead          bool
 	IsStarred       bool
+	IsAnonymous     bool
+	ParentEmailID   *int64
 	ReceiversEmails []string
 }
 
@@ -80,6 +85,8 @@ type GetEmailResult struct {
 	Header          string
 	Body            string
 	IsStarred       bool
+	IsAnonymous     bool
+	ParentEmailID   *int64
 	CreatedAt       time.Time
 	SenderImagePath string
 	ReceiverList    []string
@@ -91,16 +98,22 @@ type SendEmailInput struct {
 	Body      string
 	Receivers []string
 
+	// IsAnonymous — отправить, не раскрывая отправителя получателю.
+	IsAnonymous bool
+	// ParentEmailID заполняется только из Reply.
+	ParentEmailID *int64
+
 	Files       []multipart.File
 	FileHeaders []*multipart.FileHeader
 }
 
 type SendEmailResult struct {
-	ID        int64
-	SenderID  int64
-	Header    string
-	Body      string
-	CreatedAt time.Time
+	ID          int64
+	SenderID    int64
+	Header      string
+	Body        string
+	IsAnonymous bool
+	CreatedAt   time.Time
 }
 
 type ForwardEmailInput struct {
@@ -128,7 +141,7 @@ func (s *Service) GetEmailsByReceiver(ctx context.Context, in GetEmailsInput) (*
 	if err != nil {
 		return nil, MapRepositoryError(err)
 	}
-	return s.buildEmailsResult(ctx, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
+	return s.buildEmailsResult(ctx, in.UserID, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
 }
 
 func (s *Service) GetAllEmailsByUser(ctx context.Context, in GetEmailsInput) (*GetEmailsResult, error) {
@@ -145,7 +158,7 @@ func (s *Service) GetAllEmailsByUser(ctx context.Context, in GetEmailsInput) (*G
 		return nil, MapRepositoryError(err)
 	}
 	stats.Total += sentStat
-	return s.buildEmailsResult(ctx, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
+	return s.buildEmailsResult(ctx, in.UserID, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
 }
 
 func (s *Service) GetSpamEmails(ctx context.Context, in GetEmailsInput) (*GetEmailsResult, error) {
@@ -157,7 +170,7 @@ func (s *Service) GetSpamEmails(ctx context.Context, in GetEmailsInput) (*GetEma
 	if err != nil {
 		return nil, MapRepositoryError(err)
 	}
-	return s.buildEmailsResult(ctx, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
+	return s.buildEmailsResult(ctx, in.UserID, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
 }
 
 func (s *Service) GetTrashEmails(ctx context.Context, in GetEmailsInput) (*GetEmailsResult, error) {
@@ -169,7 +182,7 @@ func (s *Service) GetTrashEmails(ctx context.Context, in GetEmailsInput) (*GetEm
 	if err != nil {
 		return nil, MapRepositoryError(err)
 	}
-	return s.buildEmailsResult(ctx, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
+	return s.buildEmailsResult(ctx, in.UserID, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
 }
 
 func (s *Service) GetFavoriteEmails(ctx context.Context, in GetEmailsInput) (*GetEmailsResult, error) {
@@ -181,7 +194,7 @@ func (s *Service) GetFavoriteEmails(ctx context.Context, in GetEmailsInput) (*Ge
 	if err != nil {
 		return nil, MapRepositoryError(err)
 	}
-	return s.buildEmailsResult(ctx, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
+	return s.buildEmailsResult(ctx, in.UserID, emails, in.Limit, in.Offset, stats.Total, stats.Unread)
 }
 
 func (s *Service) GetEmailsBySender(ctx context.Context, in GetMyEmailsInput) (*GetMyEmailsResult, error) {
@@ -203,6 +216,8 @@ func (s *Service) GetEmailsBySender(ctx context.Context, in GetMyEmailsInput) (*
 			CreatedAt:       em.CreatedAt,
 			IsRead:          em.IsRead,
 			IsStarred:       em.IsStarred,
+			IsAnonymous:     em.IsAnonymous,
+			ParentEmailID:   em.ParentEmailID,
 			ReceiversEmails: em.Recipients,
 		}
 	}
@@ -214,16 +229,30 @@ func (s *Service) GetEmailsBySender(ctx context.Context, in GetMyEmailsInput) (*
 	}, nil
 }
 
+// hideSender — единая точка решения "показывать ли отправителя".
+// Автор своё же анонимное письмо в "Отправленных" видит как своё:
+// прячем только от всех остальных.
+func hideSender(em models.EmailWithMetadata, viewerID int64) bool {
+	return em.IsAnonymous && (em.SenderID == nil || *em.SenderID != viewerID)
+}
+
 func (s *Service) buildEmailsResult(
 	ctx context.Context,
+	viewerID int64,
 	emails []models.EmailWithMetadata,
 	limit, offset, total, unread int,
 ) (*GetEmailsResult, error) {
 	out := make([]EmailResult, len(emails))
 	for i, em := range emails {
+		var senderID *int64
 		var senderEmail, senderName, senderSurname string
 
-		if em.SenderID != nil {
+		switch {
+		case hideSender(em, viewerID):
+			// Ничего не заполняем: ни SenderID, ни email/имени.
+			// Клиент по is_anonymous = true рисует "<Аноним>".
+		case em.SenderID != nil:
+			senderID = em.SenderID
 			user, err := s.userClient.GetUserByID(ctx, *em.SenderID)
 			if err != nil {
 				senderEmail = em.SenderEmail
@@ -232,13 +261,13 @@ func (s *Service) buildEmailsResult(
 				senderName = user.Name
 				senderSurname = user.Surname
 			}
-		} else {
+		default:
 			senderEmail = em.SenderEmail
 		}
 
 		out[i] = EmailResult{
 			ID:            em.ID,
-			SenderID:      em.SenderID,
+			SenderID:      senderID,
 			SenderEmail:   senderEmail,
 			SenderName:    senderName,
 			SenderSurname: senderSurname,
@@ -248,6 +277,8 @@ func (s *Service) buildEmailsResult(
 			CreatedAt:     em.CreatedAt,
 			IsRead:        em.IsRead,
 			IsStarred:     em.IsStarred,
+			IsAnonymous:   em.IsAnonymous,
+			ParentEmailID: em.ParentEmailID,
 		}
 	}
 	return &GetEmailsResult{
@@ -269,24 +300,32 @@ func (s *Service) GetEmailByID(ctx context.Context, in GetEmailInput) (*GetEmail
 	}
 
 	result := &GetEmailResult{
-		ID:              em.ID,
-		SenderID:        em.SenderID,
-		SenderEmail:     em.SenderEmail,
-		Header:          em.Header,
-		Body:            em.Body,
-		CreatedAt:       em.CreatedAt,
-		SenderImagePath: em.SenderImagePath,
-		ReceiverList:    em.Recipients,
+		ID:            em.ID,
+		Header:        em.Header,
+		Body:          em.Body,
+		CreatedAt:     em.CreatedAt,
+		ReceiverList:  em.Recipients,
+		IsAnonymous:   em.IsAnonymous,
+		ParentEmailID: em.ParentEmailID,
 	}
 
-	if em.SenderID != nil {
-		user, err := s.userClient.GetUserByID(ctx, *em.SenderID)
-		if err != nil {
-			return nil, MapRepositoryError(err)
+	// Отправителя (id/email/имя/аватар) заполняем только если письмо не
+	// анонимное или смотрит сам автор. Иначе наружу не уходит ничего,
+	// по чему можно опознать человека.
+	hide := em.IsAnonymous && (em.SenderID == nil || *em.SenderID != in.UserID)
+	if !hide {
+		result.SenderID = em.SenderID
+		result.SenderEmail = em.SenderEmail
+		result.SenderImagePath = em.SenderImagePath
+		if em.SenderID != nil {
+			user, err := s.userClient.GetUserByID(ctx, *em.SenderID)
+			if err != nil {
+				return nil, MapRepositoryError(err)
+			}
+			result.SenderEmail = user.Email
+			result.SenderName = user.Name
+			result.SenderSurname = user.Surname
 		}
-		result.SenderEmail = user.Email
-		result.SenderName = user.Name
-		result.SenderSurname = user.Surname
 	}
 
 	return result, nil
@@ -322,18 +361,23 @@ func (s *Service) GetEmailsByIDs(ctx context.Context, emailIDs []int64, userID i
 			continue
 		}
 		email := EmailResult{
-			ID:           em.ID,
-			ReceiverList: em.Recipients,
-			Header:       em.Header,
-			Body:         em.Body,
-			CreatedAt:    em.CreatedAt,
+			ID:            em.ID,
+			ReceiverList:  em.Recipients,
+			Header:        em.Header,
+			Body:          em.Body,
+			CreatedAt:     em.CreatedAt,
+			IsAnonymous:   em.IsAnonymous,
+			ParentEmailID: em.ParentEmailID,
 		}
-		if em.SenderID != nil {
+
+		hide := em.IsAnonymous && (em.SenderID == nil || *em.SenderID != userID)
+		if !hide && em.SenderID != nil {
 			senderUser, err := s.userClient.GetUserByID(ctx, *em.SenderID)
 			if err != nil {
 				return nil, MapRepositoryError(err)
 			}
 
+			email.SenderID = em.SenderID
 			email.SenderEmail = senderUser.Email
 			email.SenderName = senderUser.Name
 			email.SenderSurname = senderUser.Surname
@@ -349,11 +393,61 @@ func (s *Service) CheckEmailAccess(ctx context.Context, in GetEmailInput) error 
 }
 
 func (s *Service) SendEmail(ctx context.Context, in SendEmailInput) (*SendEmailResult, error) {
+	if in.IsAnonymous {
+		return s.sendAnonymousEmail(ctx, in)
+	}
 	recipients, err := s.resolveRecipients(ctx, in.Receivers)
 	if err != nil {
 		return nil, err
 	}
-	return s.sendEmailTx(ctx, in.UserId, in.Header, in.Body, recipients, in.Files, in.FileHeaders)
+	return s.sendEmailTx(
+		ctx, in.UserId, in.Header, in.Body, recipients,
+		in.Files, in.FileHeaders, false, in.ParentEmailID,
+	)
+}
+
+// sendAnonymousEmail проверяет два инварианта до записи в БД:
+//  1. все получатели — внутренние (наружу анонимку не выпускаем: SMTP всё равно
+//     раскроет реальный конверт, так что "анонимность" была бы ложью);
+//  2. каждый получатель включил accept_anonymous.
+//
+// Если кто-то не согласен — письмо не теряется, а сохраняется черновиком.
+func (s *Service) sendAnonymousEmail(ctx context.Context, in SendEmailInput) (*SendEmailResult, error) {
+	recipients, usersByEmail, err := s.resolveRecipientsWithUsers(ctx, in.Receivers)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range recipients {
+		if r.UserID == nil {
+			return nil, ErrAnonymousExternal
+		}
+	}
+
+	var rejected []string
+	for _, r := range recipients {
+		u := usersByEmail[r.Email]
+		if u == nil || !u.AcceptAnonymous {
+			rejected = append(rejected, r.Email)
+		}
+	}
+
+	if len(rejected) > 0 {
+		payloads, err := readFilePayloads(in.Files, in.FileHeaders)
+		if err != nil {
+			return nil, err
+		}
+		draftID, err := s.saveDraftWithPayloads(ctx, in.UserId, in.Header, in.Body, recipients, true, payloads)
+		if err != nil {
+			return nil, err
+		}
+		return nil, &ErrAnonymousRejected{Emails: rejected, DraftID: draftID}
+	}
+
+	return s.sendEmailTx(
+		ctx, in.UserId, in.Header, in.Body, recipients,
+		in.Files, in.FileHeaders, true, in.ParentEmailID,
+	)
 }
 
 func (s *Service) ForwardEmail(ctx context.Context, in ForwardEmailInput) error {
@@ -371,7 +465,7 @@ func (s *Service) ForwardEmail(ctx context.Context, in ForwardEmailInput) error 
 	if err != nil {
 		return err
 	}
-	_, err = s.sendEmailTx(ctx, in.UserID, src.Header, src.Body, recipients, nil, nil)
+	_, err = s.sendEmailTx(ctx, in.UserID, src.Header, src.Body, recipients, nil, nil, false, nil)
 	return err
 }
 
@@ -384,19 +478,7 @@ type filePayload struct {
 	size        int64
 }
 
-func (s *Service) sendEmailTx(
-	ctx context.Context,
-	senderID int64,
-	header, body string,
-	recipients []models.Recipient,
-	files []multipart.File,
-	fileHeaders []*multipart.FileHeader,
-) (*SendEmailResult, error) {
-	sender, err := s.userClient.GetUserByID(ctx, senderID)
-	if err != nil {
-		return nil, MapRepositoryError(err)
-	}
-
+func readFilePayloads(files []multipart.File, fileHeaders []*multipart.FileHeader) ([]filePayload, error) {
 	payloads := make([]filePayload, 0, len(files))
 	for i, f := range files {
 		if i >= len(fileHeaders) {
@@ -418,6 +500,28 @@ func (s *Service) sendEmailTx(
 			size:        fh.Size,
 		})
 	}
+	return payloads, nil
+}
+
+func (s *Service) sendEmailTx(
+	ctx context.Context,
+	senderID int64,
+	header, body string,
+	recipients []models.Recipient,
+	files []multipart.File,
+	fileHeaders []*multipart.FileHeader,
+	isAnonymous bool,
+	parentEmailID *int64,
+) (*SendEmailResult, error) {
+	sender, err := s.userClient.GetUserByID(ctx, senderID)
+	if err != nil {
+		return nil, MapRepositoryError(err)
+	}
+
+	payloads, err := readFilePayloads(files, fileHeaders)
+	if err != nil {
+		return nil, err
+	}
 
 	tx, err := s.repo.BeginTx(ctx)
 	if err != nil {
@@ -431,11 +535,13 @@ func (s *Service) sendEmailTx(
 	}()
 
 	emailID, err := s.repo.InsertEmail(ctx, tx, models.Email{
-		SenderID:    &senderID,
-		SenderEmail: sender.Email,
-		Header:      header,
-		Body:        body,
-		IsDraft:     false,
+		SenderID:      &senderID,
+		SenderEmail:   sender.Email,
+		Header:        header,
+		Body:          body,
+		IsDraft:       false,
+		IsAnonymous:   isAnonymous,
+		ParentEmailID: parentEmailID,
 	})
 	if err != nil {
 		return nil, MapRepositoryError(err)
@@ -484,7 +590,10 @@ func (s *Service) sendEmailTx(
 	}
 	committed = true
 
-	if s.smtpClient != nil {
+	// Анонимка наружу не уходит: sendAnonymousEmail уже гарантировал, что все
+	// получатели внутренние, но условие оставляем явным — SMTP-конверт раскрыл
+	// бы реального отправителя и обещание анонимности стало бы ложным.
+	if !isAnonymous && s.smtpClient != nil {
 		external := collectExternal(recipients)
 		if len(external) > 0 {
 			smtpAttachments := make([]smtp.Attachment, 0, len(payloads))
@@ -503,9 +612,95 @@ func (s *Service) sendEmailTx(
 	}
 
 	return &SendEmailResult{
-		ID: emailID, SenderID: senderID,
-		Header: header, Body: body, CreatedAt: time.Now(),
+		ID:          emailID,
+		SenderID:    senderID,
+		Header:      header,
+		Body:        body,
+		IsAnonymous: isAnonymous,
+		CreatedAt:   time.Now(),
 	}, nil
+}
+
+// saveDraftWithPayloads — «карман» для анонимки, которую получатель не принимает:
+// письмо вместе с вложениями кладётся в черновики отправителя, чтобы он мог
+// переслать его обычным способом или удалить.
+func (s *Service) saveDraftWithPayloads(
+	ctx context.Context,
+	senderID int64,
+	header, body string,
+	recipients []models.Recipient,
+	isAnonymous bool,
+	payloads []filePayload,
+) (int64, error) {
+	sender, err := s.userClient.GetUserByID(ctx, senderID)
+	if err != nil {
+		return 0, MapRepositoryError(err)
+	}
+
+	tx, err := s.repo.BeginTx(ctx)
+	if err != nil {
+		return 0, ErrTransaction
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// InsertEmail шифрует тело — черновик-«карман» защищён так же, как письмо.
+	emailID, err := s.repo.InsertEmail(ctx, tx, models.Email{
+		SenderID:    &senderID,
+		SenderEmail: sender.Email,
+		Header:      header,
+		Body:        body,
+		IsDraft:     true,
+		IsAnonymous: isAnonymous,
+	})
+	if err != nil {
+		return 0, MapRepositoryError(err)
+	}
+
+	if err := s.repo.InsertEmailRecipients(ctx, tx, emailID, recipients); err != nil {
+		return 0, MapRepositoryError(err)
+	}
+
+	var uploadedKeys []string
+	if len(payloads) > 0 && s.storage != nil {
+		for _, p := range payloads {
+			key, err := s.storage.UploadAttachment(
+				ctx, emailID, p.filename, bytes.NewReader(p.data), p.size, p.contentType,
+			)
+			if err != nil {
+				for _, k := range uploadedKeys {
+					_ = s.storage.DeleteAttachment(ctx, k)
+				}
+				return 0, err
+			}
+			uploadedKeys = append(uploadedKeys, key)
+			if _, err := s.repo.InsertAttachment(ctx, tx, models.Attachment{
+				EmailID:     emailID,
+				FileName:    p.filename,
+				ContentType: p.contentType,
+				SizeBytes:   p.size,
+				StoragePath: key,
+			}); err != nil {
+				for _, k := range uploadedKeys {
+					_ = s.storage.DeleteAttachment(ctx, k)
+				}
+				return 0, MapRepositoryError(err)
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		for _, k := range uploadedKeys {
+			_ = s.storage.DeleteAttachment(ctx, k)
+		}
+		return 0, ErrTransaction
+	}
+	committed = true
+	return emailID, nil
 }
 
 func (s *Service) ReceiveExternalEmail(ctx context.Context, from string, to []string, subject string, parsed lmtp.ParsedEmail) error {
@@ -629,16 +824,25 @@ func (s *Service) UnblockSenders(ctx context.Context, in BatchInput) error {
 }
 
 func (s *Service) resolveRecipients(ctx context.Context, emails []string) ([]models.Recipient, error) {
+	recipients, _, err := s.resolveRecipientsWithUsers(ctx, emails)
+	return recipients, err
+}
+
+// resolveRecipientsWithUsers дополнительно отдаёт сами userpb.User, чтобы
+// анонимная отправка могла прочитать accept_anonymous без второго RPC.
+func (s *Service) resolveRecipientsWithUsers(
+	ctx context.Context, emails []string,
+) ([]models.Recipient, map[string]*userpb.User, error) {
 	if len(emails) == 0 {
-		return nil, ErrNoValidReceivers
+		return nil, nil, ErrNoValidReceivers
 	}
 	users, err := s.userClient.GetUsersByEmails(ctx, emails)
 	if err != nil {
-		return nil, MapRepositoryError(err)
+		return nil, nil, MapRepositoryError(err)
 	}
-	byEmail := make(map[string]int64, len(users))
+	byEmail := make(map[string]*userpb.User, len(users))
 	for _, u := range users {
-		byEmail[u.Email] = u.Id
+		byEmail[u.Email] = u
 	}
 
 	out := make([]models.Recipient, 0, len(emails))
@@ -646,15 +850,16 @@ func (s *Service) resolveRecipients(ctx context.Context, emails []string) ([]mod
 		domain := extractDomain(e)
 		rec := models.Recipient{Email: e}
 
-		if id, ok := byEmail[e]; ok {
+		if u, ok := byEmail[e]; ok {
+			id := u.Id
 			rec.UserID = &id
 		} else if isLocalDomain(domain) {
-			return nil, &ErrRecipientNotFound{Email: e}
+			return nil, nil, &ErrRecipientNotFound{Email: e}
 		}
 		out = append(out, rec)
 	}
 
-	return out, nil
+	return out, byEmail, nil
 }
 
 func collectExternal(recipients []models.Recipient) []string {

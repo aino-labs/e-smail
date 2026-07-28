@@ -4,20 +4,21 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/service"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/response"
+	"smail/microservices/email/service"
 )
 
 func draftToResponse(r *service.DraftResult) DraftResponse {
 	return DraftResponse{
-		ID:        r.ID,
-		SenderID:  r.SenderID,
-		Header:    r.Header,
-		Body:      r.Body,
-		Receivers: r.Recipients,
-		CreatedAt: r.CreatedAt,
-		UpdatedAt: r.UpdatedAt,
+		ID:          r.ID,
+		SenderID:    r.SenderID,
+		Header:      r.Header,
+		Body:        r.Body,
+		Receivers:   r.Recipients,
+		IsAnonymous: r.IsAnonymous,
+		CreatedAt:   r.CreatedAt,
+		UpdatedAt:   r.UpdatedAt,
 	}
 }
 
@@ -39,6 +40,7 @@ func (h *Handler) CreateDraft(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := h.service.CreateDraft(r.Context(), service.CreateDraftInput{
 		UserID: userID, Header: req.Header, Body: req.Body, Receivers: req.Receivers,
+		IsAnonymous: req.IsAnonymous,
 	})
 	if err != nil {
 		logger.Errorf("CreateDraft: user_id=%d, err=%v", userID, err)
@@ -46,13 +48,14 @@ func (h *Handler) CreateDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := DraftResponse{
-		ID:        result.ID,
-		SenderID:  result.SenderID,
-		Header:    result.Header,
-		Body:      result.Body,
-		Receivers: result.Recipients,
-		CreatedAt: result.CreatedAt,
-		UpdatedAt: result.UpdatedAt,
+		ID:          result.ID,
+		SenderID:    result.SenderID,
+		Header:      result.Header,
+		Body:        result.Body,
+		Receivers:   result.Recipients,
+		IsAnonymous: result.IsAnonymous,
+		CreatedAt:   result.CreatedAt,
+		UpdatedAt:   result.UpdatedAt,
 	}
 
 	b, err := resp.MarshalJSON()
@@ -92,6 +95,7 @@ func (h *Handler) UpdateDraft(w http.ResponseWriter, r *http.Request) {
 	result, err := h.service.UpdateDraft(r.Context(), service.UpdateDraftInput{
 		UserID: userID, DraftID: draftID,
 		Header: req.Header, Body: req.Body, Receivers: req.Receivers,
+		IsAnonymous: req.IsAnonymous,
 	})
 	if err != nil {
 		logger.Errorf("UpdateDraft: user_id=%d, draft_id=%d, err=%v", userID, draftID, err)
@@ -99,13 +103,14 @@ func (h *Handler) UpdateDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := DraftResponse{
-		ID:        result.ID,
-		SenderID:  result.SenderID,
-		Header:    result.Header,
-		Body:      result.Body,
-		Receivers: result.Recipients,
-		CreatedAt: result.CreatedAt,
-		UpdatedAt: result.UpdatedAt,
+		ID:          result.ID,
+		SenderID:    result.SenderID,
+		Header:      result.Header,
+		Body:        result.Body,
+		Receivers:   result.Recipients,
+		IsAnonymous: result.IsAnonymous,
+		CreatedAt:   result.CreatedAt,
+		UpdatedAt:   result.UpdatedAt,
 	}
 
 	b, err := resp.MarshalJSON()
@@ -142,13 +147,14 @@ func (h *Handler) GetDraftByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := DraftResponse{
-		ID:        result.ID,
-		SenderID:  result.SenderID,
-		Header:    result.Header,
-		Body:      result.Body,
-		Receivers: result.Recipients,
-		CreatedAt: result.CreatedAt,
-		UpdatedAt: result.UpdatedAt,
+		ID:          result.ID,
+		SenderID:    result.SenderID,
+		Header:      result.Header,
+		Body:        result.Body,
+		Receivers:   result.Recipients,
+		IsAnonymous: result.IsAnonymous,
+		CreatedAt:   result.CreatedAt,
+		UpdatedAt:   result.UpdatedAt,
 	}
 
 	b, err := resp.MarshalJSON()

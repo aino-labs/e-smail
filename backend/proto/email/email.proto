@@ -47,6 +47,8 @@ message Email {
     string header = 3;
     string body = 4;
     string created_at = 5;
+    // Письмо помечено как анонимное при отправке.
+    bool is_anonymous = 6;
 }
 
 message GetEmailByIdRequest {
@@ -82,6 +84,11 @@ message FolderEmail {
   google.protobuf.Timestamp created_at = 8;
 
   bool is_read = 9;
+
+  // Если true — клиент показывает "<Аноним>" вместо sender_*.
+  // Сервер сам решает, очищать ли sender_* для конкретного зрителя
+  // (см. service.GetEmailsByIDs).
+  bool is_anonymous = 10;
 }
 
 message GetEmailsByIdsRequest {

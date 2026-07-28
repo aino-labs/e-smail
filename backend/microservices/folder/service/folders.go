@@ -1,5 +1,5 @@
-//go:generate mockgen -destination=../../../mocks/app/folder/mock_repository.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/service Repository
-//go:generate mockgen -destination=../../../mocks/app/folder/mock_email_client.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/service EmailClient
+//go:generate mockgen -destination=../../../mocks/app/folder/mock_repository.go -package=mocks smail/microservices/folder/service Repository
+//go:generate mockgen -destination=../../../mocks/app/folder/mock_email_client.go -package=mocks smail/microservices/folder/service EmailClient
 
 package service
 
@@ -8,9 +8,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/models"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/repository"
-	emailpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/email"
+	"smail/microservices/folder/models"
+	"smail/microservices/folder/repository"
+	emailpb "smail/proto/email"
 )
 
 var (

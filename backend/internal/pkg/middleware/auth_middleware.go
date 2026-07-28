@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/utils"
+	"smail/internal/pkg/response"
+	"smail/internal/pkg/utils"
 )
 
 type ctxKey string

@@ -1,4 +1,4 @@
-//go:generate mockgen -destination=../../../../mocks/app/email/mock_email_service.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/delivery/http Service
+//go:generate mockgen -destination=../../../../mocks/app/email/mock_email_service.go -package=mocks smail/microservices/email/delivery/http Service
 
 package handler
 
@@ -7,10 +7,11 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/service"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/response"
+	"smail/microservices/email/service"
 )
 
 // maxSendFormSize limits the entire multipart body when sending an email with attachments.
@@ -22,6 +23,7 @@ type Service interface {
 	GetEmailsBySender(ctx context.Context, in service.GetMyEmailsInput) (*service.GetMyEmailsResult, error)
 	GetEmailByID(ctx context.Context, in service.GetEmailInput) (*service.GetEmailResult, error)
 	SendEmail(ctx context.Context, in service.SendEmailInput) (*service.SendEmailResult, error)
+	Reply(ctx context.Context, in service.ReplyInput) (*service.SendEmailResult, error)
 	ForwardEmail(ctx context.Context, in service.ForwardEmailInput) error
 	MarkEmailAsRead(ctx context.Context, in service.MarkAsReadInput) error
 	MarkEmailAsUnRead(ctx context.Context, in service.MarkAsReadInput) error
@@ -66,6 +68,8 @@ func emailToDTO(em service.EmailResult) EmailResponse {
 		CreatedAt:     em.CreatedAt,
 		IsRead:        em.IsRead,
 		IsStarred:     em.IsStarred,
+		IsAnonymous:   em.IsAnonymous,
+		ParentEmailID: em.ParentEmailID,
 	}
 }
 
@@ -127,6 +131,14 @@ func (h *Handler) SendEmail(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// is_anonymous приходит строкой "true"/"false". Отсутствие поля или
+		// мусор в нём трактуем как false — старые клиенты не ломаются.
+		if v := r.FormValue("is_anonymous"); v != "" {
+			if parsed, err := strconv.ParseBool(v); err == nil {
+				in.IsAnonymous = parsed
+			}
+		}
+
 		// Collect uploaded files.
 		if r.MultipartForm != nil {
 			for _, fhs := range r.MultipartForm.File {
@@ -158,6 +170,7 @@ func (h *Handler) SendEmail(w http.ResponseWriter, r *http.Request) {
 		in.Header = req.Header
 		in.Body = req.Body
 		in.Receivers = req.Receivers
+		in.IsAnonymous = req.IsAnonymous
 	}
 
 	if (in.Header == "" && in.Body == "") || !validEmails(in.Receivers) {
@@ -172,8 +185,13 @@ func (h *Handler) SendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := SendEmailResponse{
-		ID: result.ID, SenderID: result.SenderID,
-		Header: result.Header, Body: result.Body, CreatedAt: result.CreatedAt,
+		ID:            result.ID,
+		SenderID:      result.SenderID,
+		Header:        result.Header,
+		Body:          result.Body,
+		IsAnonymous:   result.IsAnonymous,
+		ParentEmailID: in.ParentEmailID,
+		CreatedAt:     result.CreatedAt,
 	}
 
 	b, err := resp.MarshalJSON()
@@ -279,6 +297,8 @@ func (h *Handler) GetSentEmails(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:       em.CreatedAt,
 			IsRead:          em.IsRead,
 			IsStarred:       em.IsStarred,
+			IsAnonymous:     em.IsAnonymous,
+			ParentEmailID:   em.ParentEmailID,
 			ReceiversEmails: em.ReceiversEmails,
 		}
 	}
@@ -330,6 +350,8 @@ func (h *Handler) GetEmailByID(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:       result.CreatedAt,
 		SenderImagePath: result.SenderImagePath,
 		ReceiverList:    result.ReceiverList,
+		IsAnonymous:     result.IsAnonymous,
+		ParentEmailID:   result.ParentEmailID,
 	}
 
 	b, err := resp.MarshalJSON()

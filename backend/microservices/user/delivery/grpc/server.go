@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service"
-	userpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/user"
+	"smail/microservices/user/service"
+	userpb "smail/proto/user"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,13 +47,14 @@ func (s *Server) GetUserById(
 
 	return &userpb.GetUserByIdResponse{
 		User: &userpb.User{
-			Id:        user.UserID,
-			Email:     user.Email,
-			Name:      user.Name,
-			Surname:   user.Surname,
-			ImagePath: user.ImagePath,
-			IsMale:    isMale,
-			Birthdate: birthdate,
+			Id:              user.UserID,
+			Email:           user.Email,
+			Name:            user.Name,
+			Surname:         user.Surname,
+			ImagePath:       user.ImagePath,
+			IsMale:          isMale,
+			Birthdate:       birthdate,
+			AcceptAnonymous: user.AcceptAnonymous,
 		},
 	}, nil
 }
@@ -87,13 +88,14 @@ func (s *Server) GetUsersByEmails(
 	pbUsers := make([]*userpb.User, 0, len(users))
 	for _, u := range users {
 		pbUsers = append(pbUsers, &userpb.User{
-			Id:        u.ID,
-			Email:     u.Email,
-			Name:      u.Name,
-			Surname:   u.Surname,
-			ImagePath: u.ImagePath,
-			IsMale:    u.IsMale,
-			Birthdate: u.Birthdate,
+			Id:              u.ID,
+			Email:           u.Email,
+			Name:            u.Name,
+			Surname:         u.Surname,
+			ImagePath:       u.ImagePath,
+			IsMale:          u.IsMale,
+			Birthdate:       u.Birthdate,
+			AcceptAnonymous: u.AcceptAnonymous,
 		})
 	}
 	return &userpb.GetUsersByEmailsResponse{Users: pbUsers}, nil

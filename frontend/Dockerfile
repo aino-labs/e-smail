@@ -11,7 +11,7 @@ COPY . .
 RUN npm run build
 
 #базовый образ
-FROM nginx:alpine 
+FROM nginx:alpine
 
 COPY --from=build /app/build/ /build
 

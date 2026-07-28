@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/models"
+	"smail/microservices/email/models"
 )
 
 func (r *Repository) CreateDraft(ctx context.Context, draft models.Draft) (*models.Draft, error) {
@@ -19,12 +19,43 @@ func (r *Repository) CreateDraft(ctx context.Context, draft models.Draft) (*mode
 		_ = tx.Rollback()
 	}()
 
-	err = tx.QueryRowContext(ctx, `
-		INSERT INTO emails (sender_id, sender_email, header, body, is_draft)
-		SELECT $1, u.email, $2, $3, true FROM users u WHERE u.id = $1
+	const query = `
+		INSERT INTO emails (
+			sender_id,
+			sender_email,
+			header_enc,
+			body_enc,
+			wrapped_dek,
+			key_version,
+			is_draft,
+			is_anonymous,
+			body
+		)
+		SELECT $1, users.email, $2, $3, $4, 2, true, $5, NULL FROM users WHERE users.id = $1
 		RETURNING id, sender_email, created_at, updated_at
-	`, draft.SenderID, draft.Header, draft.Body).Scan(
-		&draft.ID, &draft.SenderEmail, &draft.CreatedAt, &draft.UpdatedAt,
+	`
+
+	encryptedTexts, wrappedDEK, err := r.encryptor.EncryptMultiple(
+		[]byte(draft.Header),
+		[]byte(draft.Body),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encrypt body: %w", err)
+	}
+
+	err = tx.QueryRowContext(
+		ctx,
+		query,
+		draft.SenderID,
+		encryptedTexts[0], // Encrypted header
+		encryptedTexts[1], // Encrypted body
+		wrappedDEK,
+		draft.IsAnonymous,
+	).Scan(
+		&draft.ID,
+		&draft.SenderEmail,
+		&draft.CreatedAt,
+		&draft.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -52,11 +83,37 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 		_ = tx.Rollback()
 	}()
 
-	res, err := tx.ExecContext(ctx, `
+	const query = `
 		UPDATE emails
-		SET header = $1, body = $2, updated_at = NOW()
-		WHERE id = $3 AND sender_id = $4 AND is_draft = true
-	`, draft.Header, draft.Body, draft.ID, userID)
+		SET
+			header_enc = $1,
+			body_enc = $2,
+			wrapped_dek = $3,
+			key_version = 2,
+			body = NULL,
+			is_anonymous = $4,
+			updated_at = NOW()
+		WHERE id = $5 AND sender_id = $6 AND is_draft = true
+	`
+
+	encryptedTexts, wrappedDEK, err := r.encryptor.EncryptMultiple(
+		[]byte(draft.Header),
+		[]byte(draft.Body),
+	)
+	if err != nil {
+		return mapPgError(err)
+	}
+
+	res, err := tx.ExecContext(
+		ctx,
+		query,
+		encryptedTexts[0], // Encrypted header
+		encryptedTexts[1], // Encrypted bodys
+		wrappedDEK,
+		draft.IsAnonymous,
+		draft.ID,
+		userID,
+	)
 	if err != nil {
 		return mapPgError(err)
 	}
@@ -84,16 +141,40 @@ func (r *Repository) UpdateDraft(ctx context.Context, userID int64, draft models
 
 func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*models.Draft, error) {
 	var d models.Draft
-	err := r.db.QueryRowContext(ctx, `
-		SELECT id, sender_id, sender_email, header, body, created_at, updated_at
+	const query = `
+		SELECT
+			id,
+			sender_id,
+			sender_email,
+			header,
+			header_enc,s
+			body,
+			body_enc,
+			wrapped_dek,
+			key_version,
+			is_anonymous,
+			created_at,
+			updated_at
 		FROM emails
 		WHERE id = $1 AND sender_id = $2 AND is_draft = true
-	`, draftID, userID).Scan(
+	`
+
+	var encryptedBody, encryptedHeader []byte
+	var wrappedDEK []byte
+	var keyVersion int
+	var plainBody, plainHeader sql.NullString
+
+	err := r.db.QueryRowContext(ctx, query, draftID, userID).Scan(
 		&d.ID,
 		&d.SenderID,
 		&d.SenderEmail,
-		&d.Header,
-		&d.Body,
+		&plainHeader,
+		&encryptedHeader,
+		&plainBody,
+		&encryptedBody,
+		&wrappedDEK,
+		&keyVersion,
+		&d.IsAnonymous,
 		&d.CreatedAt,
 		&d.UpdatedAt,
 	)
@@ -102,6 +183,16 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 	}
 	if err != nil {
 		return nil, ErrQueryFail
+	}
+
+	d.Body, err = r.resolveEncryptionKey(plainBody, encryptedBody, wrappedDEK, keyVersion)
+	if err != nil {
+		return nil, mapPgError(err)
+	}
+
+	d.Header, err = r.resolveEncryptionKey(plainHeader, encryptedHeader, wrappedDEK, keyVersion)
+	if err != nil {
+		return nil, mapPgError(err)
 	}
 
 	drafts := []models.Draft{d}
@@ -114,7 +205,19 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 
 func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset int) ([]models.Draft, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, sender_id, sender_email, header, body, created_at, updated_at
+		SELECT
+			id,
+			sender_id,
+			sender_email,
+			header,
+			header_enc,
+			body,
+			body_enc,
+			wrapped_dek,
+			key_version,
+			is_anonymous,
+			created_at,
+			updated_at
 		FROM emails
 		WHERE sender_id = $1 AND is_draft = true
 		ORDER BY created_at DESC
@@ -133,9 +236,39 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 
 	for rows.Next() {
 		var d models.Draft
-		if err := rows.Scan(&d.ID, &d.SenderID, &d.SenderEmail, &d.Header, &d.Body, &d.CreatedAt, &d.UpdatedAt); err != nil {
+
+		var plainBody, plainHeader sql.NullString
+		var encryptedBody, encryptedHeader []byte
+		wrappedDEK := make([]byte, 60)
+		var keyVersion int
+
+		if err := rows.Scan(
+			&d.ID,
+			&d.SenderID,
+			&d.SenderEmail,
+			&plainHeader,
+			&encryptedHeader,
+			&plainBody,
+			&encryptedBody,
+			&wrappedDEK,
+			&keyVersion,
+			&d.IsAnonymous,
+			&d.CreatedAt,
+			&d.UpdatedAt,
+		); err != nil {
 			return nil, ErrQueryFail
 		}
+
+		d.Body, err = r.resolveEncryptionKey(plainBody, encryptedBody, wrappedDEK, keyVersion)
+		if err != nil {
+			return nil, mapPgError(err)
+		}
+
+		d.Header, err = r.resolveEncryptionKey(plainHeader, encryptedHeader, wrappedDEK, keyVersion)
+		if err != nil {
+			return nil, mapPgError(err)
+		}
+
 		idxByID[d.ID] = len(drafts)
 		drafts = append(drafts, d)
 		ids = append(ids, d.ID)

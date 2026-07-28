@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service"
-	mocks "github.com/go-park-mail-ru/2026_1_PushToMain/mocks/app/user"
-	userpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/user"
+	"smail/microservices/user/service"
+	mocks "smail/mocks/app/user"
+	userpb "smail/proto/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"

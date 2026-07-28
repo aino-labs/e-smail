@@ -1,14 +1,16 @@
 importScripts("/precache-assets.js");
 
-const CACHE_NAME = "app-v3";
-let lastShownEmailId = null;
+const CACHE_NAME = "app-v4";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(APP_SHELL);
-    }),
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      await Promise.allSettled(
+        APP_SHELL.map((url) => cache.add(new Request(url, { cache: "no-cache" }))),
+      );
+    })(),
   );
 });
 
@@ -23,9 +25,6 @@ self.addEventListener("activate", (event) => {
       );
 
       await self.clients.claim();
-
-      const allClients = await self.clients.matchAll({ type: "window" });
-      allClients.forEach((client) => client.navigate(client.url));
     })(),
   );
 });
@@ -36,7 +35,11 @@ self.addEventListener("fetch", (event) => {
 
   if (req.method !== "GET") return;
 
+  if (url.origin !== self.location.origin) return;
+
   if (url.pathname.startsWith("/api/")) return;
+
+  if (url.pathname.startsWith("/avatars/")) return;
 
   if (
     url.pathname.includes("hot-update") ||
@@ -51,11 +54,14 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       (async () => {
         try {
-          // bypass the browser’s HTTP cache completely
-          const network = await fetch(req, { cache: "no-cache" });
-          // update the cache so the offline fallback is fresh
-          const cache = await caches.open(CACHE_NAME);
-          cache.put("/index.html", network.clone());
+          const network = await fetch(req.url, {
+            cache: "no-cache",
+            credentials: "same-origin",
+          });
+          if (network.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put("/index.html", network.clone());
+          }
           return network;
         } catch {
           const cache = await caches.open(CACHE_NAME);
@@ -69,15 +75,19 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     (async () => {
+      const cache = await caches.open(CACHE_NAME);
       try {
         const networkResponse = await fetch(req);
-        if (networkResponse.status === 200) {
-          const cache = await caches.open(CACHE_NAME);
+        const contentType = networkResponse.headers.get("content-type") || "";
+        if (
+          networkResponse.status === 200 &&
+          !contentType.includes("text/html")
+        ) {
           cache.put(req, networkResponse.clone());
         }
         return networkResponse;
       } catch (networkError) {
-        const cached = await caches.match(req);
+        const cached = await cache.match(req);
         if (cached) return cached;
 
         if (req.destination === "image") {
@@ -89,39 +99,5 @@ self.addEventListener("fetch", (event) => {
         return new Response("Resource not available offline", { status: 503 });
       }
     })(),
-  );
-});
-
-self.addEventListener("message", (event) => {
-  const { title, body, icon, url, emailId } = event.data;
-  if (emailId && lastShownEmailId === emailId) return;
-  if (emailId) lastShownEmailId = emailId;
-
-  const options = {
-    body: body || "You have a new email",
-    icon: icon || "/images/email-icon.png",
-    badge: "/images/badge-icon.png",
-    data: { url: url || "/" },
-    requireInteraction: false,
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(title || "New Email", options),
-  );
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const urlToOpen = event.notification.data?.url || "/";
-
-  event.waitUntil(
-    clients.matchAll({ type: "window" }).then((windowClients) => {
-      for (const client of windowClients) {
-        if (client.url === urlToOpen && "focus" in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) return clients.openWindow(urlToOpen);
-    }),
   );
 });

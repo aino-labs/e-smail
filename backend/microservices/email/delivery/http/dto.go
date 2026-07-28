@@ -4,24 +4,34 @@ import "time"
 
 //easyjson:json
 type SendEmailRequest struct {
-	Header    string   `json:"header"`
-	Body      string   `json:"body"`
-	Receivers []string `json:"receivers"`
+	Header      string   `json:"header"`
+	Body        string   `json:"body"`
+	Receivers   []string `json:"receivers"`
+	IsAnonymous bool     `json:"is_anonymous"`
 }
 
 //easyjson:json
 type SendEmailResponse struct {
-	ID        int64     `json:"email_id"`
-	SenderID  int64     `json:"from"`
-	Header    string    `json:"header"`
-	Body      string    `json:"body"`
-	CreatedAt time.Time `json:"created_at"`
+	ID            int64     `json:"email_id"`
+	SenderID      int64     `json:"from"`
+	Header        string    `json:"header"`
+	Body          string    `json:"body"`
+	IsAnonymous   bool      `json:"is_anonymous"`
+	ParentEmailID *int64    `json:"parent_email_id,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 //easyjson:json
 type ForwardEmailRequest struct {
 	EmailID   int64    `json:"email_id"`
 	Receivers []string `json:"receivers"`
+}
+
+//easyjson:json
+type ReplyRequest struct {
+	Header      string `json:"header"`
+	Body        string `json:"body"`
+	IsAnonymous bool   `json:"is_anonymous"`
 }
 
 //easyjson:json
@@ -36,6 +46,8 @@ type EmailResponse struct {
 	CreatedAt     time.Time `json:"created_at"`
 	IsRead        bool      `json:"is_read"`
 	IsStarred     bool      `json:"is_starred"`
+	IsAnonymous   bool      `json:"is_anonymous"`
+	ParentEmailID *int64    `json:"parent_email_id,omitempty"`
 }
 
 //easyjson:json
@@ -55,6 +67,8 @@ type MyEmailResponse struct {
 	CreatedAt       time.Time `json:"created_at"`
 	IsRead          bool      `json:"is_read"`
 	IsStarred       bool      `json:"is_starred"`
+	IsAnonymous     bool      `json:"is_anonymous"`
+	ParentEmailID   *int64    `json:"parent_email_id,omitempty"`
 	ReceiversEmails []string  `json:"receivers_emails"`
 }
 
@@ -77,6 +91,8 @@ type GetEmailResponse struct {
 	CreatedAt       time.Time `json:"created_at"`
 	SenderImagePath string    `json:"sender_image_path"`
 	ReceiverList    []string  `json:"receiver_list"`
+	IsAnonymous     bool      `json:"is_anonymous"`
+	ParentEmailID   *int64    `json:"parent_email_id,omitempty"`
 }
 
 //easyjson:json
@@ -91,27 +107,30 @@ type IDsRequest struct {
 
 //easyjson:json
 type CreateDraftRequest struct {
-	Header    string   `json:"header"`
-	Body      string   `json:"body"`
-	Receivers []string `json:"receivers"`
+	Header      string   `json:"header"`
+	Body        string   `json:"body"`
+	Receivers   []string `json:"receivers"`
+	IsAnonymous bool     `json:"is_anonymous"`
 }
 
 //easyjson:json
 type UpdateDraftRequest struct {
-	Header    string   `json:"header"`
-	Body      string   `json:"body"`
-	Receivers []string `json:"receivers"`
+	Header      string   `json:"header"`
+	Body        string   `json:"body"`
+	Receivers   []string `json:"receivers"`
+	IsAnonymous bool     `json:"is_anonymous"`
 }
 
 //easyjson:json
 type DraftResponse struct {
-	ID        int64     `json:"id"`
-	SenderID  int64     `json:"sender_id"`
-	Header    string    `json:"header"`
-	Body      string    `json:"body"`
-	Receivers []string  `json:"receivers"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID          int64     `json:"id"`
+	SenderID    int64     `json:"sender_id"`
+	Header      string    `json:"header"`
+	Body        string    `json:"body"`
+	Receivers   []string  `json:"receivers"`
+	IsAnonymous bool      `json:"is_anonymous"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 //easyjson:json
@@ -120,6 +139,15 @@ type GetDraftsResponse struct {
 	Limit  int             `json:"limit"`
 	Offset int             `json:"offset"`
 	Total  int             `json:"total"`
+}
+
+// AnonymousRejectedResponse — 409 при попытке отправить анонимку тому, кто их
+// не принимает. Письмо не теряется: оно сохранено черновиком с draft_id.
+//easyjson:json
+type AnonymousRejectedResponse struct {
+	Error          string   `json:"error"`
+	RejectedEmails []string `json:"rejected_emails"`
+	DraftID        int64    `json:"draft_id"`
 }
 
 // ─── Attachment DTOs ──────────────────────────────────────────────────────────

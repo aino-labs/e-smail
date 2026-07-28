@@ -1,12 +1,12 @@
-//go:generate mockgen -destination=../../../../mocks/app/folder/mock_handler_service.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/delivery/http Service
+//go:generate mockgen -destination=../../../../mocks/app/folder/mock_handler_service.go -package=mocks smail/microservices/folder/delivery/http Service
 package handler
 
 import (
 	"errors"
 	"net/http"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/folder/service"
+	"smail/internal/pkg/response"
+	"smail/microservices/folder/service"
 	"github.com/gorilla/mux"
 )
 

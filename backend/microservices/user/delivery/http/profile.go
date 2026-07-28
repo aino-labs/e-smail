@@ -9,9 +9,9 @@ import (
 	"slices"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/response"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service"
+	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/response"
+	"smail/microservices/user/service"
 )
 
 //easyjson:json
@@ -29,8 +29,9 @@ type GetMeResponse struct {
 	ImagePath string   `json:"image_path"`
 	Folders   []Folder `json:"folder"`
 
-	IsMale    *bool      `json:"is_male,omitempty"`
-	Birthdate *time.Time `json:"birthdate,omitempty"`
+	IsMale          *bool      `json:"is_male,omitempty"`
+	Birthdate       *time.Time `json:"birthdate,omitempty"`
+	AcceptAnonymous bool       `json:"accept_anonymous"`
 }
 
 func (handler *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
@@ -63,14 +64,15 @@ func (handler *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := GetMeResponse{
-		ID:        result.UserID,
-		Email:     result.Email,
-		Name:      result.Name,
-		Surname:   result.Surname,
-		ImagePath: result.ImagePath,
-		IsMale:    result.IsMale,
-		Birthdate: result.Birthdate,
-		Folders:   folders,
+		ID:              result.UserID,
+		Email:           result.Email,
+		Name:            result.Name,
+		Surname:         result.Surname,
+		ImagePath:       result.ImagePath,
+		IsMale:          result.IsMale,
+		Birthdate:       result.Birthdate,
+		AcceptAnonymous: result.AcceptAnonymous,
+		Folders:         folders,
 	}
 
 	b, err := resp.MarshalJSON()
@@ -143,6 +145,10 @@ type UpdateProfileRequest struct {
 	Surname   string     `json:"surname"`
 	Birthdate *time.Time `json:"birthdate"` // ISO-8601 формат 2000-02-20
 	IsMale    *bool      `json:"is_male"`
+
+	// AcceptAnonymous опционален: не прислали — не трогаем (PATCH-семантика).
+	// Старые клиенты, ничего не знающие про поле, профиль не ломают.
+	AcceptAnonymous *bool `json:"accept_anonymous"`
 }
 
 // @Summary      Обновить профиль пользователя
@@ -192,11 +198,12 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.service.UpdateProfile(r.Context(), service.UpdateProfileInput{
-		UserID:    payload.UserId,
-		Name:      req.Name,
-		Surname:   req.Surname,
-		IsMale:    req.IsMale,
-		Birthdate: req.Birthdate,
+		UserID:          payload.UserId,
+		Name:            req.Name,
+		Surname:         req.Surname,
+		IsMale:          req.IsMale,
+		Birthdate:       req.Birthdate,
+		AcceptAnonymous: req.AcceptAnonymous,
 	})
 	if err != nil {
 		logger.Errorf("Failed to update profile: %v", err)

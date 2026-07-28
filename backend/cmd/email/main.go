@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 
-	_ "github.com/go-park-mail-ru/2026_1_PushToMain/docs"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/email/app"
+	_ "smail/docs"
+	"smail/microservices/email/app"
 )
 
 // @title           Smail API

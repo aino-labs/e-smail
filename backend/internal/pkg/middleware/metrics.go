@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/metrics"
+	"smail/internal/pkg/metrics"
 	"github.com/gorilla/mux"
 )
 

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/models"
+	"smail/microservices/user/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -88,7 +88,7 @@ func TestRepository_UpdateProfile(t *testing.T) {
 			repo := &Repository{userDb: db}
 			tt.mockSetup(mock)
 
-			err = repo.UpdateProfile(context.Background(), tt.userID, tt.nameParam, tt.surname, nil, nil)
+			err = repo.UpdateProfile(context.Background(), tt.userID, tt.nameParam, tt.surname, nil, nil, nil)
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else {

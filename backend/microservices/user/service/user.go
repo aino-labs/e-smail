@@ -1,6 +1,6 @@
-//go:generate mockgen -destination=../../../../mocks/app/user/mock_db_repository.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service DbRepository
-//go:generate mockgen -destination=../../../../mocks/app/user/mock_s3_repository.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service S3Repository
-//go:generate mockgen -destination=../../../../mocks/app/user/mock_jwt_manager.go -package=mocks github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/service JWTManager
+//go:generate mockgen -destination=../../../../mocks/app/user/mock_db_repository.go -package=mocks smail/microservices/user/service DbRepository
+//go:generate mockgen -destination=../../../../mocks/app/user/mock_s3_repository.go -package=mocks smail/microservices/user/service S3Repository
+//go:generate mockgen -destination=../../../../mocks/app/user/mock_jwt_manager.go -package=mocks smail/microservices/user/service JWTManager
 
 package service
 
@@ -12,10 +12,11 @@ import (
 	"io"
 	"time"
 
-	"github.com/go-park-mail-ru/2026_1_PushToMain/internal/pkg/utils"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/models"
-	"github.com/go-park-mail-ru/2026_1_PushToMain/microservices/user/repository/db"
-	folderpb "github.com/go-park-mail-ru/2026_1_PushToMain/proto/folder"
+	"smail/internal/pkg/utils"
+	"smail/microservices/user/models"
+	"smail/microservices/user/repository/db"
+	folderpb "smail/proto/folder"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -38,7 +39,14 @@ type DbRepository interface {
 	UpdateAvatar(ctx context.Context, userID int64, imagePath string) error
 	FindByID(ctx context.Context, userID int64) (*models.User, error)
 	UpdatePassword(ctx context.Context, userID int64, passwordHash string) error
-	UpdateProfile(ctx context.Context, userID int64, name, surname string, isMale *bool, birthdate *time.Time) error
+	UpdateProfile(
+		ctx context.Context,
+		userID int64,
+		name, surname string,
+		isMale *bool,
+		birthdate *time.Time,
+		acceptAnonymous *bool,
+	) error
 	FindByEmails(ctx context.Context, emails []string) ([]models.User, error)
 	GetUserPasswordByID(ctx context.Context, userID int64) (string, error)
 }
@@ -97,14 +105,15 @@ type Folder struct {
 }
 
 type GetMeResult struct {
-	UserID    int64
-	Email     string
-	Name      string
-	Surname   string
-	ImagePath string
-	IsMale    *bool
-	Birthdate *time.Time
-	Folders   []Folder
+	UserID          int64
+	Email           string
+	Name            string
+	Surname         string
+	ImagePath       string
+	IsMale          *bool
+	Birthdate       *time.Time
+	AcceptAnonymous bool
+	Folders         []Folder
 }
 
 func (s *Service) GetMe(ctx context.Context, userID int64) (*GetMeResult, error) {
@@ -125,15 +134,21 @@ func (s *Service) GetMe(ctx context.Context, userID int64) (*GetMeResult, error)
 		}
 	}
 
+	acceptAnonymous := false
+	if user.AcceptAnonymous != nil {
+		acceptAnonymous = *user.AcceptAnonymous
+	}
+
 	return &GetMeResult{
-		UserID:    user.ID,
-		Email:     user.Email,
-		Name:      user.Name,
-		Surname:   user.Surname,
-		ImagePath: user.ImagePath,
-		IsMale:    user.IsMale,
-		Birthdate: user.Birthdate,
-		Folders:   folders,
+		UserID:          user.ID,
+		Email:           user.Email,
+		Name:            user.Name,
+		Surname:         user.Surname,
+		ImagePath:       user.ImagePath,
+		IsMale:          user.IsMale,
+		Birthdate:       user.Birthdate,
+		AcceptAnonymous: acceptAnonymous,
+		Folders:         folders,
 	}, nil
 }
 
@@ -143,10 +158,21 @@ type UpdateProfileInput struct {
 	Surname   string
 	IsMale    *bool
 	Birthdate *time.Time
+
+	// nil ⇒ не менять (запрос без поля).
+	AcceptAnonymous *bool
 }
 
 func (s *Service) UpdateProfile(ctx context.Context, input UpdateProfileInput) error {
-	err := s.userDB.UpdateProfile(ctx, input.UserID, input.Name, input.Surname, input.IsMale, input.Birthdate)
+	err := s.userDB.UpdateProfile(
+		ctx,
+		input.UserID,
+		input.Name,
+		input.Surname,
+		input.IsMale,
+		input.Birthdate,
+		input.AcceptAnonymous,
+	)
 	if err != nil {
 		return MapRepositoryError(err)
 	}
@@ -255,13 +281,14 @@ func (s *Service) GenerateToken() (string, error) {
 }
 
 type UserInfo struct {
-	ID        int64
-	Email     string
-	Name      string
-	Surname   string
-	ImagePath string
-	IsMale    bool
-	Birthdate string
+	ID              int64
+	Email           string
+	Name            string
+	Surname         string
+	ImagePath       string
+	IsMale          bool
+	Birthdate       string
+	AcceptAnonymous bool
 }
 
 func (s *Service) GetUsersByEmails(ctx context.Context, emails []string) ([]UserInfo, error) {
@@ -280,14 +307,19 @@ func (s *Service) GetUsersByEmails(ctx context.Context, emails []string) ([]User
 		if u.IsMale != nil {
 			isMale = *u.IsMale
 		}
+		acceptAnonymous := false
+		if u.AcceptAnonymous != nil {
+			acceptAnonymous = *u.AcceptAnonymous
+		}
 		out[i] = UserInfo{
-			ID:        u.ID,
-			Email:     u.Email,
-			Name:      u.Name,
-			Surname:   u.Surname,
-			ImagePath: u.ImagePath,
-			IsMale:    isMale,
-			Birthdate: birthdate,
+			ID:              u.ID,
+			Email:           u.Email,
+			Name:            u.Name,
+			Surname:         u.Surname,
+			ImagePath:       u.ImagePath,
+			IsMale:          isMale,
+			Birthdate:       birthdate,
+			AcceptAnonymous: acceptAnonymous,
 		}
 	}
 	return out, nil
