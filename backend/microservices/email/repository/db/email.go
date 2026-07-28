@@ -527,7 +527,7 @@ func (r *Repository) resolveEncryptionKey(
 		}
 		if len(wrappedDEK) == 0 {
 			return "", fmt.Errorf("key_version %d, but wrapped_dek is empty", keyVersion)
-		}а
+		}
 		decryptedText, err := r.encryptor.Decrypt(encryptedText, wrappedDEK)
 		if err != nil {
 			return "", fmt.Errorf("decrypt body: %w", err)
