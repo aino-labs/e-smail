@@ -18,8 +18,8 @@ import SupportPage from "./pages/SupportPage/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage/AdminSupportPage";
 import Toaster from "./widgets/Toaster/Toaster";
 import { initEmailNotifications } from "./utils/emailNotifications";
-import { AppStorage } from "./stores/AppStorage";
-import "./stores/OfflineManager";
+import { AppStorage } from "./store/AppStorage";
+import "./store/OfflineManager";
 
 const routes: Record<string, React.ComponentType<any>> = {
   "/login": LoginPage,

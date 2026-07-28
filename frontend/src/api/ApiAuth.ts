@@ -1,4 +1,4 @@
-import { AppStorage } from "../stores/AppStorage";
+import { AppStorage } from "../store/AppStorage";
 import { USER_URL } from "./config";
 /**
  * Отправляет POST-запрос на эндпоинт /login с данными.

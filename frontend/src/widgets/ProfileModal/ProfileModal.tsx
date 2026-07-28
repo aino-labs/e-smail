@@ -1,7 +1,8 @@
 import "./ProfileModal.scss";
 import Button from "../../components/Button/Button";
 import { logOut } from "../../api/ApiAuth";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface ProfileModalProps {
   onClose: () => void;
@@ -11,10 +12,6 @@ interface ProfileModalProps {
   isOpen: boolean;
 }
 
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
-
 export default function ProfileModal({
   onClose,
   onProfileClick,
@@ -22,6 +19,8 @@ export default function ProfileModal({
   navigate,
   isOpen,
 }: ProfileModalProps) {
+  const { t, language } = useTranslation();
+
   const handleExit = async () => {
     await logOut();
 

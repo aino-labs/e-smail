@@ -4,17 +4,15 @@ import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
 import { postDataReg, getProfile } from "../../api/ApiAuth";
 import "./RegPage.scss";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface RegPageProps {
   navigate: (path: string) => void;
 }
 
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
-
 export default function RegPage({ navigate }: RegPageProps) {
+  const { t, language } = useTranslation();
   const [step, setStep] = useState<number>(1);
   const [formData, setFormData] = useState<Record<string, string>>({
     name: "",

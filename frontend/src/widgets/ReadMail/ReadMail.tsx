@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "./ReadMail.scss";
 import Input from "../../components/Input/Input";
 import Textarea from "../../components/Textarea/Textarea";
 import HorizontalScroller from "../../components/HorizontalScroller/HorizontalScroller";
 import MailTools from "../MailTools/MailTools";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
 import { URLMINIO } from "../../api/config";
 import { deleteEmailsFromFolder } from "../../api/ApiFolder";
 import { sendSpam } from "../../api/ApiSpam";
@@ -16,6 +16,7 @@ import {
   getIconByContentType,
   trimFileName,
 } from "../../utils/files";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface ReadMailProps {
   email?: any;
@@ -29,10 +30,6 @@ interface ReadMailProps {
   previousPath?: string | null;
 }
 
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
-
 export default function ReadMail({
   email,
   selectedEmails,
@@ -44,6 +41,7 @@ export default function ReadMail({
   selectedFolderId,
   previousPath,
 }: ReadMailProps) {
+  const { t, language } = useTranslation();
   const [attachments, setAttachments] = useState<any[]>([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState<boolean>(false);
 

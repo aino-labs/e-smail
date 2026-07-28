@@ -1,6 +1,6 @@
 import BaseEmailPage from "../../widgets/BaseEmailPage/BaseEmailPage";
 import { getDrafts, getDraftByID, deleteDraft } from "../../api/ApiDraft";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
 
 interface DraftsPageProps {
   navigate: (path: string) => void;

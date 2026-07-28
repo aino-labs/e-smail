@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import "./FolderChange.scss";
 import Button from "../../components/Button/Button";
-import { AppStorage } from "../../stores/AppStorage";
-import { toast } from "../../stores/toastStore";
+import { AppStorage } from "../../store/AppStorage";
+import { toast } from "../../store/toastStore";
 import { getProfile } from "../../api/ApiAuth";
 import {
   createNewFolder,
@@ -10,18 +10,16 @@ import {
   deleteFolder,
 } from "../../api/ApiFolder";
 import ConfirmationDialog from "../../widgets/ConfirmationDialog/ConfirmationDialog";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface FolderChangeProps {
   isEditMode: boolean;
 }
 
-const t = (key: string) => {
-  return AppStorage.t ? AppStorage.t(key) : key;
-};
-
 export default function FolderChange({
   isEditMode = false,
 }: FolderChangeProps) {
+  const { t, language } = useTranslation();
   const [folders, setFolders] = useState<any[]>(() => {
     return Array.isArray(AppStorage.folders) ? AppStorage.folders : [];
   });

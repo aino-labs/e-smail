@@ -6,9 +6,9 @@ import "./SendEmailPage.scss";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
 import NotificationManager from "../../widgets/Toaster/Toaster";
 import Input from "../../components/Input/Input";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
 import { getProfile } from "../../api/ApiAuth";
-import { toast } from "../../stores/toastStore";
+import { toast } from "../../store/toastStore";
 
 interface SendEmailPageProps {
   navigate: (route: string) => void;

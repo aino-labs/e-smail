@@ -1,8 +1,8 @@
 import Button from "../../components/Button/Button";
 import "./MailTools.scss";
-import { AppStorage } from "../../stores/AppStorage";
 import { sendSpam, unSpam } from "../../api/ApiSpam";
 import { sendFavorite, unFavorite } from "../../api/ApiFavorite";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface MailToolsProps {
   email?: any;
@@ -15,10 +15,6 @@ interface MailToolsProps {
   reloadMail?: () => void;
 }
 
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
-
 export default function MailTools({
   email,
   isFavorite,
@@ -29,6 +25,8 @@ export default function MailTools({
   backToMail,
   reloadMail,
 }: MailToolsProps) {
+  const { t, language } = useTranslation();
+
   const handleDeleteClick = async (event: React.MouseEvent) => {
     event.preventDefault();
     await deleteEmail?.();

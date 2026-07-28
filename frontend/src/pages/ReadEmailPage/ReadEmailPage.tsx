@@ -5,7 +5,8 @@ import Button from "../../components/Button/Button";
 import ReadMail from "../../widgets/ReadMail/ReadMail";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
 import { getEmailByID } from "../../api/ApiEmail";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface ReadEmailPageProps {
   id: number | string;
@@ -27,13 +28,12 @@ interface EmailState {
   is_favorite?: boolean;
 }
 
-const t = (key: string): string => AppStorage.t(key);
-
 export default function ReadEmailPage({
   id,
   navigate,
   previousPath,
 }: ReadEmailPageProps) {
+  const { t, language } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPress, setIsPress] = useState<number>(0);
   const [currentView] = useState<string>("read");

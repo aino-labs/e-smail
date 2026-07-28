@@ -4,7 +4,7 @@ import {
   getEmailsFromFolder,
   deleteEmailsFromFolder,
 } from "../../api/ApiFolder";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
 
 interface FolderPageProps {
   folderId?: string | number;

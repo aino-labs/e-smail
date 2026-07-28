@@ -9,13 +9,14 @@ import { readEmail, seacrhEmail, unReadEmail } from "../../api/ApiEmail";
 import "./BaseEmailPage.scss";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
 import SupportModal from "../../widgets/SupportModal/SupportModal";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
 import { addEmailsInFolder, deleteEmailsFromFolder } from "../../api/ApiFolder";
 import { deleteDraft } from "../../api/ApiDraft";
 import { trash } from "../../api/ApiTrash";
 import { sendFavorite, unFavorite } from "../../api/ApiFavorite";
 import { formatTime } from "../../utils/date";
 import { getDraftByID } from "../../api/ApiDraft";
+import { TranslationKey, useTranslation } from "../../hooks/useTranslation";
 
 interface BaseEmailProps {
   currentView: string;
@@ -42,10 +43,6 @@ interface BaseEmailState {
   total: number;
 }
 
-const t = (key: string) => {
-  return AppStorage.t ? AppStorage.t(key) : key;
-};
-
 export default function BaseEmailPage({
   currentView = "inbox",
   fetchEmails,
@@ -57,6 +54,8 @@ export default function BaseEmailPage({
   currentFolderName = "",
   navigate,
 }: BaseEmailProps) {
+  const { t, language } = useTranslation();
+
   const lastFolderId = useRef<number | null>(null);
   const initialLoadDone = useRef<boolean>(false);
 
@@ -419,7 +418,9 @@ export default function BaseEmailPage({
   // --- Render Layout Setup ---
   const selectedArray = getSelectedArray();
   const mobileHeaderTitle =
-    currentView === "folder" ? currentFolderName : t(currentView);
+    currentView === "folder"
+      ? currentFolderName
+      : t(currentView as TranslationKey);
 
   return (
     <div className="main-page" onClick={handleCloseModal}>

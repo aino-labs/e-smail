@@ -1,4 +1,4 @@
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
 import "./SidebarProfile.scss";
 import Button from "../Button/Button";
 import { logOut } from "../../api/ApiAuth";

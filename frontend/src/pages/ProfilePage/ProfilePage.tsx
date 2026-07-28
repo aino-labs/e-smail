@@ -7,13 +7,14 @@ import UploadAvatar from "../../components/UploadAvatar/UploadAvatar";
 import { validation } from "../../utils/validation";
 import { changePassword, getProfile, changeProfile } from "../../api/ApiAuth";
 import { getMyTickets, getMessages, answerTicket } from "../../api/ApiSupport";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
 import FolderChange from "../../widgets/FolderChange/FolderChange";
-import NotificationManager from "../../widgets/Toaster/Toaster";
 import SupportModal from "../../widgets/SupportModal/SupportModal";
 import SelectDate from "../../components/SelectDate/SelectDate";
 import { requestNotificationPermission } from "../../utils/emailNotifications";
-import { toast } from "../../stores/toastStore";
+import { toast } from "../../store/toastStore";
+import { useTranslation } from "../../hooks/useTranslation";
+import { useSettingsStore } from "../../store/useSettingsStore";
 
 type ProfileTabId = 0 | 1 | 2 | 3 | 4;
 
@@ -22,13 +23,25 @@ interface ProfilePageProps {
 }
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
+  const { t } = useTranslation();
+
+  const {
+    theme,
+    setTheme,
+    language,
+    setLanguage,
+    notificationsEnabled,
+    setNotificationsEnabled,
+    anonymousEnabled,
+    setAnonymousEnabled,
+  } = useSettingsStore();
+
   const shouldOpenSettings = AppStorage.getOpenSettingsOnProfile();
 
   // State Declarations
   const [profileState, setProfileState] = useState<ProfileTabId>(
     shouldOpenSettings ? 2 : 0,
   );
-  const [language, setLanguage] = useState<string>(AppStorage.language);
   const [name, setName] = useState<string>(AppStorage.name || "");
   const [surname, setSurname] = useState<string>(AppStorage.surname || "");
   const [email, setEmail] = useState<string>(AppStorage.email || "");
@@ -68,9 +81,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
 
   // Keep a mutable ref of selectedTicketId for the polling interval closure
   const selectedTicketIdRef = useRef<number | null>(null);
-  selectedTicketIdRef.current = selectedTicketId;
+  useEffect(() => {
+    selectedTicketIdRef.current = selectedTicketId;
+  }, [selectedTicketId]);
 
-  const t = (key: string): string => AppStorage.t(key);
   const isMobile = window.innerWidth < 769;
 
   // Sync tab layout based on current URL path
@@ -144,13 +158,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     syncTabFromUrl();
 
     window.addEventListener("popstate", syncTabFromUrl);
-    const unsubscribeStorage = AppStorage.subscribe(() => {
-      setLanguage(AppStorage.language);
-    });
 
     return () => {
       window.removeEventListener("popstate", syncTabFromUrl);
-      unsubscribeStorage();
     };
   }, []);
 
@@ -318,14 +328,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   };
 
   const handleEnableNotifs = () => {
-    AppStorage.setNotificationsEnabled(true);
+    setNotificationsEnabled(true);
     requestNotificationPermission();
-    toast.show("notifications_enabled", "success");
+    toast.show(t("notifications_enabled"), "success");
   };
 
   const handleDisableNotifs = () => {
-    AppStorage.setNotificationsEnabled(false);
-    toast.show("notifications_disabled", "success");
+    setNotificationsEnabled(false);
+    toast.show(t("notifications_disabled"), "success");
   };
 
   const toggleAnonymousMode = async (enabled: boolean) => {
@@ -335,8 +345,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       is_male: isMale ? "true" : "false",
       accept_anonymous: enabled,
     });
-    AppStorage.setAnonymousEnabled(enabled);
-    toast.show(enabled ? "anonymous_enabled" : "anonymous_disabled", "success");
+    setAnonymousEnabled(enabled);
+    toast.show(
+      enabled ? t("anonymous_enabled") : t("anonymous_disabled"),
+      "success",
+    );
   };
 
   const handleSupport = () => {
@@ -545,8 +558,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="dark"
                   type="radio"
                   name="radio-theme"
-                  checked={AppStorage.theme === "dark"}
-                  onChange={() => AppStorage.setTheme("dark")}
+                  checked={theme === "dark"}
+                  onChange={() => setTheme("dark")}
                 />
                 <label htmlFor="dark">{t("dark_theme")}</label>
               </div>
@@ -555,8 +568,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="light"
                   type="radio"
                   name="radio-theme"
-                  checked={AppStorage.theme === "light"}
-                  onChange={() => AppStorage.setTheme("light")}
+                  checked={theme === "light"}
+                  onChange={() => setTheme("light")}
                 />
                 <label htmlFor="light">{t("light_theme")}</label>
               </div>
@@ -570,8 +583,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="ru"
                   type="radio"
                   name="radio-language"
-                  checked={AppStorage.language === "ru"}
-                  onChange={() => AppStorage.setLanguage("ru")}
+                  checked={language === "ru"}
+                  onChange={() => setLanguage("ru")}
                 />
                 <label htmlFor="ru">{t("russian")}</label>
               </div>
@@ -580,8 +593,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="en"
                   type="radio"
                   name="radio-language"
-                  checked={AppStorage.language === "en"}
-                  onChange={() => AppStorage.setLanguage("en")}
+                  checked={language === "en"}
+                  onChange={() => setLanguage("en")}
                 />
                 <label htmlFor="en">{t("english")}</label>
               </div>
@@ -595,7 +608,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="notif-on"
                   type="radio"
                   name="radio-notifications"
-                  checked={AppStorage.notificationsEnabled === true}
+                  checked={notificationsEnabled}
                   onChange={handleEnableNotifs}
                 />
                 <label htmlFor="notif-on">{t("on")}</label>
@@ -605,7 +618,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="notif-off"
                   type="radio"
                   name="radio-notifications"
-                  checked={AppStorage.notificationsEnabled === false}
+                  checked={!notificationsEnabled}
                   onChange={handleDisableNotifs}
                 />
                 <label htmlFor="notif-off">{t("off")}</label>
@@ -620,7 +633,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="anon-on"
                   type="radio"
                   name="radio-anonymous"
-                  checked={AppStorage.anonymousEnabled === true}
+                  checked={anonymousEnabled === true}
                   onChange={() => toggleAnonymousMode(true)}
                 />
                 <label htmlFor="anon-on">{t("allow")}</label>
@@ -630,7 +643,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="anon-off"
                   type="radio"
                   name="radio-anonymous"
-                  checked={AppStorage.anonymousEnabled === false}
+                  checked={anonymousEnabled === false}
                   onChange={() => toggleAnonymousMode(false)}
                 />
                 <label htmlFor="anon-off">{t("not_allow")}</label>

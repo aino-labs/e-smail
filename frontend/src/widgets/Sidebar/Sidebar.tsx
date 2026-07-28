@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import Button from "../../components/Button/Button";
 import "./Sidebar.scss";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
 import SidebarProfile from "../../components/SidebarProfile/SidebarProfile";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface SidebarProps {
   isProfile: number;
@@ -22,10 +23,6 @@ interface SidebarProps {
   navigate: (path: string) => void;
 }
 
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
-
 export default function Sidebar({
   isProfile = 0,
   isPressProfile,
@@ -43,6 +40,8 @@ export default function Sidebar({
   selectedFolderId,
   navigate,
 }: SidebarProps) {
+  const { t, language } = useTranslation();
+
   const [isVisible, setIsVisible] = useState(
     AppStorage.getSidebarDropdownVisible() || false,
   );

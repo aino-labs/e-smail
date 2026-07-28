@@ -3,6 +3,8 @@ import "./Footer.scss";
 
 const VERSION = `v${__APP_VERSION__}`;
 
+// TODO: rewrite to react?
+
 class Footer extends Death13.Component {
   render() {
     return (

@@ -1,9 +1,5 @@
-import { AppStorage } from "../../stores/AppStorage";
+import { useTranslation } from "../../hooks/useTranslation";
 import "./MailBox.scss";
-
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
 
 const trimEmailAddress = (email: string): string => {
   return email.substring(0, email.lastIndexOf("@"));
@@ -53,6 +49,8 @@ export default function MailBox({
   isFavorite,
   isAnonymous,
 }: MailBoxProps) {
+  const { t, language } = useTranslation();
+
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     const isChecked = e.target.checked;

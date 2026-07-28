@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useTransition } from "react";
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import "./MailHeader.scss";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
 import { getEmailsSpam, sendSpam, unSpam } from "../../api/ApiSpam";
 import { sendFavorite, unFavorite } from "../../api/ApiFavorite";
 import { getEmailsTrash, untrash } from "../../api/ApiTrash";
 import { readEmail, unReadEmail } from "../../api/ApiEmail";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface MailHeaderProps {
   onSelectAll?: (isChecked: boolean) => void;
@@ -26,10 +27,6 @@ interface MailHeaderProps {
   isLoading: boolean;
 }
 
-const t = (key: string): string => {
-  return AppStorage.t(key);
-}
-
 export default function MailHeader({
   onSelectAll,
   loadEmail,
@@ -45,8 +42,10 @@ export default function MailHeader({
   mainPage = false,
   selectedCount = 0,
   isSelectAll = false,
-  isLoading = false
+  isLoading = false,
 }: MailHeaderProps) {
+  const { t, language } = useTranslation();
+
   const [showFolderList, setShowFolderList] = useState<boolean>(false);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +73,10 @@ export default function MailHeader({
     setShowFolderList(!showFolderList);
   };
 
-  const handleFolderSelect = (folderId: number, e: React.MouseEvent<HTMLElement>) => {
+  const handleFolderSelect = (
+    folderId: number,
+    e: React.MouseEvent<HTMLElement>,
+  ) => {
     e.stopPropagation();
     setShowFolderList(false);
     onMoveToFolder?.(folderId);
@@ -96,7 +98,9 @@ export default function MailHeader({
     }
   };
 
-  const handleUnMarkAsFavorite = async (event: React.MouseEvent<HTMLElement>) => {
+  const handleUnMarkAsFavorite = async (
+    event: React.MouseEvent<HTMLElement>,
+  ) => {
     event.preventDefault();
     if (selectedEmails && selectedEmails.length > 0) {
       await unFavorite(selectedEmails);
@@ -124,7 +128,6 @@ export default function MailHeader({
   const handleMoveToInbox = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (selectedEmails && selectedEmails.length > 0) {
-
       if (currentView === "trash") {
         await untrash(selectedEmails);
         await getEmailsTrash(0);
@@ -241,7 +244,7 @@ export default function MailHeader({
                 help={t("trash")}
                 onClick={(event: any) => {
                   event.preventDefault();
-                  onDelete?.()
+                  onDelete?.();
                 }}
               />
             </div>
@@ -317,5 +320,5 @@ export default function MailHeader({
         </div>
       ) : null}
     </div>
-  )
+  );
 }

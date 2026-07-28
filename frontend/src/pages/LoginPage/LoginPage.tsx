@@ -4,7 +4,8 @@ import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
 import { postDataLogin, getProfile } from "../../api/ApiAuth";
 import "./LoginPage.scss";
-import { AppStorage } from "../../stores/AppStorage";
+import { AppStorage } from "../../store/AppStorage";
+import { useTranslation } from "../../hooks/useTranslation";
 
 const SUFFIX = "@e-smail.ru";
 
@@ -12,11 +13,8 @@ interface LoginPageProps {
   navigate: (path: string) => void;
 }
 
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
-
 export default function LoginPage({ navigate }: LoginPageProps) {
+  const { t, language } = useTranslation();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");

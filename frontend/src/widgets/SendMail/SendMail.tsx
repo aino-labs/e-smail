@@ -4,7 +4,6 @@ import InputEmail from "../../components/InputEmail/InputEmail";
 import Input from "../../components/Input/Input";
 import Textarea from "../../components/Textarea/Textarea";
 import Button from "../../components/Button/Button";
-import NotificationManager from "../Toaster/Toaster";
 import ConfirmationDialog from "../../widgets/ConfirmationDialog/ConfirmationDialog";
 import HorizontalScroller from "../../components/HorizontalScroller/HorizontalScroller";
 import { sendEmail, replyToEmail } from "../../api/ApiEmail";
@@ -13,25 +12,24 @@ import {
   getAttachments,
   deleteAttachments,
 } from "../../api/ApiAttachments";
-import { AppStorage } from "../../stores/AppStorage";
-import { toast } from "../../stores/toastStore";
+import { AppStorage } from "../../store/AppStorage";
+import { toast } from "../../store/toastStore";
 import { createDraft, sendDraft, updateDraft } from "../../api/ApiDraft";
 import {
   formatFileSize,
   getIconByContentType,
   trimFileName,
 } from "../../utils/files";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface SendMailProps {
   actionData?: any;
   backToMail?: () => void;
 }
 
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
-
 export default function SendMail({ actionData, backToMail }: SendMailProps) {
+  const { t, language } = useTranslation();
+
   const initialData = useMemo(() => {
     const draftData = AppStorage.getDraftData();
 
@@ -501,8 +499,8 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
       {showDraftConfirm && (
         <ConfirmationDialog
           text={t("confirm_save_draft")}
-          cancelButtonTitle={t("delete_draft")}
-          confirmButtonTitle={t("save_draft")}
+          cancelButtonTitle={"delete_draft"}
+          confirmButtonTitle={"save_draft"}
           callbackCancel={handleCancel}
           callbackConfirm={handleSaveDraft}
           highlightCancel={false}

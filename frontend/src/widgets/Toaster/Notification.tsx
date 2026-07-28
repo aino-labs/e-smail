@@ -1,10 +1,6 @@
 import { useRef, useEffect } from "react";
-import { AppStorage } from "../../stores/AppStorage";
 import "./Notification.scss";
-
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface NotificationProps {
   onClose: () => void;
@@ -21,6 +17,8 @@ export default function Notification({
   message,
   index,
 }: NotificationProps) {
+  const { t, language } = useTranslation();
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -66,9 +64,7 @@ export default function Notification({
       style={{ bottom: `${bottomOffset}px` }}
     >
       <div className="__title">
-        {isStatus
-          ? t(message || "saved_successfully")
-          : t(message || "server_error")}
+        {isStatus ? message || "saved_successfully" : message || "server_error"}
       </div>
     </div>
   );

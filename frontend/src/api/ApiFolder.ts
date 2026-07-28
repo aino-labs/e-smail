@@ -1,5 +1,5 @@
 import { FOLDER_URL } from "./config";
-import { AppStorage } from "../stores/AppStorage";
+import { AppStorage } from "../store/AppStorage";
 
 export async function createNewFolder(folderName: string = "Новая папка") {
     try {
