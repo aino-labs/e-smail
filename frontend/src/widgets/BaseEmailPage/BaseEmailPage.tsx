@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import Sidebar from "../../widgets/Sidebar/Sidebar";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
@@ -81,11 +81,11 @@ export default function BaseEmailPage({
 
   // --- Lifecycle ---
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     AppStorage.currentView = currentView;
   }, [currentView]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!AppStorage.isProfileLoaded) {
       loadProfile();
     }
@@ -104,7 +104,7 @@ export default function BaseEmailPage({
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (currentView === "folder" && currentFolderId !== lastFolderId.current) {
       lastFolderId.current = currentFolderId;
       loadEmails(0);
