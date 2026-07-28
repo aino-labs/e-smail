@@ -522,6 +522,12 @@ func (r *Repository) resolveEncryptionKey(
 	case 0:
 		return plainText.String, nil
 	case 1, 2:
+		if len(encryptedText) == 0 {
+			return plainText.String, nil
+		}
+		if len(wrappedDEK) == 0 {
+			return "", fmt.Errorf("key_version %d, but wrapped_dek is empty", keyVersion)
+		}
 		decryptedText, err := r.encryptor.Decrypt(encryptedText, wrappedDEK)
 		if err != nil {
 			return "", fmt.Errorf("decrypt body: %w", err)

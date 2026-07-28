@@ -123,6 +123,9 @@ func seal(gcm cipher.AEAD, plaintext []byte) ([]byte, error) {
 }
 
 func open(gcm cipher.AEAD, blob []byte) ([]byte, error) {
+	if len(blob) < gcm.NonceSize() {
+		return nil, fmt.Errorf("blob too short: %d bytes, need at least %d", len(blob), gcm.NonceSize())
+	}
 	nonce := blob[:gcm.NonceSize()]
 	ciphertext := blob[gcm.NonceSize():]
 
