@@ -1,122 +1,143 @@
-import Death13 from "@react/stands";
+import { useState } from 'react';
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import "./MailHeader.scss";
-import { AppStorage } from "../../App";
+import { AppStorage } from "../../stores/AppStorage";
 import { getEmailsSpam, sendSpam, unSpam } from "../../api/ApiSpam";
 import { sendFavorite, unFavorite } from "../../api/ApiFavorite";
 import { getEmailsTrash, untrash } from "../../api/ApiTrash";
 import { readEmail, unReadEmail } from "../../api/ApiEmail";
 
-class MailHeader extends Death13.Component {
-  state: any = {
-    showFolderList: false,
-  };
+interface MailHeaderProps {
+  onSelectAll?: (isChecked: boolean) => void;
+  loadEmail: (offset: number) => void;
+  onMoveToFolder?: (folderId: number) => void;
+  onMarkAsRead?: () => void;
+  onDelete?: () => void;
+  reloadMail?: () => void;
+  offset: number;
+  total: number;
+  currentView: string;
+  emails: Array<any>;
+  selectedEmails: Array<number>;
+  mainPage: boolean;
+  selectedCount: number;
+  isSelectAll: boolean;
+  isLoading: boolean;
+}
 
-  handleSelectAll = (e: any) => {
+const t = (key: string): string => {
+  return AppStorage.t(key);
+}
+
+export default function MailHeader({
+  onSelectAll,
+  loadEmail,
+  onMoveToFolder,
+  onMarkAsRead,
+  onDelete,
+  reloadMail,
+  offset = 0,
+  total = 0,
+  currentView = "",
+  selectedEmails = [],
+  emails = [],
+  mainPage = false,
+  selectedCount = 0,
+  isSelectAll = false,
+  isLoading = false
+}: MailHeaderProps) {
+  const [showFolderList, setShowFolderList] = useState<boolean>(false);
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isChecked = e && e.target ? e.target.checked : false;
-    this.props.onSelectAll(isChecked);
+    onSelectAll?.(isChecked);
   };
 
-  handlePrevPage = (event: any) => {
+  const handlePrevPage = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    const { offset } = this.props;
     const newOffset = Math.max(0, offset - 50);
-    this.props.loadEmail(newOffset);
+    loadEmail(newOffset);
   };
 
-  handleNextPage = (event: any) => {
+  const handleNextPage = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    const { offset, total } = this.props;
     const newOffset = offset + 50;
     if (newOffset < total) {
-      this.props.loadEmail(newOffset);
+      loadEmail(newOffset);
     }
   };
 
-  handleMoveToFolder = (event: any) => {
+  const handleMoveToFolder = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    this.setState({ showFolderList: !this.state.showFolderList });
+    setShowFolderList(!showFolderList);
   };
 
-  handleFolderSelect = (folderId: number, e: any) => {
+  const handleFolderSelect = (folderId: number, e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
-    this.setState({ showFolderList: false });
-    if (this.props.onMoveToFolder) {
-      this.props.onMoveToFolder(folderId);
+    setShowFolderList(false);
+    onMoveToFolder?.(folderId);
+  };
+
+  const handleMarkAsSpam = async (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    if (selectedEmails && selectedEmails.length > 0) {
+      await sendSpam(selectedEmails);
+      reloadMail?.();
     }
   };
 
-  handleMarkAsSpam = async (event: any) => {
+  const handleMarkAsFavorite = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    if (this.props.selectedEmails && this.props.selectedEmails.length > 0) {
-      await sendSpam(this.props.selectedEmails);
-      this.props.reloadMail?.();
+    if (selectedEmails && selectedEmails.length > 0) {
+      await sendFavorite(selectedEmails);
+      reloadMail?.();
     }
   };
 
-  handleMarkAsFavorite = async (event: any) => {
+  const handleUnMarkAsFavorite = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    if (this.props.selectedEmails && this.props.selectedEmails.length > 0) {
-      await sendFavorite(this.props.selectedEmails);
-      this.props.reloadMail?.();
+    if (selectedEmails && selectedEmails.length > 0) {
+      await unFavorite(selectedEmails);
+      reloadMail?.();
     }
   };
 
-  handleUnMarkAsFavorite = async (event: any) => {
+  const handleMarkAsRead = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    if (this.props.selectedEmails && this.props.selectedEmails.length > 0) {
-      await unFavorite(this.props.selectedEmails);
-      this.props.reloadMail?.();
+    if (selectedEmails && selectedEmails.length > 0) {
+      await readEmail(selectedEmails);
+      onMarkAsRead?.();
+      reloadMail?.();
     }
   };
 
-  handleMarkAsRead = async (event: any) => {
+  const handleMarkAsUnread = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    if (this.props.selectedEmails && this.props.selectedEmails.length > 0) {
-      await readEmail(this.props.selectedEmails);
-      this.props.onMarkAsRead?.();
-      this.props.reloadMail?.();
+    if (selectedEmails && selectedEmails.length > 0) {
+      await unReadEmail(selectedEmails);
+      reloadMail?.();
     }
   };
 
-  handleMarkAsUnread = async (event: any) => {
+  const handleMoveToInbox = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    if (this.props.selectedEmails && this.props.selectedEmails.length > 0) {
-      await unReadEmail(this.props.selectedEmails);
-      this.props.reloadMail?.();
-    }
-  };
-
-  handleMoveToInbox = async (event: any) => {
-    event.preventDefault();
-    if (this.props.selectedEmails && this.props.selectedEmails.length > 0) {
-      const { currentView } = this.props;
+    if (selectedEmails && selectedEmails.length > 0) {
 
       if (currentView === "trash") {
-        await untrash(this.props.selectedEmails);
+        await untrash(selectedEmails);
         await getEmailsTrash(0);
       } else if (currentView === "spam") {
-        await unSpam(this.props.selectedEmails);
+        await unSpam(selectedEmails);
         await getEmailsSpam(0);
       }
-      this.props.reloadMail?.();
+      reloadMail?.();
     }
   };
 
-  handleClickOutside = () => {
-    this.setState({ showFolderList: false });
-  };
-
-  t(key: string): string {
-    return AppStorage.t(key);
-  }
-
-  hasReadSelected = () => {
-    const { selectedEmails } = this.props;
+  const hasReadSelected = () => {
     if (!selectedEmails) return false;
-    const { emails } = this.props;
     if (!emails) return false;
     return selectedEmails.some((selectedId: number) => {
       const email = emails.find((e: any) => e.id === selectedId);
@@ -124,10 +145,8 @@ class MailHeader extends Death13.Component {
     });
   };
 
-  hasFavoriteSelected = () => {
-    const { selectedEmails } = this.props;
+  const hasFavoriteSelected = () => {
     if (!selectedEmails) return false;
-    const { emails } = this.props;
     if (!emails) return false;
     return selectedEmails.some((selectedId: number) => {
       const email = emails.find((e: any) => e.id === selectedId);
@@ -135,186 +154,168 @@ class MailHeader extends Death13.Component {
     });
   };
 
-  render() {
-    const {
-      isSelectAll,
-      offset = 0,
-      total = 0,
-      mainPage = false,
-      currentView = "",
-      isLoading,
-    } = this.props;
-    const startItem = total > 0 ? offset + 1 : 0;
-    const endItem = Math.min(offset + 50, total);
-    const hasSelected = this.props.selectedCount > 0;
-    const { showFolderList } = this.state;
-    const isSpamOrTrash = currentView === "spam" || currentView === "trash";
-    const isDrafts = currentView === "drafts";
-    const isMobile = window.innerWidth < 769;
-    const isSent = currentView === "sent";
-    const hasReadSelected = this.hasReadSelected();
-    const hasFavoriteSelected = this.hasFavoriteSelected();
-    const hasOnlyUnread = hasSelected && !hasReadSelected;
+  const startItem = total > 0 ? offset + 1 : 0;
+  const endItem = Math.min(offset + 50, total);
+  const hasSelected = selectedCount > 0;
+  const isSpamOrTrash = currentView === "spam" || currentView === "trash";
+  const isDrafts = currentView === "drafts";
+  const isMobile = window.innerWidth < 769;
+  const isSent = currentView === "sent";
+  const hasOnlyUnread = hasSelected && !hasReadSelected();
 
-    const folders = AppStorage.folders || [];
+  const folders = AppStorage.folders || [];
 
-    return (
-      <div className="mail-header">
-        <div className="mail-header__left-container">
-          <div className="left-container__select-all">
-            <Input
-              type="checkbox"
-              className={`checkbox-all ${isSelectAll ? "isSelect" : ""}`}
-              name="checkbox-all"
-              help="Выбрать все"
-              checked={isSelectAll}
-              onChange={this.handleSelectAll}
-            />
-            <Button
-              name="arrow-down"
-              help="Выбрать"
-              onClick={(event: any) => {
-                event.preventDefault();
-              }}
-            />
-          </div>
-
-          {!hasSelected && (
-            <Button
-              name="refresh"
-              className={isLoading ? "refreshing" : ""}
-              block={isLoading}
-              help={this.t("refresh")}
-              onClick={(event: any) => {
-                event.preventDefault();
-                this.props.reloadMail();
-              }}
-            />
-          )}
-
-          {hasSelected && (
-            <div className="select-all-container">
-              <div
-                className={`select-all__tools-left${isDrafts || isSent || isSpamOrTrash ? " hide-separator" : ""}`}
-              >
-                {isSpamOrTrash && (
-                  <Button
-                    name="move-to-inbox"
-                    help={this.t("move_to_inbox")}
-                    onClick={this.handleMoveToInbox}
-                  />
-                )}
-
-                {!isSpamOrTrash && !isDrafts && (
-                  <div className="select-all-container">
-                    {hasFavoriteSelected ? (
-                      <Button
-                        name="unfavorite"
-                        help={this.t("unstarred")}
-                        onClick={this.handleUnMarkAsFavorite}
-                      />
-                    ) : (
-                      <Button
-                        name="favorites"
-                        help={this.t("starred")}
-                        onClick={this.handleMarkAsFavorite}
-                      />
-                    )}
-                    {!isSent && (
-                      <Button
-                        name="spam"
-                        help={this.t("spam")}
-                        onClick={this.handleMarkAsSpam}
-                      />
-                    )}
-                  </div>
-                )}
-
-                <Button
-                  name="trash"
-                  help={this.t("trash")}
-                  onClick={(event: any) => {
-                    event.preventDefault();
-                    if (this.props.onDelete) {
-                      this.props.onDelete();
-                    }
-                  }}
-                />
-              </div>
-              <div className="select-all__tools-right">
-                {mainPage && !isSpamOrTrash && !isDrafts && (
-                  <>
-                    {hasOnlyUnread ? (
-                      <Button
-                        name="read-all-mail"
-                        help={this.t("mark_as_read")}
-                        onClick={this.handleMarkAsRead}
-                      />
-                    ) : hasReadSelected ? (
-                      <Button
-                        name="unread-all-mail"
-                        help={this.t("mark_as_unread")}
-                        onClick={this.handleMarkAsUnread}
-                      />
-                    ) : null}
-                  </>
-                )}
-                {mainPage && !isSpamOrTrash && !isDrafts && (
-                  <div className="move-to-folder-container">
-                    <Button
-                      name="move-to-folder"
-                      help={this.t("move_to_folder")}
-                      onClick={this.handleMoveToFolder}
-                    />
-                    {showFolderList && (
-                      <div className="folder-dropdown">
-                        {folders.length > 0 ? (
-                          folders.map((folder: any) => (
-                            <div
-                              key={folder.id}
-                              className="folder-dropdown__item"
-                              onClick={(e: any) =>
-                                this.handleFolderSelect(folder.id, e)
-                              }
-                            >
-                              {folder.name}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="folder-dropdown__item folder-dropdown__item--empty">
-                            Нет доступных папок
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+  return (
+    <div className="mail-header">
+      <div className="mail-header__left-container">
+        <div className="left-container__select-all">
+          <Input
+            type="checkbox"
+            className={`checkbox-all ${isSelectAll ? "isSelect" : ""}`}
+            name="checkbox-all"
+            checked={isSelectAll}
+            onChange={handleSelectAll}
+          />
+          <Button
+            name="arrow-down"
+            help="Выбрать"
+            onClick={(event: any) => {
+              event.preventDefault();
+            }}
+          />
         </div>
-        {!isMobile || !hasSelected ? (
-          <div className="mail-header__right-container">
-            <div className="count-email">
-              {startItem} - {endItem} {this.t("of")} {total}
-            </div>
-            <Button
-              name="left"
-              help="Пред."
-              block={offset === 0}
-              onClick={this.handlePrevPage}
-            />
-            <Button
-              name="right"
-              help="След."
-              block={offset + 50 >= total}
-              onClick={this.handleNextPage}
-            />
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-}
 
-export default MailHeader;
+        {!hasSelected && (
+          <Button
+            name="refresh"
+            className={isLoading ? "refreshing" : ""}
+            block={isLoading}
+            help={t("refresh")}
+            onClick={(event: any) => {
+              event.preventDefault();
+              reloadMail?.();
+            }}
+          />
+        )}
+
+        {hasSelected && (
+          <div className="select-all-container">
+            <div
+              className={`select-all__tools-left${isDrafts || isSent || isSpamOrTrash ? " hide-separator" : ""}`}
+            >
+              {isSpamOrTrash && (
+                <Button
+                  name="move-to-inbox"
+                  help={t("move_to_inbox")}
+                  onClick={handleMoveToInbox}
+                />
+              )}
+
+              {!isSpamOrTrash && !isDrafts && (
+                <div className="select-all-container">
+                  {hasFavoriteSelected() ? (
+                    <Button
+                      name="unfavorite"
+                      help={t("unstarred")}
+                      onClick={handleUnMarkAsFavorite}
+                    />
+                  ) : (
+                    <Button
+                      name="favorites"
+                      help={t("starred")}
+                      onClick={handleMarkAsFavorite}
+                    />
+                  )}
+                  {!isSent && (
+                    <Button
+                      name="spam"
+                      help={t("spam")}
+                      onClick={handleMarkAsSpam}
+                    />
+                  )}
+                </div>
+              )}
+
+              <Button
+                name="trash"
+                help={t("trash")}
+                onClick={(event: any) => {
+                  event.preventDefault();
+                  onDelete?.()
+                }}
+              />
+            </div>
+            <div className="select-all__tools-right">
+              {mainPage && !isSpamOrTrash && !isDrafts && (
+                <>
+                  {hasOnlyUnread ? (
+                    <Button
+                      name="read-all-mail"
+                      help={t("mark_as_read")}
+                      onClick={handleMarkAsRead}
+                    />
+                  ) : hasReadSelected() ? (
+                    <Button
+                      name="unread-all-mail"
+                      help={t("mark_as_unread")}
+                      onClick={handleMarkAsUnread}
+                    />
+                  ) : null}
+                </>
+              )}
+              {mainPage && !isSpamOrTrash && !isDrafts && (
+                <div className="move-to-folder-container">
+                  <Button
+                    name="move-to-folder"
+                    help={t("move_to_folder")}
+                    onClick={handleMoveToFolder}
+                  />
+                  {showFolderList && (
+                    <div className="folder-dropdown">
+                      {folders.length > 0 ? (
+                        folders.map((folder: any) => (
+                          <div
+                            key={folder.id}
+                            className="folder-dropdown__item"
+                            onClick={(e: any) =>
+                              handleFolderSelect(folder.id, e)
+                            }
+                          >
+                            {folder.name}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="folder-dropdown__item folder-dropdown__item--empty">
+                          Нет доступных папок
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      {!isMobile || !hasSelected ? (
+        <div className="mail-header__right-container">
+          <div className="count-email">
+            {startItem} - {endItem} {t("of")} {total}
+          </div>
+          <Button
+            name="left"
+            help="Пред."
+            block={offset === 0}
+            onClick={handlePrevPage}
+          />
+          <Button
+            name="right"
+            help="След."
+            block={offset + 50 >= total}
+            onClick={handleNextPage}
+          />
+        </div>
+      ) : null}
+    </div>
+  )
+}

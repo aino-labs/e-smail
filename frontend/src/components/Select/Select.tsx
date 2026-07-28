@@ -1,96 +1,97 @@
-import Death13 from "@react/stands";
+import { useState, useEffect } from "react";
 import "./Select.scss";
 
-class Select extends Death13.Component {
-  constructor(props: any) {
-    super(props);
+const MONTHS_LIST: Record<number, number> = {
+  1: 31, // Январь
+  2: 28, // Февраль
+  3: 31, // Март
+  4: 30, // Апрель
+  5: 31, // Май
+  6: 30, // Июнь
+  7: 31, // Июль
+  8: 31, // Август
+  9: 30, // Сентябрь
+  10: 31, // Октябрь
+  11: 30, // Ноябрь
+  12: 31, // Декабрь
+};
 
-    this.selectOption = this.selectOption.bind(this);
-    this.toggleDropDown = this.toggleDropDown.bind(this);
-    this.handleClickOutside = this.handleClickOutside.bind(this);
-    document.addEventListener("click", this.handleClickOutside);
+const MONTH_NAMES = [
+  "Январь",
+  "Февраль",
+  "Март",
+  "Апрель",
+  "Май",
+  "Июнь",
+  "Июль",
+  "Август",
+  "Сентябрь",
+  "Октябрь",
+  "Ноябрь",
+  "Декабрь",
+];
+
+const getDaysInMonth = (monthStr: string, year: number) => {
+  const month = parseInt(monthStr);
+  if (!month) return 31;
+  if (month === 2) {
+    const isLeapYear = (year % 4 === 0 && year % 100 != 0) || year % 400 == 0;
+    return isLeapYear ? 29 : 28;
   }
 
-  state: any = {
-    isOpen: false,
-    selectedValue: this.props.value || "",
-    selectedLabel: this.props.label || "",
+  return MONTHS_LIST[month] || 31;
+};
+
+interface SelectProps {
+  id?: string;
+  name?: string;
+  value?: string;
+  label?: string;
+  placeholder?: string;
+  options?: Array<{ value: string; label: string }>;
+  selectedMonth?: string;
+  selectedYear?: number;
+  onChange?: (value: string, label: string) => void;
+}
+
+export default function Select({
+  name,
+  id,
+  value = "",
+  label = "",
+  placeholder,
+  options,
+  selectedMonth = "Январь",
+  selectedYear = new Date().getFullYear(),
+  onChange,
+}: SelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState(label || value);
+
+  useEffect(() => {
+    const handleClickOutside = () => setIsOpen(false);
+    document.addEventListener("click", handleClickOutside);
+
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  const toggleDropDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(!isOpen);
   };
 
-  monthsList: any = {
-    1: 31, // Январь
-    2: 28, // Февраль
-    3: 31, // Март
-    4: 30, // Апрель
-    5: 31, // Май
-    6: 30, // Июнь
-    7: 31, // Июль
-    8: 31, // Август
-    9: 30, // Сентябрь
-    10: 31, // Октябрь
-    11: 30, // Ноябрь
-    12: 31, // Декабрь
+  const selectOption = (val: string, lbl: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(false);
+    setSelectedLabel(lbl);
+    if (onChange) onChange(val, lbl);
   };
 
-  monthNames = [
-    "Январь",
-    "Февраль",
-    "Март",
-    "Апрель",
-    "Май",
-    "Июнь",
-    "Июль",
-    "Август",
-    "Сентябрь",
-    "Октябрь",
-    "Ноябрь",
-    "Декабрь",
-  ];
-
-  handleClickOutside() {
-    this.setState({ isOpen: false });
-  }
-
-  toggleDropDown(e: any) {
-    e.stopPropagation();
-    this.setState({ isOpen: !this.state.isOpen });
-  }
-
-  selectOption(value: string, label: string, e: any) {
-    e.stopPropagation();
-    this.setState({
-      isOpen: false,
-      selectedValue: value,
-      selectedLabel: label,
-    });
-
-    if (this.props.onChange) {
-      this.props.onChange(value, label);
-    }
-  }
-
-  getDaysInMonth(monthStr: string, year: number) {
-    const month = parseInt(monthStr);
-    if (!month) return 31;
-    if (month === 2) {
-      const isLeapYear = (year % 4 === 0 && year % 100 != 0) || year % 400 == 0;
-      return isLeapYear ? 29 : 28;
-    }
-
-    return this.monthsList[month] || 31;
-  }
-
-  getOption() {
-    const { name, options } = this.props;
-
-    if (options && options.length > 0) {
-      return options;
-    }
+  const getOptions = () => {
+    if (options && options.length > 0) return options;
 
     if (name === "day") {
-      const selectedMonth = this.props.selectedMonth || "Январь";
-      const selectedYear = this.props.selectedYear || new Date().getFullYear();
-      const dayInMonth = this.getDaysInMonth(selectedMonth, selectedYear);
+      const dayInMonth = getDaysInMonth(selectedMonth, selectedYear);
       return Array.from({ length: dayInMonth }, (_, i) => ({
         value: String(i + 1),
         label: String(i + 1),
@@ -98,7 +99,7 @@ class Select extends Death13.Component {
     }
 
     if (name === "month") {
-      return this.monthNames.map((month, i) => ({
+      return MONTH_NAMES.map((month, i) => ({
         value: String(i + 1),
         label: month,
       }));
@@ -113,42 +114,29 @@ class Select extends Death13.Component {
     }
 
     return [];
-  }
+  };
 
-  render() {
-    const { selectedLabel, isOpen } = this.state;
-    const options = this.getOption();
-    return (
-      <div
-        className="select"
-        id={this.props.id}
-        name={this.props.name}
-        onClick={this.toggleDropDown}
-      >
-        <div className="select__value">
-          {selectedLabel || this.props.placeholder}
-        </div>
-        <div className={`select__toggle ${isOpen ? "open" : ""}`}>
-          <div className="arrow-down" src="../../assets/svg/ArrowDown.svg" />
-        </div>
-        {isOpen && (
-          <div className="select__dropdown shadow">
-            {options.map((option: any) => (
-              <div
-                className="select__value"
-                key={option.value}
-                onClick={(e: any) =>
-                  this.selectOption(option.value, option.label, e)
-                }
-              >
-                {option.label}
-              </div>
-            ))}
-          </div>
-        )}
+  const computedOptions = getOptions();
+
+  return (
+    <div className="select" id={id} onClick={toggleDropDown}>
+      <div className="select__value">{selectedLabel || placeholder}</div>
+      <div className={`select__toggle ${isOpen ? "open" : ""}`}>
+        <div className="arrow-down" />
       </div>
-    );
-  }
+      {isOpen && (
+        <div className="select__dropdown shadow">
+          {computedOptions.map((option: any) => (
+            <div
+              className="select__value"
+              key={option.value}
+              onClick={(e: any) => selectOption(option.value, option.label, e)}
+            >
+              {option.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
-
-export default Select;
