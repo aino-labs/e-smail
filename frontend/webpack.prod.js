@@ -55,7 +55,14 @@ export default merge(common, {
               url: { filter: (url) => !url.startsWith("/assets/") },
             },
           },
-          "sass-loader",
+          {
+            loader: "sass-loader",
+            options: {
+              sassOptions: {
+                charset: false,
+              },
+            },
+          },
         ],
       },
       {
