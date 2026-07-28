@@ -1,31 +1,39 @@
-import Death13 from "@react/stands";
+import { useState } from "react";
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
 import { postDataLogin, getProfile } from "../../api/ApiAuth";
 import "./LoginPage.scss";
-import { AppStorage } from "../../App";
+import { AppStorage } from "../../stores/AppStorage";
 
-class LoginPage extends Death13.Component {
-  private suffix = "@e-smail.ru";
+const SUFFIX = "@e-smail.ru";
 
-  state: any = {
-    errors: {},
-    isLoading: false,
-    email: "",
-    password: "",
-  };
+interface LoginPageProps {
+  navigate: (path: string) => void;
+}
 
-  validateField = (field: string, value: string) => {
+const t = (key: string): string => {
+  return AppStorage.t(key);
+};
+
+export default function LoginPage({ navigate }: LoginPageProps) {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+
+  const validateField = (
+    field: string,
+    value: string,
+    currentEmail: string,
+    currentPassword: string,
+  ) => {
     const data: any = {
-      email:
-        field === "email"
-          ? value + this.suffix
-          : this.state.email + this.suffix,
-      password: field === "password" ? value : this.state.password,
+      email: field === "email" ? value + SUFFIX : currentEmail + SUFFIX,
+      password: field === "password" ? value : currentPassword,
     };
 
-    const result = validation(data, this.t);
+    const result = validation(data, t);
 
     if (!result.isValid) {
       const fieldError = result.errors.find((err: any) => err.field === field);
@@ -36,25 +44,31 @@ class LoginPage extends Death13.Component {
     return undefined;
   };
 
-  handleInputChange = (field: string, value: string) => {
-    const error = this.validateField(field, value);
+  const handleInputChange = (field: string, value: string) => {
+    const targetEmail = field === "email" ? value : email;
+    const targetPassword = field === "password" ? value : password;
 
-    this.setState({
-      [field]: value,
-      errors: {
-        ...this.state.errors,
-        [field]: error,
-      },
-    });
+    const error = validateField(field, value, targetEmail, targetPassword);
+
+    if (field === "email") {
+      setEmail(value);
+    } else if (field === "password") {
+      setPassword(value);
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: error || "",
+      }));
+    }
   };
 
-  validateAllFields = () => {
+  const validateAllFields = () => {
     const data = {
-      email: this.state.email + this.suffix,
-      password: this.state.password,
+      email: email + SUFFIX,
+      password: password,
     };
 
-    const result = validation(data, this.t);
+    const result = validation(data, t);
     const newErrors: any = {};
 
     if (!result.isValid) {
@@ -65,32 +79,30 @@ class LoginPage extends Death13.Component {
       });
     }
 
-    this.setState({ errors: newErrors });
+    setErrors(newErrors);
     return result.isValid;
   };
 
-  async handleSubmit(event: Event) {
+  const handleSubmit = async (event: React.MouseEvent) => {
     event.preventDefault();
 
-    this.state.email = this.state.email;
-
-    const isValid = this.validateAllFields();
+    const isValid = validateAllFields();
 
     if (!isValid) {
       return;
     }
 
-    this.setState({ isLoading: true });
+    setIsLoading(true);
 
     const response = await postDataLogin({
-      email: this.state.email + this.suffix,
-      password: this.state.password,
+      email: email + SUFFIX,
+      password: password,
     });
 
     if (response && response.isValid) {
       const data = await getProfile();
       AppStorage.setProfileData(data);
-      window.app.handleRoute("/");
+      navigate("/");
     } else if (response && !response.isValid) {
       const serverErrors: any = {};
       response.errors?.forEach((err: any) => {
@@ -98,80 +110,72 @@ class LoginPage extends Death13.Component {
           serverErrors[err.field] = err.message;
         }
       });
-      this.setState({ errors: serverErrors, isLoading: false });
+      setErrors(serverErrors);
+      setIsLoading(false);
     }
-  }
+  };
 
-  t(key: string): string {
-    return AppStorage.t(key);
-  }
-
-  render() {
-    const { errors, email, password } = this.state;
-    return (
-      <div className="auth-page">
-        <div className="auth-container">
-          <div className="auth-page__form-container">
-            <div className="logo-container">
-              <img src="../../assets/svg/Logo.svg" />
-              <h1 className="logo__title">SMail</h1>
-            </div>
-            <h1 className="auth-form__subtitle">{this.t("auth_subtitle")}</h1>
-            <h1 className="auth-form__title">{this.t("auth_title")}</h1>
-            <form action="" className="auth-form">
-              <div className="auth-form__inputs">
-                <Input
-                  type="email"
-                  placeholder={this.t("enter_email")}
-                  input_title={this.t("email")}
-                  name="email"
-                  suffix="@e-smail.ru"
-                  error={errors.email}
-                  value={email}
-                  onInput={(e: any) => {
-                    const raw = e.target.value;
-                    const atIndex = raw.indexOf("@");
-                    const clean =
-                      atIndex !== -1 ? raw.substring(0, atIndex) : raw;
-                    this.handleInputChange("email", clean);
-                  }}
-                />
-                <Input
-                  type="password"
-                  placeholder={this.t("enter_password")}
-                  input_title={this.t("password")}
-                  name="password"
-                  error={errors.password}
-                  value={password}
-                  onInput={(e: any) => {
-                    this.handleInputChange("password", e.target.value);
-                  }}
-                />
-              </div>
-              <div className="auth-form__actions">
-                <Button
-                  title={this.t("enter")}
-                  name="button-login-for-login"
-                  onClick={async (event: Event) => {
-                    event.preventDefault();
-                    await this.handleSubmit(event);
-                  }}
-                />
-                <Button
-                  title={this.t("register")}
-                  name="button-reg-for-login"
-                  onClick={(event: Event) => {
-                    event.preventDefault();
-                    window.app.handleRoute("/register");
-                  }}
-                />
-              </div>
-            </form>
+  return (
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-page__form-container">
+          <div className="logo-container">
+            <img src="../../assets/svg/Logo.svg" />
+            <h1 className="logo__title">SMail</h1>
           </div>
+          <h1 className="auth-form__subtitle">{t("auth_subtitle")}</h1>
+          <h1 className="auth-form__title">{t("auth_title")}</h1>
+          <form action="" className="auth-form">
+            <div className="auth-form__inputs">
+              <Input
+                type="email"
+                placeholder={t("enter_email")}
+                input_title={t("email")}
+                name="email"
+                suffix="@e-smail.ru"
+                error={errors.email}
+                value={email}
+                onInput={(e: any) => {
+                  const raw = e.target.value;
+                  const atIndex = raw.indexOf("@");
+                  const clean =
+                    atIndex !== -1 ? raw.substring(0, atIndex) : raw;
+                  handleInputChange("email", clean);
+                }}
+              />
+              <Input
+                type="password"
+                placeholder={t("enter_password")}
+                input_title={t("password")}
+                name="password"
+                error={errors.password}
+                value={password}
+                onInput={(e: any) => {
+                  handleInputChange("password", e.target.value);
+                }}
+              />
+            </div>
+            <div className="auth-form__actions">
+              <Button
+                title={t("enter")}
+                name="button-login-for-login"
+                onClick={async (event: React.MouseEvent<HTMLButtonElement>) => {
+                  event.preventDefault();
+                  await handleSubmit(event);
+                }}
+              />
+              <Button
+                title={t("register")}
+                name="button-reg-for-login"
+                onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                  event.preventDefault();
+                  navigate("/register");
+                }}
+              />
+            </div>
+          </form>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 }
-
-export default LoginPage;

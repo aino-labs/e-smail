@@ -1,5 +1,6 @@
 import { EMAIL_URL } from "./config";
-import { AppStorage } from "../App";
+import { AppStorage } from "../stores/AppStorage";
+
 /**
  * Отправляет GET-запрос на эндпоинт /inbox.
  */

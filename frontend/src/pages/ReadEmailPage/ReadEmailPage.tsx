@@ -1,76 +1,75 @@
-import Death13 from "@react/stands";
-import "./ReadEmailPage.scss";
-import { AppStorage } from "../../App";
-import Sidebar from "../../widgets/Sidebar/Sidebar";
+import { useState, useEffect } from "react";
+import Sidebar from "../../widgets/Sidebar/Sidebar"; // Adjust relative paths as needed
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
-import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
 import ReadMail from "../../widgets/ReadMail/ReadMail";
+import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
 import { getEmailByID } from "../../api/ApiEmail";
+import { AppStorage } from "../../stores/AppStorage";
 
-class ReadEmailPage extends Death13.Component {
-  state: any = {
-    isModalOpen: false,
-    unReadCount: 0,
-    replyData: null,
-    isPress: 0,
-    forwardData: null,
-    avatarKey: 0,
-    selectedFolderId: null,
-    currentView: "read",
-    email: {
-      id: "",
-      header: "",
-      body: "",
-      createdAt: "",
-      senderEmail: "",
-      senderImage: "",
-      senderName: "",
-      senderSurname: "",
-      receiverList: [],
-    },
-  };
+interface ReadEmailPageProps {
+  id: number | string;
+  navigate: (path: string) => void;
+  previousPath: string;
+}
 
-  constructor(props: any) {
-    super(props);
-    const selectedFolderId = AppStorage.getCurrentFolderId?.() || null;
+interface EmailState {
+  id: string | number;
+  header: string;
+  body: string;
+  createdAt: string;
+  senderEmail: string;
+  senderImage: string;
+  senderName: string;
+  senderSurname: string;
+  receiverList: any[];
+  is_anonymous?: boolean;
+  is_favorite?: boolean;
+}
 
-    this.state = {
-      ...this.state,
-      selectedFolderId: selectedFolderId,
-      currentView: "read",
-    };
-  }
+const t = (key: string): string => AppStorage.t(key);
 
-  componentDidMount() {
-    const strID = location.pathname.split("/").pop();
-    const id = strID ? parseInt(strID, 10) : 0;
-    this.loadEmail(id);
-  }
+export default function ReadEmailPage({
+  id,
+  navigate,
+  previousPath,
+}: ReadEmailPageProps) {
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isPress, setIsPress] = useState<number>(0);
+  const [currentView] = useState<string>("read");
 
-  componentDidUpdate(prevProps: any) {
-    if (prevProps.id !== this.props.id) {
-      const strID = location.pathname.split("/").pop();
-      const id = strID ? parseInt(strID, 10) : 0;
-      this.loadEmail(id);
-    }
-  }
+  // Lazy state initialization prevents calling AppStorage on every single render
+  const [selectedFolderId] = useState<any>(
+    () => AppStorage.getCurrentFolderId?.() || null,
+  );
 
-  async loadEmail(id: number) {
-    const data = await getEmailByID(id);
-    if (!data) {
-      window.app.handleRoute("/");
-    }
+  const [email, setEmail] = useState<EmailState>({
+    id: "",
+    header: "",
+    body: "",
+    createdAt: "",
+    senderEmail: "",
+    senderImage: "",
+    senderName: "",
+    senderSurname: "",
+    receiverList: [],
+  });
 
-    AppStorage.cacheSingleEmail(data);
+  useEffect(() => {
+    const loadEmail = async () => {
+      const strID = window.location.pathname.split("/").pop();
+      const parsedId = strID ? parseInt(strID, 10) : 0;
+      const data = await getEmailByID(parsedId);
 
-    if (window.app.previousPath === "/sent") {
-      this.setState({ isPress: 1 });
-    } else {
-      this.setState({ isPress: 0 });
-    }
-    this.setState({
-      email: {
+      if (!data) {
+        navigate("/");
+        return;
+      }
+
+      AppStorage.cacheSingleEmail(data);
+
+      setIsPress(previousPath === "/sent" ? 1 : 0);
+      setEmail({
         id: data.id,
         header: data.header,
         body: data.body,
@@ -81,154 +80,151 @@ class ReadEmailPage extends Death13.Component {
         senderSurname: data.sender_surname,
         receiverList: data.receiver_list,
         is_anonymous: data.is_anonymous,
-      },
-    });
-  }
+        is_favorite: data.is_favorite,
+      });
+    };
 
-  handleAvatar = (event: Event) => {
+    loadEmail();
+  }, [id]); // Handles both initial mount and reactive changes to props.id
+
+  const handleAvatar = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     event.preventDefault();
-    this.setState({ isModalOpen: true });
+    setIsModalOpen(true);
   };
 
-  handleCloseModal = () => {
-    this.setState({ isModalOpen: false });
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
   };
 
-  handleProfileClick = () => {
-    this.setState({ isModalOpen: false });
-    window.app.handleRoute("/profile");
+  const handleProfileClick = () => {
+    setIsModalOpen(false);
+    navigate("/profile");
   };
 
-  handleGetSpam = () => {
+  const handleSettingsClick = () => {
+    setIsModalOpen(false);
+    navigate("/settings");
+  };
+
+  const handleGetSpam = () => {
     AppStorage.setCurrentView("spam");
-    window.app.handleRoute("/");
+    navigate("/");
   };
 
-  handleGetTrash = () => {
+  const handleGetTrash = () => {
     AppStorage.setCurrentView("trash");
-    window.app.handleRoute("/");
+    navigate("/");
   };
 
-  handleGetFavorite = () => {
+  const handleGetFavorite = () => {
     AppStorage.setCurrentView("favorite");
-    window.app.handleRoute("/");
+    navigate("/");
   };
 
-  handleGetDrafts = () => {
+  const handleGetDrafts = () => {
     AppStorage.setCurrentView("drafts");
-    window.app.handleRoute("/");
+    navigate("/");
   };
 
-  handleGetSendEmail = () => {
+  const handleGetSendEmail = () => {
     AppStorage.setCurrentView("sent");
-    window.app.handleRoute("/sent");
+    navigate("/sent");
   };
 
-  handleGoToMain = () => {
+  const handleGoToMain = () => {
     AppStorage.setCurrentView("inbox");
     AppStorage.clearMailActionData();
     AppStorage.setCurrentFolderId(null);
-    window.app.handleRoute("/");
+    navigate("/");
   };
 
-  handleNewMail = () => {
-    window.app.handleRoute("/send");
+  const handleNewMail = () => {
+    navigate("/send");
   };
 
-  handleBackToMail = () => {
+  const handleBackToMail = () => {
     AppStorage.clearMailActionData();
     AppStorage.setCurrentFolderId(null);
-    window.app.handleRoute("/");
+    navigate("/");
   };
 
-  handleBackToSent = () => {
+  const handleBackToSent = () => {
     AppStorage.clearMailActionData();
     AppStorage.setCurrentFolderId(null);
-    window.app.handleRoute("/sent");
+    navigate("/sent");
   };
 
-  loadEmailFromFolder = async (offset: number, folderID: number) => {
+  const loadEmailFromFolder = async (offset: number, folderID: number) => {
     AppStorage.setCurrentFolderId(folderID);
     AppStorage.setCurrentView("folder");
-    window.app.handleRoute("/");
+    navigate("/");
   };
 
-  handleFavoriteToggled = (newIsFavorite: boolean) => {
-    const updatedEmail = {
-      ...this.state.email,
+  const handleFavoriteToggled = (newIsFavorite: boolean) => {
+    setEmail((prev) => ({
+      ...prev,
       is_favorite: newIsFavorite,
-    };
-    this.setState({ email: updatedEmail });
+    }));
   };
 
-  t(key: string): string {
-    return AppStorage.t(key);
-  }
-
-  render() {
-    const { isModalOpen, selectedFolderId, currentView } = this.state;
-
-    return (
-      <div className="send-email-page" onClick={() => this.handleCloseModal()}>
-        <aside className="sidebar">
-          <Sidebar
-            isProfile={0}
-            isPress={0}
-            newMail={this.handleNewMail}
-            backToMail={this.handleGoToMain}
-            updateMail={this.handleGoToMain}
-            handleGetDrafts={this.handleGetDrafts}
-            handleGetSendEmail={this.handleGetSendEmail}
-            handleGetSpam={this.handleGetSpam}
-            handleGetTrash={this.handleGetTrash}
-            handleGetFavorite={this.handleGetFavorite}
-            loadEmailFromFolder={this.loadEmailFromFolder}
-            selectedFolderId={this.state.selectedFolderId}
-            currentView={currentView}
-          />
-        </aside>
-        <div className="right-part">
-          <div className="top-bar">
-            <div className="search-bar">
-              <Input
-                type="text"
-                placeholder={this.t("search")}
-                name="search"
-                svg="../../assets/svg/Search.svg"
-                onInput={() => {}}
-              />
-            </div>
-
-            <div className="top-right-menu">
-              <Button
-                svg={AppStorage.getAvatarUrl()}
-                name="avatar"
-                help="Аккаунт"
-                onClick={this.handleAvatar}
-              />
-            </div>
-          </div>
-          <div className="mail-box-container">
-            <ReadMail
-              key={this.state.email.id}
-              email={this.state.email}
-              backToMail={this.handleBackToMail}
-              backToSent={this.handleBackToSent}
-              selectedFolderId={selectedFolderId}
-              onFavoriteToggled={this.handleFavoriteToggled}
+  return (
+    <div className="send-email-page" onClick={handleCloseModal}>
+      <aside className="sidebar">
+        <Sidebar
+          isProfile={0}
+          isPressProfile={0}
+          newMail={handleNewMail}
+          backToMail={handleGoToMain}
+          selectedFolderId={selectedFolderId}
+          name={AppStorage.name}
+          surname={AppStorage.surname}
+          email={AppStorage.email}
+          avatarUrl={AppStorage.getAvatarUrl()}
+          navigate={navigate}
+        />
+      </aside>
+      <div className="right-part">
+        <div className="top-bar">
+          <div className="search-bar">
+            <Input
+              type="text"
+              placeholder={t("search")}
+              name="search"
+              svg="../../assets/svg/Search.svg"
+              onInput={() => {}}
             />
           </div>
 
-          <ProfileModal
-            isOpen={isModalOpen}
-            onClose={this.handleCloseModal}
-            onProfileClick={this.handleProfileClick}
+          <div className="top-right-menu">
+            <Button
+              svg={AppStorage.getAvatarUrl()}
+              name="avatar"
+              help="Аккаунт"
+              onClick={handleAvatar}
+            />
+          </div>
+        </div>
+        <div className="mail-box-container">
+          <ReadMail
+            key={email.id}
+            email={email}
+            backToMail={handleBackToMail}
+            backToSent={handleBackToSent}
+            selectedFolderId={selectedFolderId}
+            onFavoriteToggled={handleFavoriteToggled}
+            navigate={navigate}
           />
         </div>
-      </div>
-    );
-  }
-}
 
-export default ReadEmailPage;
+        <ProfileModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onProfileClick={handleProfileClick}
+          onSettingsClick={handleSettingsClick}
+          navigate={navigate}
+        />
+      </div>
+    </div>
+  );
+}

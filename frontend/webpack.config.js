@@ -42,14 +42,8 @@ export default {
       new CssMinimizerPlugin(),
       new ImageMinimizerPlugin({
         minimizer: {
-          implementation: ImageMinimizerPlugin.imageminMinify,
-          options: {
-            plugins: [
-              ["imagemin-mozjpeg", { quality: 80 }],
-              ["imagemin-pngquant", { quality: [0.6, 0.8] }],
-              ["imagemin-svgo", {}],
-            ],
-          },
+          implementation: ImageMinimizerPlugin.sharpMinify,
+          options: { encodeOptions: { jpeg: { quality: 80 } } },
         },
       }),
     ],

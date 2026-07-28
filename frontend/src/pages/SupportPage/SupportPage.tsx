@@ -1,34 +1,38 @@
-import Death13 from "@react/stands";
+import { useState } from "react";
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import Select from "../../components/Select/Select";
 import Textarea from "../../components/Textarea/Textarea";
-
 import { sendSupportTicket } from "../../api/ApiSupport";
-
 import "./SupportPage.scss";
 
-class SupportPage extends Death13.Component {
-  state: any = {
-    category: { value: "", label: "" },
-    problem: "",
-    description: "",
+const ticketCategories = [
+  { value: "bug", label: "Ошибка" },
+  { value: "proposal", label: "Предложение" },
+  { value: "complaint", label: "Жалоба" },
+  { value: "other", label: "Другое" },
+];
+
+export default function SupportPage() {
+  const [category, setCategory] = useState({ value: "", label: "" });
+  const [problem, setProblem] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+
+  const handleCategoryChange = (value: any, label: any) => {
+    setCategory({ value, label });
   };
 
-  handleCategoryChange = (value: any, label: any) => {
-    this.setState({ category: { value, label } });
+  const handleProblemChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setProblem(event.target.value);
   };
 
-  handleProblemChange = (event: any) => {
-    this.setState({ problem: event.target.value });
+  const handleDescriptionChange = (
+    event: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    setDescription(event.target.value);
   };
 
-  handleDescriptionChange = (event: any) => {
-    this.setState({ description: event.target.value });
-  };
-
-  handleSubmit = async () => {
-    const { category, problem, description } = this.state;
+  const handleSubmit = async () => {
     const payload = {
       theme: category.value,
       header: problem,
@@ -38,11 +42,11 @@ class SupportPage extends Death13.Component {
 
     try {
       await sendSupportTicket(payload);
-      this.setState({
-        category: { value: "", label: "" },
-        problem: "",
-        description: "",
-      });
+
+      setCategory({ value: "", label: "" });
+      setProblem("");
+      setDescription("");
+
       const url = window.location.origin;
       window.parent.postMessage({ action: "closeSupportModal" }, url);
     } catch (error) {
@@ -50,40 +54,33 @@ class SupportPage extends Death13.Component {
     }
   };
 
-  render() {
-    const ticketCategories = [
-      { value: "bug", label: "Ошибка" },
-      { value: "proposal", label: "Предложение" },
-      { value: "complaint", label: "Жалоба" },
-      { value: "other", label: "Другое" },
-    ];
-    return (
-      <div className="support-page-container">
-        <h1 className="support-page__title">Расскажите о проблеме</h1>
-        <span className="support-page__subtitle">
-          С чем связано ваше обращение?
-        </span>
-        <Select
-          id="category"
-          options={ticketCategories}
-          placeholder="Выберите категорию"
-          onChange={this.handleCategoryChange}
-        />
-        <Input
-          input_title="Что за проблема?"
-          placeholder="Краткое описание проблемы"
-          onInput={this.handleProblemChange}
-        />
-        <Textarea
-          className="support-textarea"
-          input_title="Подробное описание проблемы"
-          placeholder="Опишите проблему максимально подробно"
-          onInput={this.handleDescriptionChange}
-        />
-        <Button title="Отправить" onClick={this.handleSubmit} />
-      </div>
-    );
-  }
+  return (
+    <div className="support-page-container">
+      <h1 className="support-page__title">Расскажите о проблеме</h1>
+      <span className="support-page__subtitle">
+        С чем связано ваше обращение?
+      </span>
+      <Select
+        id="category"
+        options={ticketCategories}
+        placeholder="Выберите категорию"
+        value={category.value}
+        onChange={handleCategoryChange}
+      />
+      <Input
+        input_title="Что за проблема?"
+        placeholder="Краткое описание проблемы"
+        value={problem}
+        onInput={handleProblemChange}
+      />
+      <Textarea
+        className="support-textarea"
+        inputTitle="Подробное описание проблемы"
+        placeholder="Опишите проблему максимально подробно"
+        value={description}
+        onInput={handleDescriptionChange}
+      />
+      <Button title="Отправить" onClick={handleSubmit} />
+    </div>
+  );
 }
-
-export default SupportPage;

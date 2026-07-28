@@ -1,5 +1,5 @@
 import { EMAIL_URL } from "./config";
-import { AppStorage } from "../App";
+import { AppStorage } from "../stores/AppStorage";
 
 export async function getAttachments(emailId: number) {
   try {

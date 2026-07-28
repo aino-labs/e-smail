@@ -1,11 +1,13 @@
-import path, { dirname } from "path";
+import path from "path";
+import { fileURLToPath } from "url";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import CopyWebpackPlugin from "copy-webpack-plugin";
 import GeneratePrecacheManifest from "./webpack/GeneratePrecacheManifest.js";
 import webpack from "webpack";
 import { readFileSync } from "fs";
 
-const __dirname = dirname("./");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Service version
 const pkg = JSON.parse(
@@ -44,11 +46,11 @@ export default {
                 [
                   "@babel/preset-react",
                   {
-                    pragma: "Death13.createElement",
-                    pragmaFrag: "Death13.Fragment",
+                    runtime: "automatic",
                   },
                 ],
               ],
+              plugins: [["babel-plugin-react-compiler", {}]],
             },
           },
         ],
