@@ -68,6 +68,7 @@ export default function BaseEmailPage({
     selectedEmails: new Set<number>(),
     total: 0,
   });
+  const [isSupportOpen, setIsSupportOpen] = useState<boolean>(false);
 
   const offsetRef = useRef(state.offset);
   useEffect(() => {
@@ -411,10 +412,6 @@ export default function BaseEmailPage({
     }
   };
 
-  const handleSupport = () => {
-    document.querySelector(".support-modal")?.classList.toggle("show");
-  };
-
   // --- Render Layout Setup ---
   const selectedArray = getSelectedArray();
   const mobileHeaderTitle =
@@ -424,7 +421,10 @@ export default function BaseEmailPage({
 
   return (
     <div className="main-page" onClick={handleCloseModal}>
-      <SupportModal />
+      <SupportModal
+        isOpen={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
+      />
       <div className="sidebar-overlay" onClick={toggleSidebar}></div>
 
       <aside className="sidebar">
@@ -462,7 +462,7 @@ export default function BaseEmailPage({
             />
           </div>
           <div className="top-right-menu">
-            <div className="support" onClick={handleSupport} />
+            <div className="support" onClick={() => setIsSupportOpen(true)} />
             <Button
               svg={AppStorage.getAvatarUrl()}
               name="avatar"

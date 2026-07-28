@@ -15,6 +15,7 @@ import { requestNotificationPermission } from "../../utils/emailNotifications";
 import { toast } from "../../store/toastStore";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { useUserStore } from "../../store/useUserStore";
 
 type ProfileTabId = 0 | 1 | 2 | 3 | 4;
 
@@ -42,29 +43,26 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   const [profileState, setProfileState] = useState<ProfileTabId>(
     shouldOpenSettings ? 2 : 0,
   );
-  const [name, setName] = useState<string>(AppStorage.name || "");
-  const [surname, setSurname] = useState<string>(AppStorage.surname || "");
-  const [email, setEmail] = useState<string>(AppStorage.email || "");
-  const [isMale, setIsMale] = useState<boolean>(AppStorage.is_male ?? true);
-  const [birthDay, setBirthDay] = useState<string>(AppStorage.birthDay || "");
-  const [birthMonth, setBirthMonth] = useState<string>(
-    AppStorage.birthMonth || "",
-  );
-  const [birthYear, setBirthYear] = useState<string>(
-    AppStorage.birthYear || "",
-  );
+  const {
+    name,
+    surname,
+    email,
+    is_male,
+    birthDay,
+    birthMonth,
+    birthYear,
+    setProfileData,
+    image_path,
+    setImagePath,
+  } = useUserStore();
 
   const [oldPassword, setOldPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [avatarKey, setAvatarKey] = useState<number>(0);
-  const [avatarUrl, setAvatarUrl] = useState<string>(AppStorage.getAvatarUrl());
 
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isConfirm, setIsConfirm] = useState<boolean>(false);
-  const [isStatus, setIsStatus] = useState<boolean>(false);
   const [isFolderEditMode, setIsFolderEditMode] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
@@ -129,7 +127,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       }
     }
 
-    AppStorage.setProfileData({
+    setProfileData({
       is_male: data.is_male ?? true,
       name: data.name || "",
       surname: data.surname || "",
@@ -140,16 +138,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       birthYear: bYear,
       anonymousEnabled: data.accept_anonymous,
     });
-
-    setName(data.name || "");
-    setSurname(data.surname || "");
-    setEmail(data.email || "");
-    setIsMale(data.is_male ?? true);
-    setAvatarUrl(AppStorage.getAvatarUrl());
-    setIsStatus(false);
-    setBirthDay(bDay);
-    setBirthMonth(bMonth);
-    setBirthYear(bYear);
   };
 
   // Setup synchronization hooks and event listeners
@@ -226,8 +214,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   const handleInputChange = (field: string, value: string) => {
     const error = validateField(field, value);
 
-    if (field === "name") setName(value);
-    if (field === "surname") setSurname(value);
+    if (field === "name") setProfileData({ name: value });
+    if (field === "surname") setProfileData({ surname: value });
     if (field === "oldPassword") setOldPassword(value);
     if (field === "newPassword") setNewPassword(value);
 
@@ -247,7 +235,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
 
   const handleAvatarUpdate = () => {
     setAvatarKey((prev) => prev + 1);
-    setAvatarUrl(AppStorage.getAvatarUrl());
     toast.show("saved_successfully", "success");
   };
 
@@ -286,7 +273,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     }
 
     try {
-      const payload: any = { name, surname, is_male: isMale, email };
+      const payload: any = { name, surname, is_male, email };
       if (birthDate) payload.birthdate = birthDate;
 
       const response = await changeProfile(payload);
@@ -295,23 +282,19 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
           name,
           surname,
           email,
-          is_male: isMale,
-          image_path: AppStorage.image_path,
+          is_male,
+          image_path,
           birthDay,
           birthMonth,
           birthYear,
-          anonymousEnabled: AppStorage.anonymousEnabled,
+          anonymousEnabled,
         });
-        setIsConfirm(false);
-        setIsStatus(false);
         toast.show("saved_successfully", "success");
       } else {
         toast.show("client_error", "error");
       }
     } catch (error) {
       console.error("Profile change error:", error);
-      setIsConfirm(true);
-      setIsStatus(false);
     }
   };
 
@@ -342,7 +325,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     await changeProfile({
       name,
       surname,
-      is_male: isMale ? "true" : "false",
+      is_male: is_male ? "true" : "false",
       accept_anonymous: enabled,
     });
     setAnonymousEnabled(enabled);
@@ -409,7 +392,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       <div className="profile-content">
         <div className="profile-avatar">
           <UploadAvatar
-            image={avatarUrl}
+            image={image_path}
             onAvatarUpdate={handleAvatarUpdate}
             key={avatarKey}
           />
@@ -437,9 +420,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
           />
           <SelectDate
             onChange={(date) => {
-              setBirthDay(date.day);
-              setBirthMonth(date.month);
-              setBirthYear(date.year);
+              setProfileData({
+                birthDay: date.day,
+                birthMonth: date.month,
+                birthYear: date.year,
+              });
             }}
             birthDay={birthDay}
             birthMonth={birthMonth}
@@ -453,8 +438,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="male"
                   type="radio"
                   name="radio-gender"
-                  checked={isMale === true}
-                  onInput={() => setIsMale(true)}
+                  checked={is_male}
+                  onInput={() => setProfileData({ is_male: true })}
                 />
                 <label htmlFor="male">{t("male")}</label>
               </div>
@@ -463,8 +448,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="female"
                   type="radio"
                   name="radio-gender"
-                  checked={isMale !== true}
-                  onInput={() => setIsMale(false)}
+                  checked={!is_male}
+                  onInput={() => setProfileData({ is_male: false })}
                 />
                 <label htmlFor="female">{t("female")}</label>
               </div>
@@ -790,16 +775,19 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   );
 
   return (
-    <div className="profile-page" onClick={() => setIsModalOpen(false)}>
-      <SupportModal />
+    <div className="profile-page">
+      <SupportModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+      />
       <aside className={`sidebar ${isMobile || isSidebarOpen ? "open" : ""}`}>
         <Sidebar
           isProfile={1}
           isPressProfile={profileState}
-          avatarUrl={AppStorage.getAvatarUrl()}
-          name={AppStorage.name}
-          surname={AppStorage.surname}
-          email={AppStorage.email}
+          avatarUrl={image_path}
+          name={name}
+          surname={surname}
+          email={email}
           backToMail={() => navigate("/")}
           changeProfile={() => navigateToTab(0, "/profile/personal")}
           changePassword={() => navigateToTab(1, "/profile/password")}
@@ -815,17 +803,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
         {!isMobile && (
           <div className="top-bar">
             <div className="search-bar" />
-            <div className="top-right-menu">
-              <Button
-                svg={AppStorage.getAvatarUrl()}
-                name="avatar"
-                help="Аккаунт"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  setIsModalOpen(true);
-                }}
-              />
-            </div>
           </div>
         )}
         <div className="profile-content-area">

@@ -4,6 +4,7 @@ import "./Sidebar.scss";
 import { AppStorage } from "../../store/AppStorage";
 import SidebarProfile from "../../components/SidebarProfile/SidebarProfile";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useSettingsStore } from "../../store/useSettingsStore";
 
 interface SidebarProps {
   isProfile: number;
