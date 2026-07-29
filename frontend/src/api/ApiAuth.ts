@@ -52,6 +52,15 @@ export async function postDataLogin(data = {}) {
           ],
         };
       }
+      // 500/502/403 и прочие: без этой ветки функция возвращала undefined,
+      // и вызывающий код молча зависал с isLoading=true
+      return {
+        isValid: false,
+        errors: [
+          { field: "password", message: AppStorage.t("server_error") },
+          { field: "email", message: " " },
+        ],
+      };
     }
   } catch {
     return {
@@ -124,6 +133,13 @@ export async function postDataReg(data = {}) {
           ],
         };
       }
+      return {
+        isValid: false,
+        errors: [
+          { field: "password", message: AppStorage.t("server_error") },
+          { field: "email", message: " " },
+        ],
+      };
     }
   } catch {
     return {
