@@ -9,7 +9,6 @@ interface UserSettingsState {
   sidebarDropdownVisible: boolean;
 
   setTheme: (theme: "light" | "dark") => void;
-  toggleTheme: () => void;
   setLanguage: (language: "ru" | "en") => void;
   setSidebarDropdownVisible: (visible: boolean) => void;
   setNotificationsEnabled: (enabled: boolean) => void;
@@ -25,16 +24,7 @@ export const useSettingsStore = create<UserSettingsState>()(
       anonymousEnabled: true,
       sidebarDropdownVisible: false,
 
-      setTheme: (theme) => {
-        document.documentElement.setAttribute("data-theme", theme);
-        set({ theme });
-      },
-      toggleTheme: () =>
-        set((state) => {
-          const nextTheme = state.theme === "light" ? "dark" : "light";
-          document.documentElement.setAttribute("data-theme", nextTheme);
-          return { theme: nextTheme };
-        }),
+      setTheme: (theme: "light" | "dark") => set({ theme }),
       setLanguage: (language) => set({ language }),
       setSidebarDropdownVisible: (sidebarDropdownVisible) =>
         set({ sidebarDropdownVisible }),

@@ -53,7 +53,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     birthYear,
     setProfileData,
     image_path,
-    setImagePath,
   } = useUserStore();
 
   const [oldPassword, setOldPassword] = useState<string>("");
