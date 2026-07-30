@@ -128,7 +128,10 @@ export const en = {
   anonymous_disabled: "Anonymous emails disabled",
   enable_anonymous: "Anonymous emails",
   allow: "Allow",
-  not_allow: "Not allow",
+  not_allow: "Don't allow",
+  open: "open",
+  pending: "pending",
+  closed: "closed",
 
   //Sidebar
   new_letter: "New mail",

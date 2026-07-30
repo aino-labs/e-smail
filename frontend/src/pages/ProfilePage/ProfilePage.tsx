@@ -63,7 +63,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
 
   // Support section state
@@ -82,7 +82,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     selectedTicketIdRef.current = selectedTicketId;
   }, [selectedTicketId]);
 
-  const isMobile = window.innerWidth < 769;
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 769);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 769);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Sync tab layout based on current URL path
   const syncTabFromUrl = () => {
@@ -234,7 +239,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
 
   const handleAvatarUpdate = () => {
     setAvatarKey((prev) => prev + 1);
-    toast.show("saved_successfully", "success");
+    toast.show(t("saved_successfully"), "success");
   };
 
   const handleChangePassword = async (event: React.FormEvent) => {
@@ -682,13 +687,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
             <div className="tickets-list">
               {supportTickets.map((ticket) => (
                 <div
-                  key={ticket.id}
-                  className={`ticket-item ${selectedTicketId === ticket.id ? "active" : ""}`}
-                  onClick={() => handleSelectTicket(ticket.id)}
+                  key={ticket.ticket_id}
+                  className={`ticket-item ${selectedTicketId === ticket.ticket_id ? "active" : ""}`}
+                  onClick={() => handleSelectTicket(ticket.ticket_id)}
                 >
-                  <div className="ticket-subject">{ticket.subject}</div>
-                  <div className="ticket-preview">
-                    {ticket.lastMessagePreview}
+                  <div className="ticket-subject">{ticket.header}</div>
+                  <div className="ticket-status" data-status={ticket.status}>
+                    {t(ticket.status)}
                   </div>
                 </div>
               ))}
@@ -747,7 +752,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   </div>
                 ))}
               </div>
-              <div className="chat-input-wrapper">
+              <div className="chat-input-area">
                 <input
                   type="text"
                   value={chatInputText}
@@ -767,13 +772,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     </div>
   );
 
+  console.log(supportTickets);
+
   return (
     <div className="profile-page">
       <SupportModal
         isOpen={isSupportModalOpen}
         onClose={() => setIsSupportModalOpen(false)}
       />
-      <aside className={`sidebar ${isMobile || isSidebarOpen ? "open" : ""}`}>
+      <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
         <Sidebar
           isProfile={1}
           isPressProfile={profileState}

@@ -128,6 +128,9 @@ export const ru = {
   enable_anonymous: "Анонимные письма",
   allow: "Разрешить",
   not_allow: "Запретить",
+  open: "Открыт",
+  pending: "В обработке",
+  closed: "Закрыт",
 
   //Sidebar
   new_letter: "Новое письмо",

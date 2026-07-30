@@ -421,15 +421,15 @@
                         font-weight: 600;
                         margin-bottom: 4px;
 
-                        &[data-status="открыт"] {
+                        &[data-status="open"] {
                             background-color: #fff3e0;
                             color: #e65100;
                         }
-                        &[data-status="в обработке"] {
+                        &[data-status="pending"] {
                             background-color: #fff9c4;
                             color: #f57f17;
                         }
-                        &[data-status="закрыт"] {
+                        &[data-status="closed"] {
                             background-color: #e8f5e9;
                             color: #2e7d32;
                         }
