@@ -5,6 +5,12 @@ import { AppStorage } from "../store/AppStorage";
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 let lastEmailId: string | number | null = null;
 
+// В Safari iOS (вне установленной PWA) window.Notification не существует:
+// прямое обращение к Notification.permission кидает ReferenceError.
+function notificationsGranted(): boolean {
+  return "Notification" in window && Notification.permission === "granted";
+}
+
 async function fetchLatestEmail() {
   try {
     const data = await getInbox(0);
@@ -37,7 +43,7 @@ async function sendNotificationToSW(email: any) {
 }
 
 async function checkForNewEmails() {
-  if (Notification.permission !== "granted") return;
+  if (!notificationsGranted()) return;
 
   const email = await fetchLatestEmail();
   if (!email) return;
@@ -55,7 +61,7 @@ async function checkForNewEmails() {
 
 function startPolling() {
   if (pollingInterval) return;
-  if (Notification.permission !== "granted") return;
+  if (!notificationsGranted()) return;
   if (!AppStorage.notificationsEnabled) return;
   lastEmailId = null;
   checkForNewEmails();
@@ -91,7 +97,7 @@ export function initEmailNotifications() {
     const isLoggedIn = !!AppStorage.email && AppStorage.email !== "";
     if (
       isLoggedIn &&
-      Notification.permission === "granted" &&
+      notificationsGranted() &&
       AppStorage.notificationsEnabled
     ) {
       startPolling();
@@ -102,7 +108,7 @@ export function initEmailNotifications() {
 
   if (
     AppStorage.email &&
-    Notification.permission === "granted" &&
+    notificationsGranted() &&
     AppStorage.notificationsEnabled
   ) {
     startPolling();

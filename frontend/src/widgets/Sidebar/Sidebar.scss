@@ -15,6 +15,7 @@
 
     position: sticky;
     box-sizing: border-box;
+    scrollbar-width: none;
 
     width: 100%;
 
@@ -26,6 +27,7 @@
         padding: 0 10px;
         margin-bottom: 5px;
         color: var(--tertiary-text);
+        cursor: pointer;
 
         .arrow-left-icon {
             width: 24px;

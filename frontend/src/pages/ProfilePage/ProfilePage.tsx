@@ -299,6 +299,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
 
   const navigateToTab = (tabId: ProfileTabId, route: string) => {
     setProfileState(tabId);
+    setIsSidebarOpen(false);
     navigate(route, true);
   };
 

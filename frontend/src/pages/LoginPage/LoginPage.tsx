@@ -92,23 +92,28 @@ export default function LoginPage({ navigate }: LoginPageProps) {
 
     setIsLoading(true);
 
-    const response = await postDataLogin({
-      email: email + SUFFIX,
-      password: password,
-    });
-
-    if (response && response.isValid) {
-      const data = await getProfile();
-      AppStorage.setProfileData(data);
-      navigate("/");
-    } else if (response && !response.isValid) {
-      const serverErrors: any = {};
-      response.errors?.forEach((err: any) => {
-        if (err.field && !serverErrors[err.field]) {
-          serverErrors[err.field] = err.message;
-        }
+    try {
+      const response = await postDataLogin({
+        email: email + SUFFIX,
+        password: password,
       });
-      setErrors(serverErrors);
+
+      if (response && response.isValid) {
+        const data = await getProfile();
+        AppStorage.setProfileData(data);
+        navigate("/");
+      } else if (response && !response.isValid) {
+        const serverErrors: any = {};
+        response.errors?.forEach((err: any) => {
+          if (err.field && !serverErrors[err.field]) {
+            serverErrors[err.field] = err.message;
+          }
+        });
+        setErrors(serverErrors);
+      }
+    } catch {
+      setErrors({ password: t("server_error"), email: " " });
+    } finally {
       setIsLoading(false);
     }
   };

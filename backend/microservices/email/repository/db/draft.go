@@ -147,7 +147,7 @@ func (r *Repository) GetDraftByID(ctx context.Context, draftID, userID int64) (*
 			sender_id,
 			sender_email,
 			header,
-			header_enc,s
+			header_enc,
 			body,
 			body_enc,
 			wrapped_dek,
@@ -239,7 +239,7 @@ func (r *Repository) GetDrafts(ctx context.Context, userID int64, limit, offset 
 
 		var plainBody, plainHeader sql.NullString
 		var encryptedBody, encryptedHeader []byte
-		wrappedDEK := make([]byte, 60)
+		var wrappedDEK []byte
 		var keyVersion int
 
 		if err := rows.Scan(
