@@ -20,6 +20,7 @@ import Toaster from "./widgets/Toaster/Toaster";
 import { initEmailNotifications } from "./utils/emailNotifications";
 import { AppStorage } from "./store/AppStorage";
 import "./store/OfflineManager";
+import { useSettingsStore } from "./store/useSettingsStore";
 
 const routes: Record<string, React.ComponentType<any>> = {
   "/login": LoginPage,
@@ -76,6 +77,12 @@ function getComponent(path: string) {
 const App = () => {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [previousPath, setPreviousPath] = useState<string | null>(null);
+
+  const theme = useSettingsStore((state) => state.theme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     const handlePopState = () => {
