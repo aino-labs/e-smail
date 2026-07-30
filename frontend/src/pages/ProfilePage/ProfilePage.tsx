@@ -53,8 +53,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   const [isConfirm, setIsConfirm] = useState<boolean>(false);
   const [isStatus, setIsStatus] = useState<boolean>(false);
   const [isFolderEditMode, setIsFolderEditMode] = useState<boolean>(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
   // Support section state
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
@@ -307,6 +306,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
 
   const navigateToTab = (tabId: ProfileTabId, route: string) => {
     setProfileState(tabId);
+    setIsSidebarOpen(false);
     navigate(route, true);
   };
 
@@ -779,7 +779,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   return (
     <div className="profile-page" onClick={() => setIsModalOpen(false)}>
       <SupportModal />
-      <aside className={`sidebar ${isMobile || isSidebarOpen ? "open" : ""}`}>
+      <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
         <Sidebar
           isProfile={1}
           isPressProfile={profileState}

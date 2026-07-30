@@ -168,7 +168,7 @@ export default function Sidebar({
         </div>
       ) : null}
       <div className="logo-container" onClick={handleInboxClick}>
-        <img src="../../assets/svg/Logo.svg" />
+        <img src="../../assets/svg/Logo.svg" alt="SMail logo" />
         <h1 className="logo__title">SMail</h1>
       </div>
       {isProfile !== 1 && (
