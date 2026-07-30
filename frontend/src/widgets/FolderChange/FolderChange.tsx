@@ -12,13 +12,7 @@ import {
 import ConfirmationDialog from "../../widgets/ConfirmationDialog/ConfirmationDialog";
 import { useTranslation } from "../../hooks/useTranslation";
 
-interface FolderChangeProps {
-  isEditMode: boolean;
-}
-
-export default function FolderChange({
-  isEditMode = false,
-}: FolderChangeProps) {
+export default function FolderChange() {
   const { t, language } = useTranslation();
   const [folders, setFolders] = useState<any[]>(() => {
     return Array.isArray(AppStorage.folders) ? AppStorage.folders : [];
@@ -227,7 +221,7 @@ export default function FolderChange({
               </span>
             )}
 
-            {isEditMode && editingFolderId !== folder.id && (
+            {editingFolderId !== folder.id && (
               <button
                 className="folder-drag-btn"
                 onClick={(e: any) => e.preventDefault()}

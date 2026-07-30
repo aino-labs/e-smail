@@ -63,7 +63,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const [isFolderEditMode, setIsFolderEditMode] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
 
@@ -301,13 +300,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   const navigateToTab = (tabId: ProfileTabId, route: string) => {
     setProfileState(tabId);
     navigate(route, true);
-  };
-
-  const handleToggleFolderEditMode = async () => {
-    if (isFolderEditMode && AppStorage.folderChangeInstance) {
-      await AppStorage.folderChangeInstance.saveAllPendingChanges();
-    }
-    setIsFolderEditMode((prev) => !prev);
   };
 
   const handleEnableNotifs = () => {
@@ -654,7 +646,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       <h1>{t("folder")}</h1>
       <div className="profile-content">
         <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
-          <FolderChange isEditMode={isFolderEditMode} />
+          <FolderChange />
         </form>
       </div>
     </div>
