@@ -2,7 +2,10 @@ package response
 
 import (
 	"fmt"
+	"math"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type ErrorResponse struct {
@@ -37,6 +40,14 @@ func Forbidden(w http.ResponseWriter) {
 func NotFound(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNotFound)
 	_, _ = fmt.Fprintf(w, `{ "error": "Not found" }`)
+}
+
+func TooManyRequests(w http.ResponseWriter, retryAfter time.Duration) {
+	if retryAfter > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(retryAfter.Seconds()))))
+	}
+	w.WriteHeader(http.StatusTooManyRequests)
+	_, _ = fmt.Fprintf(w, `{ "error": "Too many requests" }`)
 }
 
 func NotFoundWithMessage(w http.ResponseWriter, msg string) {

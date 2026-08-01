@@ -5,6 +5,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"regexp"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"io"
 
 	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/ratelimit"
 	"smail/internal/pkg/response"
 	"smail/microservices/user/service"
 )
@@ -223,14 +225,31 @@ func (handler *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ipKey := ratelimit.IPKey(middleware.ClientIPFromContext(r.Context()))
+	acctKey := ratelimit.AccountKey(req.Email)
+
+	if wait, blocked := handler.cfg.LoginGuard.Blocked(ipKey, acctKey); blocked {
+		response.TooManyRequests(w, wait)
+		return
+	}
+
 	token, err := handler.service.SignIn(r.Context(), service.SignInInput{
 		Email:    req.Email,
 		Password: req.Password,
 	})
 	if err != nil {
+		if errors.Is(err, service.ErrInvalidCredentials) {
+			handler.cfg.LoginGuard.Fail(ipKey, acctKey)
+			middleware.GetLogger(r.Context()).Warnf(
+				"failed sign-in attempt from %s",
+				middleware.ClientIPFromContext(r.Context()),
+			)
+		}
 		parseCommonErrors(err, w)
 		return
 	}
+
+	handler.cfg.LoginGuard.Reset(ipKey, acctKey)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionTokenCookie,

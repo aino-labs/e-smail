@@ -1,5 +1,3 @@
-# dev config
-
 port: 8081
 
 jwt:
@@ -57,3 +55,17 @@ grpc:
 
 grpc_clients: 
   folder_service: "folder-service:50053"
+
+rate_limit:
+  rate_per_second: 0.2
+  burst: 10
+
+  max_fails: 5
+  base_block: 1m
+  max_block: 1h
+
+  ttl: 24h
+
+  trusted_proxies:
+    - 127.0.0.1/32
+    - 172.28.0.0/16

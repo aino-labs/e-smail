@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"smail/internal/pkg/ratelimit"
 	"smail/internal/pkg/response"
 	"smail/microservices/user/service"
 	"github.com/gorilla/mux"
@@ -15,6 +16,7 @@ type Config struct {
 	TTL           time.Duration
 	MaxAvatarSize int64
 	AllowedTypes  []string
+	LoginGuard    *ratelimit.Guard
 }
 
 type Handler struct {
@@ -29,18 +31,26 @@ func New(service Service, cfg Config) *Handler {
 	}
 }
 
-func (h *Handler) InitRoutes(public, private *mux.Router) {
+func (h *Handler) InitRoutes(public, private *mux.Router, authLimit mux.MiddlewareFunc) {
+	if authLimit == nil {
+		authLimit = func(next http.Handler) http.Handler { return next }
+	}
+
 	// Public routes
-	public.HandleFunc("/signup", h.SignUp).Methods(http.MethodPost, http.MethodOptions)
-	public.HandleFunc("/signin", h.SignIn).Methods(http.MethodPost, http.MethodOptions)
+	public.Handle("/signup", authLimit(http.HandlerFunc(h.SignUp))).
+		Methods(http.MethodPost, http.MethodOptions)
+	public.Handle("/signin", authLimit(http.HandlerFunc(h.SignIn))).
+		Methods(http.MethodPost, http.MethodOptions)
 	public.PathPrefix("/docs").Handler(httpSwagger.WrapHandler)
 	public.HandleFunc("/logout", h.Logout).Methods(http.MethodPost, http.MethodOptions)
-	public.HandleFunc("/csrf", h.GetCSRF).Methods(http.MethodGet, http.MethodOptions)
+	public.Handle("/csrf", authLimit(http.HandlerFunc(h.GetCSRF))).
+		Methods(http.MethodGet, http.MethodOptions)
 
 	// Private routes
 	private.HandleFunc("/profile/avatar", h.UploadAvatar).Methods(http.MethodPost, http.MethodOptions)
 	private.HandleFunc("/profile/me", h.GetMe).Methods(http.MethodGet, http.MethodOptions)
-	private.HandleFunc("/password", h.UpdatePassword).Methods(http.MethodPut, http.MethodOptions)
+	private.Handle("/password", authLimit(http.HandlerFunc(h.UpdatePassword))).
+		Methods(http.MethodPut, http.MethodOptions)
 	private.HandleFunc("/profile/change", h.UpdateProfile).Methods(http.MethodPut, http.MethodOptions)
 
 }

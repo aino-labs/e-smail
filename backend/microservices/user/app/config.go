@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"time"
 
 	"smail/internal/app"
 	"smail/internal/pkg/logger"
@@ -26,6 +27,17 @@ type GRPCClients struct {
 	FolderService string `mapstructure:"folder_service"`
 }
 
+type RateLimitConfig struct {
+	Rate      float64       `mapstructure:"rate_per_second"`
+	Burst     float64       `mapstructure:"burst"`
+	MaxFails  int           `mapstructure:"max_fails"`
+	BaseBlock time.Duration `mapstructure:"base_block"`
+	MaxBlock  time.Duration `mapstructure:"max_block"`
+	TTL       time.Duration `mapstructure:"ttl"`
+
+	TrustedProxies []string `mapstructure:"trusted_proxies"`
+}
+
 type Config struct {
 	ServerPort string `mapstructure:"port"`
 
@@ -41,6 +53,8 @@ type Config struct {
 
 	GRPC        GRPCConfig  `mapstructure:"grpc"`
 	GRPCClients GRPCClients `mapstructure:"grpc_clients"`
+
+	RateLimit RateLimitConfig `mapstructure:"rate_limit"`
 }
 
 func Load(path string) (*Config, error) {

@@ -23,6 +23,7 @@ import (
 	"smail/internal/pkg/logger"
 	"smail/internal/pkg/metrics"
 	"smail/internal/pkg/middleware"
+	"smail/internal/pkg/ratelimit"
 	"github.com/gorilla/mux"
 
 	"net"
@@ -134,10 +135,26 @@ func (app *App) Run(configPath string) {
 		}
 	}()
 
+	trustedProxies, err := middleware.ParseCIDRs(app.Config.RateLimit.TrustedProxies)
+	if err != nil {
+		app.Logger.Fatalf("invalid trusted_proxies: %v", err)
+	}
+
+	loginGuard := ratelimit.New(ratelimit.Config{
+		Rate:      app.Config.RateLimit.Rate,
+		Burst:     app.Config.RateLimit.Burst,
+		MaxFails:  app.Config.RateLimit.MaxFails,
+		BaseBlock: app.Config.RateLimit.BaseBlock,
+		MaxBlock:  app.Config.RateLimit.MaxBlock,
+		TTL:       app.Config.RateLimit.TTL,
+	})
+	defer loginGuard.Close()
+
 	authHandler := authHttp.New(userService, authHttp.Config{
 		TTL:           app.Config.JWTManager.TTL(),
 		MaxAvatarSize: app.Config.Avatar.MaxSizeMB * 1024 * 1024,
 		AllowedTypes:  app.Config.Avatar.AllowedTypes,
+		LoginGuard:    loginGuard,
 	})
 
 	m := metrics.New("user", "backend")
@@ -156,7 +173,7 @@ func (app *App) Run(configPath string) {
 	private.Use(middleware.AuthMiddleware(&app.Config.JWTManager))
 	private.Use(middleware.CSRFMiddleware)
 
-	authHandler.InitRoutes(public, private)
+	authHandler.InitRoutes(public, private, middleware.RateLimit(loginGuard, trustedProxies))
 
 	app.Server = http.Server{
 		Addr:    ":" + app.Config.ServerPort,
