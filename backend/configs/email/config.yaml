@@ -51,6 +51,7 @@ smtp:
 
 lmtp:
   addr: "0.0.0.0:2400"
+  local_domain: "e-smail.ru"
 
 grpc:
   email_port: "50052"

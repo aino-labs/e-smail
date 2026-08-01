@@ -597,3 +597,90 @@ func buildMultipart(boundary string, parts ...part) string {
 	sb.WriteString("--" + boundary + "--\r\n")
 	return sb.String()
 }
+
+func makeGuardedSession(recv *mockReceiver) *Session {
+	return &Session{backend: NewBackend(recv, "e-smail.ru")}
+}
+
+func TestSession_Mail_RejectsLocalSender(t *testing.T) {
+	tests := []struct {
+		name       string
+		from       string
+		wantReject bool
+	}{
+		{"spoofed local sender", "ceo@e-smail.ru", true},
+		{"spoofed with different case", "CEO@E-Smail.RU", true},
+		{"legitimate external sender", "someone@external.example", false},
+		{"lookalike domain is not local", "attacker@fake-e-smail.ru", false},
+		{"subdomain bounce is allowed", "MAILER-DAEMON@mail.e-smail.ru", false},
+		{"null sender (bounce)", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := makeGuardedSession(&mockReceiver{})
+
+			err := s.Mail(tt.from, nil)
+
+			if tt.wantReject {
+				if err == nil {
+					t.Fatalf("expected rejection for %q, got nil", tt.from)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("expected acceptance for %q, got %v", tt.from, err)
+			}
+			if s.from != tt.from {
+				t.Fatalf("expected from %q, got %q", tt.from, s.from)
+			}
+		})
+	}
+}
+
+func TestSession_Data_RejectsLocalHeaderFrom(t *testing.T) {
+	recv := &mockReceiver{}
+	s := makeGuardedSession(recv)
+
+	if err := s.Mail("attacker@external.example", nil); err != nil {
+		t.Fatalf("envelope sender must be accepted: %v", err)
+	}
+	s.to = []string{"victim@e-smail.ru"}
+
+	raw := "From: \"Support\" <support@e-smail.ru>\r\n" +
+		"Subject: Password reset\r\n" +
+		"Content-Type: text/plain\r\n\r\n" +
+		"click here\r\n"
+
+	if err := s.Data(strings.NewReader(raw)); err == nil {
+		t.Fatal("expected rejection of forged From header, got nil")
+	}
+	if len(recv.calls) != 0 {
+		t.Fatal("forged message must not reach the receiver")
+	}
+}
+
+func TestSession_Data_AcceptsExternalHeaderFrom(t *testing.T) {
+	recv := &mockReceiver{}
+	s := makeGuardedSession(recv)
+
+	if err := s.Mail("partner@external.example", nil); err != nil {
+		t.Fatalf("envelope sender must be accepted: %v", err)
+	}
+	s.to = []string{"user@e-smail.ru"}
+
+	raw := "From: Partner <partner@external.example>\r\n" +
+		"Subject: Hello\r\n" +
+		"Content-Type: text/plain\r\n\r\n" +
+		"body\r\n"
+
+	if err := s.Data(strings.NewReader(raw)); err != nil {
+		t.Fatalf("legitimate external mail must pass: %v", err)
+	}
+	if len(recv.calls) != 1 {
+		t.Fatalf("expected 1 delivered message, got %d", len(recv.calls))
+	}
+	if got := recv.last().subject; got != "Hello" {
+		t.Fatalf("unexpected subject %q", got)
+	}
+}

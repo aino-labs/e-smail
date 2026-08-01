@@ -5,13 +5,21 @@ mydestination =
 
 inet_interfaces = all
 inet_protocols = ipv4
+
 mynetworks = 127.0.0.0/8, 172.28.0.0/16
 
 relay_domains = $mydomain
 transport_maps = hash:/etc/postfix/transport
 
+smtpd_helo_required = yes
+
 smtpd_relay_restrictions =
     reject_unauth_destination
+
+smtpd_sender_restrictions =
+    check_sender_access hash:/etc/postfix/sender_access,
+    reject_non_fqdn_sender,
+    reject_unknown_sender_domain
 
 smtpd_recipient_restrictions =
     reject_unauth_destination,
@@ -20,6 +28,11 @@ smtpd_recipient_restrictions =
     reject_non_fqdn_recipient,
     reject_unknown_sender_domain,
     reject_rbl_client zen.spamhaus.org
+
+smtpd_milters = inet:127.0.0.1:8891, inet:127.0.0.1:8893
+non_smtpd_milters = inet:127.0.0.1:8891
+milter_protocol = 6
+milter_default_action = tempfail
 
 smtpd_tls_cert_file = /etc/ssl/postfix/fullchain.pem
 smtpd_tls_key_file  = /etc/ssl/postfix/privkey.pem

@@ -126,7 +126,7 @@ func (app *App) Run(configPath string) {
 	}
 
 	// LMTP
-	lmtpServer := lmtp.NewServer(svc, app.Config.LMTP.Addr)
+	lmtpServer := lmtp.NewServer(svc, app.Config.LMTP.Addr, app.Config.LMTP.LocalDomain)
 	lmtpListener, err := net.Listen("tcp", app.Config.LMTP.Addr)
 	if err != nil {
 		app.Logger.Fatalf("lmtp bind error: %v", err)

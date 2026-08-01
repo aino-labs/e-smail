@@ -47,7 +47,8 @@ type SMTPConfig struct {
 }
 
 type LMTPConfig struct {
-	Addr string `mapstructure:"addr"`
+	Addr        string `mapstructure:"addr"`
+	LocalDomain string `mapstructure:"local_domain"`
 }
 
 type EncryptConfig struct {

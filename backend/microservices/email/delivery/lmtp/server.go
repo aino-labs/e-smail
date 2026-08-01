@@ -30,15 +30,47 @@ type Receiver interface {
 }
 
 type Backend struct {
-	receiver Receiver
+	receiver    Receiver
+	localDomain string
 }
 
-func NewBackend(r Receiver) *Backend {
-	return &Backend{receiver: r}
+func NewBackend(r Receiver, localDomain string) *Backend {
+	return &Backend{
+		receiver:    r,
+		localDomain: strings.ToLower(strings.TrimSpace(localDomain)),
+	}
 }
 
 func (b *Backend) NewSession(_ *smtp.Conn) (smtp.Session, error) {
 	return &Session{backend: b}, nil
+}
+
+var errSenderForgery = &smtp.SMTPError{
+	Code:         550,
+	EnhancedCode: smtp.EnhancedCode{5, 7, 1},
+	Message:      "sender address forgery",
+}
+
+func (b *Backend) isLocalDomain(domain string) bool {
+	return b.localDomain != "" && domain == b.localDomain
+}
+
+func addrDomain(addr string) string {
+	i := strings.LastIndex(addr, "@")
+	if i < 0 {
+		return ""
+	}
+	return strings.ToLower(strings.Trim(addr[i+1:], "<> \t\r\n"))
+}
+
+func headerFromDomain(v string) string {
+	if v == "" {
+		return ""
+	}
+	if list, err := mail.ParseAddressList(v); err == nil && len(list) > 0 {
+		return addrDomain(list[0].Address)
+	}
+	return addrDomain(v)
 }
 
 type Session struct {
@@ -48,6 +80,9 @@ type Session struct {
 }
 
 func (s *Session) Mail(from string, _ *smtp.MailOptions) error {
+	if s.backend.isLocalDomain(addrDomain(from)) {
+		return errSenderForgery
+	}
 	s.from = from
 	return nil
 }
@@ -61,6 +96,10 @@ func (s *Session) Data(r io.Reader) error {
 	msg, err := mail.ReadMessage(r)
 	if err != nil {
 		return err
+	}
+
+	if s.backend.isLocalDomain(headerFromDomain(msg.Header.Get("From"))) {
+		return errSenderForgery
 	}
 
 	dec := new(mime.WordDecoder)
@@ -214,8 +253,8 @@ func (s *Session) Logout() error {
 	return nil
 }
 
-func NewServer(r Receiver, addr string) *smtp.Server {
-	be := NewBackend(r)
+func NewServer(r Receiver, addr, localDomain string) *smtp.Server {
+	be := NewBackend(r, localDomain)
 	srv := smtp.NewServer(be)
 
 	srv.Addr = addr
