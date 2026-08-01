@@ -194,7 +194,7 @@ func TestHandler_SignIn(t *testing.T) {
 
 		th.mockService.EXPECT().
 			SignIn(gomock.Any(), gomock.Any()).
-			Return("", service.ErrUserNotFound)
+			Return("", service.ErrInvalidCredentials)
 
 		bodyBytes, _ := json.Marshal(validBody)
 		req := httptest.NewRequest(http.MethodPost, "/signin", bytes.NewReader(bodyBytes))
@@ -203,7 +203,7 @@ func TestHandler_SignIn(t *testing.T) {
 
 		th.SignIn(rec, req)
 
-		assert.Equal(t, http.StatusNotFound, rec.Code)
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	})
 
 	t.Run("wrong password", func(t *testing.T) {
@@ -212,7 +212,7 @@ func TestHandler_SignIn(t *testing.T) {
 
 		th.mockService.EXPECT().
 			SignIn(gomock.Any(), gomock.Any()).
-			Return("", service.ErrWrongPassword)
+			Return("", service.ErrInvalidCredentials)
 
 		bodyBytes, _ := json.Marshal(validBody)
 		req := httptest.NewRequest(http.MethodPost, "/signin", bytes.NewReader(bodyBytes))

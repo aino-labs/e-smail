@@ -31,7 +31,19 @@ var (
 	ErrUploadAvatar         = errors.New("failed to upload avatar")
 	ErrUpdateAvatar         = errors.New("failed to update avatar")
 	ErrUpdatePassword       = errors.New("failed to update password")
+
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )
+
+var dummyHash = mustDummyHash()
+
+func mustDummyHash() string {
+	h, err := utils.Hash("dummy-password-that-never-matches")
+	if err != nil {
+		panic("failed to init dummy password hash: " + err.Error())
+	}
+	return h
+}
 
 type DbRepository interface {
 	Save(ctx context.Context, user models.User) (int64, error)
@@ -255,12 +267,17 @@ type SignInInput struct {
 func (s *Service) SignIn(ctx context.Context, signIn SignInInput) (string, error) {
 	user, err := s.userDB.FindByEmail(ctx, signIn.Email)
 	if err != nil {
+		if errors.Is(err, db.ErrUserNotFound) {
+			_ = utils.ComparePasswordAndHash(dummyHash, signIn.Password)
+			return "", ErrInvalidCredentials
+		}
 		return "", MapRepositoryError(err)
 	}
 
 	if err := utils.ComparePasswordAndHash(user.Password, signIn.Password); err != nil {
-		return "", MapRepositoryError(err)
+		return "", ErrInvalidCredentials
 	}
+
 	token, err := s.jwt.GenerateJWT(user.ID)
 	if err != nil {
 		return "", MapRepositoryError(err)

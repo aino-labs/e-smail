@@ -48,6 +48,9 @@ func (h *Handler) InitRoutes(public, private *mux.Router) {
 func parseCommonErrors(err error, w http.ResponseWriter) {
 	switch {
 
+	case errors.Is(err, service.ErrInvalidCredentials):
+		response.Unauthorized(w)
+
 	case errors.Is(err, service.ErrUserNotFound):
 		response.NotFound(w)
 
