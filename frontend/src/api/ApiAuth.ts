@@ -1,5 +1,8 @@
-import { AppStorage } from "../store/AppStorage";
 import { USER_URL } from "./config";
+import { useAuthStore } from "../store/useAuthStore";
+
+const getCSRF = () => useAuthStore.getState().csrfToken;
+
 /**
  * Отправляет POST-запрос на эндпоинт /login с данными.
  */
@@ -16,6 +19,11 @@ export async function postDataLogin(data = {}) {
 
     const responseData = await response.json();
     if (response.ok) {
+      if (responseData.csrf_token) {
+        useAuthStore.getState().setCSRFToken(responseData.csrf_token);
+      } else {
+        await getCSRFToken();
+      }
       return {
         isValid: true,
         token: responseData.token,
@@ -28,7 +36,7 @@ export async function postDataLogin(data = {}) {
           errors: [
             {
               field: "password",
-              message: AppStorage.t("incorrect_credentials"),
+              message: "incorrect_credentials",
             },
             {
               field: "email",
@@ -43,7 +51,7 @@ export async function postDataLogin(data = {}) {
           errors: [
             {
               field: "password",
-              message: AppStorage.t("client_error"),
+              message: "client_error",
             },
             {
               field: "email",
@@ -57,7 +65,7 @@ export async function postDataLogin(data = {}) {
       return {
         isValid: false,
         errors: [
-          { field: "password", message: AppStorage.t("server_error") },
+          { field: "password", message: "server_error" },
           { field: "email", message: " " },
         ],
       };
@@ -68,7 +76,7 @@ export async function postDataLogin(data = {}) {
       errors: [
         {
           field: "password",
-          message: AppStorage.t("server_error"),
+          message: "server_error",
         },
         {
           field: "email",
@@ -109,7 +117,7 @@ export async function postDataReg(data = {}) {
           errors: [
             {
               field: "password",
-              message: AppStorage.t("client_error"),
+              message: "client_error",
             },
             {
               field: "email",
@@ -124,7 +132,7 @@ export async function postDataReg(data = {}) {
           errors: [
             {
               field: "password",
-              message: AppStorage.t("email_exists"),
+              message: "email_exists",
             },
             {
               field: "email",
@@ -136,7 +144,7 @@ export async function postDataReg(data = {}) {
       return {
         isValid: false,
         errors: [
-          { field: "password", message: AppStorage.t("server_error") },
+          { field: "password", message: "server_error" },
           { field: "email", message: " " },
         ],
       };
@@ -147,7 +155,7 @@ export async function postDataReg(data = {}) {
       errors: [
         {
           field: "password",
-          message: AppStorage.t("server_error"),
+          message: "server_error",
         },
         {
           field: "email",
@@ -177,7 +185,6 @@ export async function logOut() {
 
 export async function getProfile() {
   try {
-    AppStorage.csrfToken = await getCSRFToken();
     const response = await fetch(`${USER_URL}/profile/me`, {
       method: "GET",
       headers: {
@@ -202,7 +209,7 @@ export async function changePassword(data = {}) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": AppStorage.csrfToken,
+        "X-CSRF-Token": getCSRF(),
       },
       credentials: "include",
       body: JSON.stringify(data),
@@ -225,7 +232,11 @@ export async function getCSRFToken() {
 
     if (response.ok) {
       const data = await response.json();
-      return data.csrf_token || null;
+      const token = data.csrf_token || null;
+
+      useAuthStore.getState().setCSRFToken(token);
+
+      return token;
     }
   } catch {
     return null;
@@ -240,7 +251,7 @@ export async function uploadAvatar(file: File) {
     const response = await fetch(`${USER_URL}/profile/avatar`, {
       method: "POST",
       headers: {
-        "X-CSRF-Token": AppStorage.csrfToken,
+        "X-CSRF-Token": getCSRF(),
       },
       credentials: "include",
       body: formData,
@@ -264,7 +275,7 @@ export async function changeProfile(data: {
     const response = await fetch(`${USER_URL}/profile/change`, {
       method: "PUT",
       headers: {
-        "X-CSRF-Token": AppStorage.csrfToken,
+        "X-CSRF-Token": getCSRF(),
       },
       credentials: "include",
       body: JSON.stringify(data),

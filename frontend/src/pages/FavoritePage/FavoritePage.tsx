@@ -10,7 +10,7 @@ export default function FavoritePage({ navigate }: FavoritePageProps) {
     <BaseEmailPage
       currentView="favorite"
       fetchEmails={getEmailsFavorite}
-      emptyMessage="Нет избранных писем"
+      emptyMessage="empty_favorites"
       navigate={navigate}
     />
   );

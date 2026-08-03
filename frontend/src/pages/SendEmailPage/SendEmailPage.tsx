@@ -4,26 +4,33 @@ import Button from "../../components/Button/Button";
 import SendMail from "../../widgets/SendMail/SendMail";
 import "./SendEmailPage.scss";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
-import NotificationManager from "../../widgets/Toaster/Toaster";
 import Input from "../../components/Input/Input";
-import { AppStorage } from "../../store/AppStorage";
 import { getProfile } from "../../api/ApiAuth";
 import { toast } from "../../store/toastStore";
+import { useTranslation } from "../../hooks/useTranslation";
+import { useUserStore } from "../../store/useUserStore";
+import { useComposerStore } from "../../store/useComposerStore";
+import { useMailStore } from "../../store/useMailStore";
 
 interface SendEmailPageProps {
   navigate: (route: string) => void;
 }
 
 const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
-  // State Declarations
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [replyData, setReplyData] = useState<any>(null);
-  const [forwardData, setForwardData] = useState<any>(null);
-  const [currentView, setCurrentView] = useState<string>("send");
-  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
+  const [selectedFolderId] = useState<number | null>(null);
 
-  const t = (key: string): string => AppStorage.t(key);
-  const mailActionData = replyData || forwardData;
+  const { t } = useTranslation();
+  const {
+    isProfileLoaded,
+    setProfileData,
+    getAvatarUrl,
+    name,
+    surname,
+    email,
+  } = useUserStore();
+  const { setCurrentFolderId } = useMailStore();
+  const { data: composerData, clearComposerData } = useComposerStore();
 
   // Profile Fetching Logic
   const loadProfile = async () => {
@@ -32,17 +39,13 @@ const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
       navigate("/login");
       toast.show("auth_error", "error");
     } else {
-      AppStorage.setProfileData(data);
+      setProfileData(data);
     }
   };
 
   // Run initial loading logic on mount
   useEffect(() => {
-    setReplyData(AppStorage.getReplyData());
-    setForwardData(AppStorage.getForwardData());
-
-    if (!AppStorage.isProfileLoaded) {
-      AppStorage.isProfileLoaded = true;
+    if (!isProfileLoaded) {
       loadProfile();
     }
   }, []);
@@ -68,55 +71,15 @@ const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
     navigate("/settings");
   };
 
-  const handleNewMail = () => {
-    AppStorage.clearMailActionData();
-    setReplyData(null);
-    setForwardData(null);
-  };
-
   const handleBackToMail = () => {
-    AppStorage.clearMailActionData();
-    AppStorage.setCurrentFolderId(null);
-    AppStorage.setCurrentView("inbox");
-    navigate("/");
-  };
-
-  const handleGetSendEmail = () => {
-    AppStorage.setCurrentView("sent");
-    navigate("/sent");
-  };
-
-  const handleGetDrafts = () => {
-    AppStorage.setCurrentView("drafts");
-    navigate("/");
-  };
-
-  const handleGetSpam = () => {
-    AppStorage.setCurrentView("spam");
-    navigate("/");
-  };
-
-  const handleGetTrash = () => {
-    AppStorage.setCurrentView("trash");
-    navigate("/");
-  };
-
-  const handleGetFavorite = () => {
-    AppStorage.setCurrentView("favorite");
+    clearComposerData();
+    setCurrentFolderId(null);
     navigate("/");
   };
 
   const handleGoToMain = () => {
-    AppStorage.setCurrentView("inbox");
-    AppStorage.clearMailActionData();
-    AppStorage.setCurrentFolderId(null);
-    navigate("/");
-  };
-
-  const loadEmailFromFolder = async (offset: number, folderID: number) => {
-    AppStorage.setCurrentFolderId(folderID);
-    AppStorage.setCurrentView("folder");
-    setSelectedFolderId(folderID);
+    clearComposerData;
+    setCurrentFolderId(null);
     navigate("/");
   };
 
@@ -135,7 +98,7 @@ const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
 
       <div className="top-right-menu">
         <Button
-          svg={AppStorage.getAvatarUrl()}
+          svg={getAvatarUrl()}
           name="avatar"
           help="Аккаунт"
           onClick={handleAvatar}
@@ -149,13 +112,13 @@ const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
       <aside className="sidebar">
         <Sidebar
           isProfile={0}
-          newMail={handleNewMail}
+          newMail={clearComposerData}
           backToMail={handleGoToMain}
           selectedFolderId={selectedFolderId}
-          name={AppStorage.name}
-          surname={AppStorage.surname}
-          email={AppStorage.email}
-          avatarUrl={AppStorage.getAvatarUrl()}
+          name={name}
+          surname={surname}
+          email={email}
+          avatarUrl={getAvatarUrl()}
           navigate={navigate}
         />
       </aside>
@@ -164,7 +127,7 @@ const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
         {renderTopBar()}
 
         <div className="mail-box-container">
-          <SendMail backToMail={handleBackToMail} actionData={mailActionData} />
+          <SendMail backToMail={handleBackToMail} actionData={composerData} />
         </div>
 
         <ProfileModal

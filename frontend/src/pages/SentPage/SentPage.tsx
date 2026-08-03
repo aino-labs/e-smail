@@ -17,8 +17,8 @@ export default function SentPage({ navigate }: SentPageProps) {
       currentView="sent"
       fetchEmails={getEmailSend}
       deleteEmails={trash}
-      emptyMessage="Нет отправленных писем"
-      emptySubMessage="Напишите ваше первое письмо, нажав на кнопку слева"
+      emptyMessage="empty_sent"
+      emptySubMessage="first_email_sub"
       onReadMail={onReadMail}
       navigate={navigate}
     />

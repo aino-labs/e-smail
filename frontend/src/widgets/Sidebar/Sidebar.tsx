@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import Button from "../../components/Button/Button";
 import "./Sidebar.scss";
-import { AppStorage } from "../../store/AppStorage";
 import SidebarProfile from "../../components/SidebarProfile/SidebarProfile";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { useUIStore } from "../../store/useUIStore";
+import { useMailStore } from "../../store/useMailStore";
 
 interface SidebarProps {
   isProfile: number;
@@ -41,31 +42,15 @@ export default function Sidebar({
   selectedFolderId,
   navigate,
 }: SidebarProps) {
-  const { t, language } = useTranslation();
-
-  const [isVisible, setIsVisible] = useState(
-    AppStorage.getSidebarDropdownVisible() || false,
+  const { t } = useTranslation();
+  const { currentView, setCurrentView } = useUIStore();
+  const sidebarDropdownVisible = useUIStore(
+    (state) => state.sidebarDropdownVisible,
   );
-
-  const [appState, setAppState] = useState({
-    unReadCount: AppStorage.unReadCount,
-    currentView: AppStorage.currentView || "inbox",
-    folders: AppStorage.folders || [],
-  });
-
-  useEffect(() => {
-    const unsubscribe = AppStorage.subscribe?.(() => {
-      setAppState({
-        unReadCount: AppStorage.unReadCount,
-        currentView: AppStorage.currentView || "inbox",
-        folders: AppStorage.folders || [],
-      });
-    });
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
+  const setSidebarDropdownVisible = useUIStore(
+    (state) => state.setSidebarDropdownVisible,
+  );
+  const { unreadCount, folders, setCurrentFolderId } = useMailStore();
 
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 769);
   useEffect(() => {
@@ -76,9 +61,8 @@ export default function Sidebar({
 
   const toggleDropdown = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    const newState = !isVisible;
-    setIsVisible(newState);
-    AppStorage.setSidebarDropdownVisible(newState);
+    const newState = !sidebarDropdownVisible;
+    setSidebarDropdownVisible(newState);
 
     const button = event.currentTarget;
     button.classList.toggle("active");
@@ -96,64 +80,62 @@ export default function Sidebar({
   };
 
   const handleFolderClick = (folderId: number) => {
-    AppStorage.setCurrentFolderId(folderId);
-    AppStorage.setCurrentView("folder");
+    setCurrentFolderId(folderId);
+    setCurrentView("folder");
     navigate(`/folder/${folderId}`);
     toggleSidebar();
   };
 
   const handleInboxClick = (event: React.MouseEvent) => {
     event.preventDefault();
-    AppStorage.setCurrentView("inbox");
-    AppStorage.setCurrentFolderId(null);
+    setCurrentView("inbox");
+    setCurrentFolderId(null);
     navigate("/");
     toggleSidebar();
   };
 
   const handleDraftsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    AppStorage.setCurrentView("drafts");
+    setCurrentView("drafts");
     navigate("/drafts");
     toggleSidebar();
   };
 
   const handleSentClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    AppStorage.setCurrentView("sent");
+    setCurrentView("sent");
     navigate("/sent");
     toggleSidebar();
   };
 
   const handleFavoriteClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    AppStorage.setCurrentView("favorite");
+    setCurrentView("favorite");
     navigate("/favorite");
     toggleSidebar();
   };
 
   const handleSpamClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    AppStorage.setCurrentView("spam");
+    setCurrentView("spam");
     navigate("/spam");
     toggleSidebar();
   };
 
   const handleTrashClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    AppStorage.setCurrentView("trash");
+    setCurrentView("trash");
     navigate("/trash");
     toggleSidebar();
   };
 
   const handleAllMailClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    AppStorage.setCurrentView("all-emails");
-    AppStorage.setCurrentFolderId(null);
+    setCurrentView("all-emails");
+    setCurrentFolderId(null);
     navigate("/all-emails");
     toggleSidebar();
   };
-
-  const { unReadCount, currentView, folders } = appState;
 
   return (
     <div className="sidebar-widget">
@@ -185,7 +167,7 @@ export default function Sidebar({
               name="button-inbox"
               title={t("inbox")}
               isSelect={currentView === "inbox" && !selectedFolderId}
-              count={unReadCount}
+              count={unreadCount}
               onClick={handleInboxClick}
             />
 
@@ -214,10 +196,10 @@ export default function Sidebar({
           <div className="drop-down">
             <Button
               name="button-drop-down"
-              title={isVisible ? t("hide") : t("yet")}
+              title={sidebarDropdownVisible ? t("hide") : t("yet")}
               onClick={toggleDropdown}
             />
-            {isVisible && (
+            {sidebarDropdownVisible && (
               <div className="extra-button-container">
                 <Button
                   name="button-spam"

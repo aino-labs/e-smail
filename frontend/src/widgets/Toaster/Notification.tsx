@@ -1,6 +1,5 @@
 import { useRef, useEffect } from "react";
 import "./Notification.scss";
-import { useTranslation } from "../../hooks/useTranslation";
 
 interface NotificationProps {
   onClose: () => void;
@@ -17,8 +16,6 @@ export default function Notification({
   message,
   index,
 }: NotificationProps) {
-  const { t, language } = useTranslation();
-
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {

@@ -11,7 +11,7 @@ export default function TrashPage({ navigate }: TrashPageProps) {
       currentView="trash"
       fetchEmails={getEmailsTrash}
       deleteEmails={trash}
-      emptyMessage="Корзина пуста"
+      emptyMessage="empty_trash"
       navigate={navigate}
     />
   );

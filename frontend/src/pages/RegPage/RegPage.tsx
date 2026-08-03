@@ -2,10 +2,11 @@ import { useState } from "react";
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
-import { postDataReg, getProfile } from "../../api/ApiAuth";
+import { postDataReg, getProfile, getCSRFToken } from "../../api/ApiAuth";
 import "./RegPage.scss";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useUserStore } from "../../store/useUserStore";
+import { useAuthStore } from "../../store/useAuthStore";
 
 interface RegPageProps {
   navigate: (path: string) => void;
@@ -14,6 +15,8 @@ interface RegPageProps {
 export default function RegPage({ navigate }: RegPageProps) {
   const { t } = useTranslation();
   const { setProfileData } = useUserStore();
+  const { setAuthenticated } = useAuthStore();
+
   const [step, setStep] = useState<number>(1);
   const [formData, setFormData] = useState<Record<string, string>>({
     name: "",
@@ -130,6 +133,11 @@ export default function RegPage({ navigate }: RegPageProps) {
       const response = await postDataReg(payload);
 
       if (response && response.isValid) {
+        // 1. Fetch & save fresh session CSRF token to useAuthStore
+        await getCSRFToken();
+
+        // 2. Mark user as authenticated in store
+        setAuthenticated(true);
         const data = await getProfile();
         setProfileData(data);
         navigate("/");

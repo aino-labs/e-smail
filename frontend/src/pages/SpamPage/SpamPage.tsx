@@ -12,7 +12,7 @@ export default function SpamPage({ navigate }: SpamPageProps) {
       currentView="spam"
       fetchEmails={getEmailsSpam}
       deleteEmails={trash}
-      emptyMessage="Спам пуст"
+      emptyMessage="empty_spam"
       navigate={navigate}
     />
   );

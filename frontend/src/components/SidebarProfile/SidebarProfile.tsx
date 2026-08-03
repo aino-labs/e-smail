@@ -1,7 +1,8 @@
-import { AppStorage } from "../../store/AppStorage";
 import "./SidebarProfile.scss";
 import Button from "../Button/Button";
 import { logOut } from "../../api/ApiAuth";
+import { useMailStore } from "../../store/useMailStore";
+import { useUserStore } from "../../store/useUserStore";
 
 interface SidebarProfileProps {
   name?: string;
@@ -14,14 +15,16 @@ interface SidebarProfileProps {
 }
 
 export default function SidebarProfile({
-  name = AppStorage.name,
-  surname = AppStorage.surname,
-  email = AppStorage.email,
-  avatarUrl = AppStorage.image_path,
+  name = "",
+  surname = "",
+  email = "",
+  avatarUrl = "",
   variant = "",
   textAlign = "",
   navigate,
 }: SidebarProfileProps) {
+  const setUnreadCount = useMailStore((state) => state.setUnreadCount);
+  const getAvatarUrl = useUserStore((state) => state.getAvatarUrl);
   const handleAvatar = () => {
     navigate("/profile");
   };
@@ -29,7 +32,7 @@ export default function SidebarProfile({
   const handleExit = async () => {
     await logOut();
 
-    AppStorage.setUnReadCount(0);
+    setUnreadCount(0);
 
     navigate("/login");
   };
@@ -39,7 +42,7 @@ export default function SidebarProfile({
       {variant === "mobile" ? (
         <Button
           className="sidebar-profile__profile-btn"
-          svg={AppStorage.getAvatarUrl()}
+          svg={getAvatarUrl()}
           name="avatar"
           help="Аккаунт"
           onClick={handleAvatar}

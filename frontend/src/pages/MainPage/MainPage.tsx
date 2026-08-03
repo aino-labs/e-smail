@@ -10,8 +10,8 @@ export default function MainPage({ navigate }: MainPageProps) {
     <BaseEmailPage
       currentView="inbox"
       fetchEmails={getInbox}
-      emptyMessage="Ваш почтовый ящик пуст :("
-      emptySubMessage="Напишите ваше первое письмо, нажав на кнопку слева"
+      emptyMessage="empty_inbox"
+      emptySubMessage="first_email_sub"
       showUnreadToggle
       showMarkAsRead
       showMoveToFolder

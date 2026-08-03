@@ -7,7 +7,6 @@ import UploadAvatar from "../../components/UploadAvatar/UploadAvatar";
 import { validation } from "../../utils/validation";
 import { changePassword, getProfile, changeProfile } from "../../api/ApiAuth";
 import { getMyTickets, getMessages, answerTicket } from "../../api/ApiSupport";
-import { AppStorage } from "../../store/AppStorage";
 import FolderChange from "../../widgets/FolderChange/FolderChange";
 import SupportModal from "../../widgets/SupportModal/SupportModal";
 import SelectDate from "../../components/SelectDate/SelectDate";
@@ -283,7 +282,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
 
       const response = await changeProfile(payload);
       if (response) {
-        AppStorage.setProfileData({
+        setProfileData({
           name,
           surname,
           email,

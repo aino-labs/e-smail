@@ -2,12 +2,12 @@ import { useState, useTransition } from "react";
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import "./MailHeader.scss";
-import { AppStorage } from "../../store/AppStorage";
 import { getEmailsSpam, sendSpam, unSpam } from "../../api/ApiSpam";
 import { sendFavorite, unFavorite } from "../../api/ApiFavorite";
 import { getEmailsTrash, untrash } from "../../api/ApiTrash";
 import { readEmail, unReadEmail } from "../../api/ApiEmail";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useMailStore } from "../../store/useMailStore";
 
 interface MailHeaderProps {
   onSelectAll?: (isChecked: boolean) => void;
@@ -44,7 +44,7 @@ export default function MailHeader({
   isSelectAll = false,
   isLoading = false,
 }: MailHeaderProps) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
 
   const [showFolderList, setShowFolderList] = useState<boolean>(false);
 
@@ -166,7 +166,7 @@ export default function MailHeader({
   const isSent = currentView === "sent";
   const hasOnlyUnread = hasSelected && !hasReadSelected();
 
-  const folders = AppStorage.folders || [];
+  const { folders } = useMailStore();
 
   return (
     <div className="mail-header">

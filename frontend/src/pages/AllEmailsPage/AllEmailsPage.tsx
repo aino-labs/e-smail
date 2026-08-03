@@ -10,7 +10,7 @@ export default function AllEmailsPage({ navigate }: AllEmailsPageProps) {
     <BaseEmailPage
       currentView="all-emails"
       fetchEmails={getAllEmails}
-      emptyMessage="Нет писем"
+      emptyMessage="empty_inbox"
       navigate={navigate}
     />
   );

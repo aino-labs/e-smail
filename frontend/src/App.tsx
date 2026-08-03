@@ -18,9 +18,10 @@ import SupportPage from "./pages/SupportPage/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage/AdminSupportPage";
 import Toaster from "./widgets/Toaster/Toaster";
 import { initEmailNotifications } from "./utils/emailNotifications";
-import { AppStorage } from "./store/AppStorage";
 import "./store/OfflineManager";
 import { useSettingsStore } from "./store/useSettingsStore";
+import { useAuthStore } from "./store/useAuthStore";
+import { getCSRFToken, getProfile } from "./api/ApiAuth";
 
 const routes: Record<string, React.ComponentType<any>> = {
   "/login": LoginPage,
@@ -75,6 +76,8 @@ function getComponent(path: string) {
 }
 
 const App = () => {
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [previousPath, setPreviousPath] = useState<string | null>(null);
 
@@ -83,6 +86,18 @@ const App = () => {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      const user = await getProfile();
+      if (user) {
+        setAuthenticated(true);
+        await getCSRFToken();
+      }
+    };
+
+    initAuth();
+  }, [setAuthenticated]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -112,9 +127,6 @@ const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("Root element not found");
 }
-
-AppStorage.init();
-(window as any).AppStorage = AppStorage;
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

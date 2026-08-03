@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./SendMail.scss";
 import InputEmail from "../../components/InputEmail/InputEmail";
 import Input from "../../components/Input/Input";
@@ -12,7 +12,6 @@ import {
   getAttachments,
   deleteAttachments,
 } from "../../api/ApiAttachments";
-import { AppStorage } from "../../store/AppStorage";
 import { toast } from "../../store/toastStore";
 import { createDraft, sendDraft, updateDraft } from "../../api/ApiDraft";
 import {
@@ -21,73 +20,66 @@ import {
   trimFileName,
 } from "../../utils/files";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useComposerStore } from "../../store/useComposerStore";
+import { useUIStore } from "../../store/useUIStore";
 
 interface SendMailProps {
   actionData?: any;
   backToMail?: () => void;
 }
 
-export default function SendMail({ actionData, backToMail }: SendMailProps) {
-  const { t, language } = useTranslation();
+export default function SendMail({ backToMail }: SendMailProps) {
+  const { t } = useTranslation();
+  const {
+    data: composerData,
+    clearComposerData,
+  } = useComposerStore();
 
-  const initialData = useMemo(() => {
-    const draftData = AppStorage.getDraftData();
+  const { currentView } = useUIStore();
 
-    let header = "";
-    let body = "";
-    let receivers: string[] = [];
-    let draftId: number | null = null;
-
-    if (actionData) {
-      if (actionData.type === "reply") {
-        header = actionData.subject || "";
-        body = actionData.body || "";
-        receivers = actionData.to ? [actionData.to] : [];
-      } else if (actionData.type === "forward") {
-        header = actionData.subject || "";
-        body = actionData.body || "";
-        receivers = [];
-      }
-    } else if (draftData) {
-      header = draftData.header || "";
-      body = draftData.body || "";
-      receivers = draftData.receivers || [];
-      draftId = draftData.id || null;
-    }
-
-    return { header, body, receivers, draftId };
-  }, [actionData]);
-
-  const [header, setHeader] = useState(initialData.header);
-  const [body, setBody] = useState(initialData.body);
-  const [receivers, setReceivers] = useState<string[]>(initialData.receivers);
-  const [invalidReceivers, setInvalidReceivers] = useState<string[]>([]);
+  const [subject, setSubject] = useState(composerData.subject || "");
+  const [body, setBody] = useState(composerData.body || "");
+  const [recipients, setRecipients] = useState<string[]>(
+    composerData.recipients || []
+  );
+  const [invalidRecipients, setInvalidRecipients] = useState<string[]>([]);
   const [files, setFiles] = useState<any[]>([]);
-  const [draftId, setDraftId] = useState<number | null>(initialData.draftId);
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [sending, setSending] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [showDraftConfirm, setShowDraftConfirm] = useState(false);
 
-  const [emailId] = useState<number | null>(
-    () => AppStorage.emailReplyingId || null,
-  );
-  const [replyingToAnonymous] = useState<boolean>(
-    () => !!AppStorage.replyingToAnonymous,
-  );
-
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 769;
 
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 769);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 769);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Sync state when store data changes
+  useEffect(() => {
+    setSubject(composerData.subject || "");
+    setBody(composerData.body || "");
+    setRecipients(composerData.recipients || []);
+  }, [composerData]);
+
+  const isReply = composerData.type === "reply";
+  const isDraft = composerData.type === "draft";
+
+  // Fixed recipient length check and safe union checks
   const isFormValid =
     body.trim().length > 0 &&
-    (receivers.length > 0 || replyingToAnonymous) &&
-    invalidReceivers.length === 0;
+    (recipients.length > 0 ||
+      (isReply && composerData.replyingToAnonymous)) &&
+    invalidRecipients.length === 0;
 
   const buttonBlock = !isFormValid;
 
   useEffect(() => {
-    if (!draftId) return;
+    if (composerData.type !== "draft") return;
+    const draftId = composerData.draftId;
 
     const fetchDraftAttachments = async () => {
       try {
@@ -117,14 +109,20 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
           file: null,
         }));
 
-        setFiles([...files, ...draftFiles]);
+        setFiles((prev) => {
+          const existingIds = new Set(prev.map((f: any) => f.attachmentId));
+          const newUniqueFiles = draftFiles.filter(
+            (f: any) => !existingIds.has(f.attachmentId)
+          );
+          return [...prev, ...newUniqueFiles];
+        });
       } catch (err) {
         console.error("Failed to fetch draft attachments", err);
       }
     };
 
     fetchDraftAttachments();
-  }, [draftId]);
+  }, [composerData]);
 
   const uploadFiles = async (emailId: number) => {
     const newFiles = files.filter((f: any) => !f.uploaded);
@@ -136,11 +134,10 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
 
     try {
       const uploadPromises = newFiles.map((fileItem: any) =>
-        uploadAttachment(emailId, fileItem.file),
+        uploadAttachment(emailId, fileItem.file)
       );
 
       const results = await Promise.all(uploadPromises);
-
       const allSuccessful = results.every((result) => result !== null);
 
       if (!allSuccessful) {
@@ -158,62 +155,62 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
     }
   };
 
-  const handleSubmit = async (e?: React.SubmitEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setSending(true);
 
     let responseSend;
 
-    if (replyingToAnonymous && emailId !== null) {
-      responseSend = await replyToEmail(emailId, {
-        header: header.trim(),
+    if (composerData.type === "reply" && composerData.replyingToAnonymous) {
+      responseSend = await replyToEmail(composerData.replyToId, {
+        header: subject.trim(),
         body: body.trim(),
         files: files.map((f: any) => f.file),
         is_anonymous: isAnonymous,
       });
-    } else if (draftId) {
+    } else if (composerData.type === "draft") {
+      const draftId = composerData.draftId;
+
       await updateDraft(
         {
-          header: header.trim(),
+          header: subject.trim(),
           body: body.trim(),
-          receivers: receivers,
+          receivers: recipients,
         },
-        draftId,
+        draftId
       );
 
-      uploadFiles(draftId);
+      await uploadFiles(draftId);
+
       responseSend = await sendDraft(
         {
-          header: header.trim(),
+          header: subject.trim(),
           body: body.trim(),
-          receivers: receivers,
-          is_anonymous: isAnonymous || replyingToAnonymous,
+          receivers: recipients,
+          is_anonymous: isAnonymous,
         },
-        draftId,
+        draftId
       );
     } else {
       responseSend = await sendEmail({
-        header: header.trim(),
+        header: subject.trim(),
         body: body.trim(),
-        receivers: receivers,
+        receivers: recipients,
         files: files.map((f: any) => f.file),
         is_anonymous: isAnonymous,
       });
     }
 
-    if (!responseSend.error) {
-      AppStorage.clearMailActionData();
+    if (responseSend && !responseSend.error) {
+      clearComposerData();
       backToMail?.();
       toast.show("message_sent", "success");
     } else {
       setSending(false);
-      if (responseSend.error.includes("recipient not found")) {
+      const err = responseSend?.error || "";
+      if (err.includes("recipient not found")) {
         toast.show("recipient_not_found", "error");
-      } else if (
-        responseSend.error.includes(
-          "some recipients do not accept anonymous emails",
-        )
-      ) {
+      } else if (err.includes("some recipients do not accept anonymous emails")) {
         toast.show("anonymous_forbidden", "error");
       } else {
         toast.show("email_send_error", "error");
@@ -222,7 +219,7 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
   };
 
   const handleCancel = () => {
-    AppStorage.clearMailActionData();
+    clearComposerData();
     setShowDraftConfirm(false);
     backToMail?.();
   };
@@ -230,14 +227,15 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
   const handleSaveDraft = async () => {
     let savedDraftId: number | null = null;
 
-    if (draftId) {
+    if (composerData.type === "draft") {
+      const draftId = composerData.draftId;
       const response = await updateDraft(
         {
-          header: header.trim(),
+          header: subject.trim(),
           body: body.trim(),
-          receivers: receivers,
+          receivers: recipients,
         },
-        draftId,
+        draftId
       );
 
       if (response) {
@@ -245,18 +243,18 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
       }
     } else {
       if (
-        header === "" &&
+        subject === "" &&
         body === "" &&
-        receivers.length === 0 &&
+        recipients.length === 0 &&
         files.length === 0
       ) {
         backToMail?.();
         return;
       }
       const response = await createDraft({
-        header: header.trim(),
+        header: subject.trim(),
         body: body.trim(),
-        receivers: receivers,
+        receivers: recipients,
       });
 
       if (response) {
@@ -269,15 +267,15 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
     }
 
     if (savedDraftId) {
-      AppStorage.clearMailActionData();
+      clearComposerData();
       backToMail?.();
-      toast.show("draft_saved", "error");
+      toast.show(t("draft_saved"), "success");
     }
 
     setShowDraftConfirm(false);
   };
 
-  const handleFileChange = (e: any) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles: File[] = Array.from(e.target.files || []);
 
     if (fileInputRef.current) {
@@ -318,9 +316,9 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
     const fileItem = files.find((f: any) => f.id === fileId);
     if (!fileItem) return;
 
-    if (fileItem.uploaded && fileItem.attachmentId && draftId) {
+    if (fileItem.uploaded && fileItem.attachmentId && composerData.type === "draft") {
       try {
-        await deleteAttachments(draftId, [fileItem.attachmentId]);
+        await deleteAttachments(composerData.draftId, [fileItem.attachmentId]);
       } catch (err) {
         console.error("Failed to delete attachment", err);
       }
@@ -331,9 +329,9 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
 
   const handleMobileCloseButton = () => {
     if (
-      header === "" &&
+      subject === "" &&
       body === "" &&
-      receivers.length === 0 &&
+      recipients.length === 0 &&
       files.length === 0
     ) {
       handleCancel();
@@ -368,9 +366,9 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
       <div className="send-mail-header">
         <span className="send-mail-header__text">{t("new_letter")}</span>
       </div>
-      <form action="" className="send-form">
+      <form className="send-form" onSubmit={handleSubmit}>
         <div className="send-inputs">
-          {replyingToAnonymous ? (
+          {isReply && composerData.replyingToAnonymous ? (
             <span className="input-container" data-name="anonymous">
               {t("to")}
               {"\t"}
@@ -380,10 +378,10 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
             <InputEmail
               input_title={t("to")}
               placeholder={t("enter_email")}
-              emails={receivers}
+              emails={recipients}
               onChange={(emails: string[], invalid: string[]) => {
-                setReceivers(emails);
-                setInvalidReceivers(invalid);
+                setRecipients(emails);
+                setInvalidRecipients(invalid);
               }}
             />
           )}
@@ -393,10 +391,10 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
             input_title={t("subject")}
             name="theme"
             maxLength={255}
-            value={header}
-            onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setHeader(e.target.value)
-            }
+            value={subject}
+            onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setSubject(e.target.value);
+            }}
           />
         </div>
         {files.length > 0 ? (
@@ -437,14 +435,15 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
         <Textarea
           readonly={false}
           value={body}
-          onInput={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-            setBody(e.target.value)
-          }
+          onInput={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+            setBody(e.target.value);
+          }}
         />
       </form>
       <div className="send-down">
         <div className="send-tools">
           <input
+            ref={fileInputRef}
             type="file"
             hidden
             multiple
@@ -470,13 +469,13 @@ export default function SendMail({ actionData, backToMail }: SendMailProps) {
             <div className="send-actions">
               <div className="anonymous-radio">
                 <input
-                  id="anon-toggle"
+                  id="anon-toggle-desktop"
                   type="checkbox"
                   name="radio-anonymous"
                   checked={isAnonymous}
                   onChange={() => setIsAnonymous((prev) => !prev)}
                 />
-                <label htmlFor="anon-toggle">{t("toggle_anon")}</label>
+                <label htmlFor="anon-toggle-desktop">{t("toggle_anon")}</label>
               </div>
               <Button
                 title={t("save")}

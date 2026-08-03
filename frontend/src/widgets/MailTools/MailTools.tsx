@@ -25,7 +25,7 @@ export default function MailTools({
   backToMail,
   reloadMail,
 }: MailToolsProps) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
 
   const handleDeleteClick = async (event: React.MouseEvent) => {
     event.preventDefault();

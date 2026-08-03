@@ -5,6 +5,7 @@ import { en } from "../locales/en";
 const dictionaries = { en, ru };
 
 export type TranslationKey = keyof typeof ru;
+export type Language = "ru" | "en";
 
 export function useTranslation() {
   const language = useSettingsStore((state) => state.language);
@@ -15,4 +16,9 @@ export function useTranslation() {
   };
 
   return { t, language };
+}
+
+export function translate(key: TranslationKey, language: Language) {
+  const dictionary = dictionaries[language];
+  return dictionary[key] || key;
 }

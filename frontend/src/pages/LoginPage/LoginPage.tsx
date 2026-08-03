@@ -2,10 +2,11 @@ import { useState } from "react";
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
-import { postDataLogin, getProfile } from "../../api/ApiAuth";
+import { postDataLogin, getProfile, getCSRFToken } from "../../api/ApiAuth";
 import "./LoginPage.scss";
-import { AppStorage } from "../../store/AppStorage";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useUserStore } from "../../store/useUserStore";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const SUFFIX = "@e-smail.ru";
 
@@ -14,7 +15,10 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ navigate }: LoginPageProps) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
+  const { setProfileData } = useUserStore();
+  const { setAuthenticated } = useAuthStore();
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
@@ -97,8 +101,13 @@ export default function LoginPage({ navigate }: LoginPageProps) {
       });
 
       if (response && response.isValid) {
+        // 1. Fetch & save fresh session CSRF token to useAuthStore
+        await getCSRFToken();
+
+        // 2. Mark user as authenticated in store
+        setAuthenticated(true);
         const data = await getProfile();
-        AppStorage.setProfileData(data);
+        setProfileData(data);
         navigate("/");
       } else if (response && !response.isValid) {
         const serverErrors: any = {};
@@ -136,7 +145,6 @@ export default function LoginPage({ navigate }: LoginPageProps) {
           >
             <div className="auth-form__inputs">
               <Input
-                type="email"
                 placeholder={t("enter_email")}
                 input_title={t("email")}
                 name="email"

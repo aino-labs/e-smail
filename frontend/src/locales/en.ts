@@ -35,6 +35,19 @@ export const en = {
   favorite: "Starred",
   yesterday: "Yesterday",
   anonymous: "<Anonymous>",
+  folder: "Folder",
+
+  // Empty messages
+  empty_inbox: "Your inbox is empty :(",
+  empty_trash: "Trash is empty",
+  empty_spam: "No mail marked as spam",
+  empty_sent: "No emails sent",
+  empty_favorites: "No favorites",
+  empty_drafts: "No drafts",
+  empty_folder: "This folder is empty",
+  empty_folder_sub: "Try moving mail to this folder",
+  first_email_sub:
+    "Compose your first email by pressing the button in the top left corner",
 
   //ReadPage
   //SendPage
@@ -149,7 +162,7 @@ export const en = {
   personal_information: "Personal info",
   security: "Security",
   interface: "Interface",
-  folder: "Folders",
+  folders: "Folders",
   support: "Support",
 
   //Navigation

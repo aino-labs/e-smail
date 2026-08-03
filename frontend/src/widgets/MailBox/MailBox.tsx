@@ -49,7 +49,7 @@ export default function MailBox({
   isFavorite,
   isAnonymous,
 }: MailBoxProps) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
 
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();

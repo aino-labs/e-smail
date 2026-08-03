@@ -35,6 +35,18 @@ export const ru = {
   move_to_folder: "Переместить в папку",
   yesterday: "Вчера",
   anonymous: "<Аноним>",
+  folder: "Папка",
+
+  // Empty messages
+  empty_inbox: "Ваш почтовый ящик пуст :(",
+  empty_trash: "Корзина пуста",
+  empty_spam: "Спам пуст",
+  empty_sent: "Нет отправленных писем",
+  empty_favorites: "Нет избранных писем",
+  empty_folder: "Эта папка пуста",
+  empty_drafts: "Нет черновиков",
+  empty_folder_sub: "Переместите письма в эту папку",
+  first_email_sub: "Напишите ваше первое письмо, нажав на кнопку слева",
 
   //ReadPage
   //SendPage
@@ -148,7 +160,7 @@ export const ru = {
   personal_information: "Личные данные",
   security: "Безопасность",
   interface: "Интерфейс",
-  folder: "Папки",
+  folders: "Папки",
   support: "Поддержка",
 
   //Navigation
