@@ -81,9 +81,7 @@ export default function LoginPage({ navigate }: LoginPageProps) {
     return result.isValid;
   };
 
-  const handleSubmit = async (event: React.MouseEvent) => {
-    event.preventDefault();
-
+  const handleSubmit = async () => {
     const isValid = validateAllFields();
 
     if (!isValid) {
@@ -128,7 +126,14 @@ export default function LoginPage({ navigate }: LoginPageProps) {
           </div>
           <h1 className="auth-form__subtitle">{t("auth_subtitle")}</h1>
           <h1 className="auth-form__title">{t("auth_title")}</h1>
-          <form action="" className="auth-form">
+          <form
+            action=""
+            className="auth-form"
+            onSubmit={async (event: React.SubmitEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              await handleSubmit();
+            }}
+          >
             <div className="auth-form__inputs">
               <Input
                 type="email"
@@ -160,12 +165,9 @@ export default function LoginPage({ navigate }: LoginPageProps) {
             </div>
             <div className="auth-form__actions">
               <Button
+                type="submit"
                 title={t("enter")}
                 name="button-login-for-login"
-                onClick={async (event: React.MouseEvent<HTMLButtonElement>) => {
-                  event.preventDefault();
-                  await handleSubmit(event);
-                }}
               />
               <Button
                 title={t("register")}

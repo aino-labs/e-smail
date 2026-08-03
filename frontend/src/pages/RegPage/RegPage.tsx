@@ -4,15 +4,16 @@ import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
 import { postDataReg, getProfile } from "../../api/ApiAuth";
 import "./RegPage.scss";
-import { AppStorage } from "../../store/AppStorage";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useUserStore } from "../../store/useUserStore";
 
 interface RegPageProps {
   navigate: (path: string) => void;
 }
 
 export default function RegPage({ navigate }: RegPageProps) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
+  const { setProfileData } = useUserStore();
   const [step, setStep] = useState<number>(1);
   const [formData, setFormData] = useState<Record<string, string>>({
     name: "",
@@ -101,9 +102,7 @@ export default function RegPage({ navigate }: RegPageProps) {
     return result.isValid;
   };
 
-  const handleNextStep = (event: React.MouseEvent) => {
-    event.preventDefault();
-
+  const handleNextStep = () => {
     const isValid = validateStep1();
 
     if (isValid) {
@@ -116,9 +115,7 @@ export default function RegPage({ navigate }: RegPageProps) {
     setStep(1);
   };
 
-  const handleRegister = async (event: React.MouseEvent) => {
-    event.preventDefault();
-
+  const handleRegister = async () => {
     const isValid = validateStep2();
 
     if (!isValid) {
@@ -134,7 +131,7 @@ export default function RegPage({ navigate }: RegPageProps) {
 
       if (response && response.isValid) {
         const data = await getProfile();
-        AppStorage.setProfileData(data);
+        setProfileData(data);
         navigate("/");
       } else if (response && !response.isValid) {
         const serverErrors: any = {};
@@ -164,7 +161,15 @@ export default function RegPage({ navigate }: RegPageProps) {
           </div>
           <h1 className="auth-form__subtitle">{t("auth_subtitle")}</h1>
           <h1 className="auth-form__title">{t("auth_title2")}</h1>
-          <form action="" className="auth-form">
+          <form
+            action=""
+            className="auth-form"
+            onSubmit={(event: React.SubmitEvent) => {
+              event.preventDefault();
+              if (step === 1) handleNextStep();
+              else handleRegister();
+            }}
+          >
             <div className="auth-form__inputs">
               {step === 1 && (
                 <div className="auth-form__inputs">
@@ -197,7 +202,6 @@ export default function RegPage({ navigate }: RegPageProps) {
               {step === 2 && (
                 <div className="auth-form__inputs">
                   <Input
-                    type="email"
                     placeholder={t("enter_email")}
                     input_title={t("email")}
                     name="email"
@@ -230,9 +234,9 @@ export default function RegPage({ navigate }: RegPageProps) {
               {step === 1 && (
                 <div className="auth-form__actions">
                   <Button
+                    type="submit"
                     title={t("continue")}
                     name="button-reg-for-reg"
-                    onClick={handleNextStep}
                   />
                   <Button
                     title={t("enter")}
@@ -247,9 +251,9 @@ export default function RegPage({ navigate }: RegPageProps) {
               {step === 2 && (
                 <div className="auth-form__actions">
                   <Button
+                    type="submit"
                     title={t("register")}
                     name="button-reg-for-reg"
-                    onClick={handleRegister}
                   />
                   <Button
                     title={t("back")}

@@ -20,10 +20,14 @@ import { useUserStore } from "../../store/useUserStore";
 type ProfileTabId = 0 | 1 | 2 | 3 | 4;
 
 interface ProfilePageProps {
+  shouldOpenSettings?: boolean;
   navigate: (route: string, replace?: boolean) => void;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({
+  shouldOpenSettings = false,
+  navigate,
+}) => {
   const { t } = useTranslation();
 
   const {
@@ -36,8 +40,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     anonymousEnabled,
     setAnonymousEnabled,
   } = useSettingsStore();
-
-  const shouldOpenSettings = AppStorage.getOpenSettingsOnProfile();
 
   // State Declarations
   const [profileState, setProfileState] = useState<ProfileTabId>(
