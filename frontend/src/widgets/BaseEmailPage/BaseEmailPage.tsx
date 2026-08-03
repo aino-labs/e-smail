@@ -50,7 +50,7 @@ export default function BaseEmailPage({
   currentView = "inbox",
   fetchEmails,
   emptyMessage = "empty_inbox",
-  emptySubMessage = "first_email_sub",
+  emptySubMessage,
   showUnreadToggle = false,
   showMarkAsRead = false,
   currentFolderId = null,
@@ -506,8 +506,10 @@ export default function BaseEmailPage({
             {state.emails.length === 0 && (
               <div className="mail-box-container-form__placeholder">
                 <div className="mail-box-container-form__placeholder__icon"></div>
-                <span>{emptyMessage || "Нет писем"}</span>
-                {emptySubMessage && <span>{emptySubMessage}</span>}
+                <span>{t(emptyMessage) || "Нет писем"}</span>
+                {emptySubMessage
+                  ? t(emptySubMessage) && <span>{t(emptySubMessage)}</span>
+                  : null}
               </div>
             )}
 
