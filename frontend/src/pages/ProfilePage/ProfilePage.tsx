@@ -253,12 +253,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
         setOldPassword("");
         setNewPassword("");
 
-        toast.show("saved_successfully", "success");
+        toast.show(t("saved_successfully"), "success");
       } else {
-        toast.show("passwords_dont_match", "error");
+        toast.show(t("passwords_dont_match"), "error");
       }
     } catch {
-      toast.show("client_error", "error");
+      toast.show(t("client_error"), "error");
     }
   };
 
@@ -293,9 +293,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
           birthYear,
           anonymousEnabled,
         });
-        toast.show("saved_successfully", "success");
+        toast.show(t("saved_successfully"), "success");
       } else {
-        toast.show("client_error", "error");
+        toast.show(t("client_error"), "error");
       }
     } catch (error) {
       console.error("Profile change error:", error);

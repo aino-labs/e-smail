@@ -37,7 +37,7 @@ const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
     const data = await getProfile();
     if (data === null) {
       navigate("/login");
-      toast.show("auth_error", "error");
+      toast.show(t("auth_error"), "error");
     } else {
       setProfileData(data);
     }

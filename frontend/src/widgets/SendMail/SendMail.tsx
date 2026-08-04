@@ -136,13 +136,13 @@ export default function SendMail({ backToMail }: SendMailProps) {
       const allSuccessful = results.every((result) => result !== null);
 
       if (!allSuccessful) {
-        toast.show("file_upload_error", "error");
+        toast.show(t("file_upload_error"), "error");
         return false;
       }
 
       return true;
     } catch {
-      toast.show("file_upload_error", "error");
+      toast.show(t("file_upload_error"), "error");
       return false;
     } finally {
       setUploadingFiles(false);
@@ -199,18 +199,18 @@ export default function SendMail({ backToMail }: SendMailProps) {
     if (responseSend && !responseSend.error) {
       clearComposerData();
       backToMail?.();
-      toast.show("message_sent", "success");
+      toast.show(t("message_sent"), "success");
     } else {
       setSending(false);
       const err = responseSend?.error || "";
       if (err.includes("recipient not found")) {
-        toast.show("recipient_not_found", "error");
+        toast.show(t("recipient_not_found"), "error");
       } else if (
         err.includes("some recipients do not accept anonymous emails")
       ) {
-        toast.show("anonymous_forbidden", "error");
+        toast.show(t("anonymous_forbidden"), "error");
       } else {
-        toast.show("email_send_error", "error");
+        toast.show(t("email_send_error"), "error");
       }
     }
   };

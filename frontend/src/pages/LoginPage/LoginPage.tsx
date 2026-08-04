@@ -4,7 +4,7 @@ import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
 import { postDataLogin, getProfile, getCSRFToken } from "../../api/ApiAuth";
 import "./LoginPage.scss";
-import { useTranslation } from "../../hooks/useTranslation";
+import { TranslationKey, useTranslation } from "../../hooks/useTranslation";
 import { useUserStore } from "../../store/useUserStore";
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -149,7 +149,7 @@ export default function LoginPage({ navigate }: LoginPageProps) {
                 input_title={t("email")}
                 name="email"
                 suffix="@e-smail.ru"
-                error={errors.email}
+                error={t(errors.email as TranslationKey)}
                 value={email}
                 onInput={(e: any) => {
                   const raw = e.target.value;
@@ -164,7 +164,7 @@ export default function LoginPage({ navigate }: LoginPageProps) {
                 placeholder={t("enter_password")}
                 input_title={t("password")}
                 name="password"
-                error={errors.password}
+                error={t(errors.password as TranslationKey)}
                 value={password}
                 onInput={(e: any) => {
                   handleInputChange("password", e.target.value);
