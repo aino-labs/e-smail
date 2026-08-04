@@ -1,7 +1,5 @@
-import { useAuthStore } from "../store/useAuthStore";
+import { getCSRFToken } from "./ApiAuth";
 import { SUPPORT_URL } from "./config";
-
-const getCSRF = () => useAuthStore.getState().csrfToken;
 
 export async function sendSupportTicket(payload: any) {
   try {
@@ -9,7 +7,7 @@ export async function sendSupportTicket(payload: any) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       body: JSON.stringify(payload),
       credentials: "include",
@@ -35,7 +33,7 @@ export async function getMyTickets() {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
     });
@@ -84,7 +82,7 @@ export async function getMessages(ticket_id: number) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
     });
@@ -109,7 +107,7 @@ export async function answerTicket(ticket_id: number, message: string) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({
@@ -138,7 +136,7 @@ export async function updateTicketStatus(ticket_id: number, status: string) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({

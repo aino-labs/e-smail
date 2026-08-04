@@ -46,7 +46,10 @@ export const useComposerStore = create<ComposerState>()(
       emailReplyingId: null,
 
       setComposerData: (newData: Partial<ComposerData>) =>
-        set((prev) => ({ ...prev, data: { ...prev.data, newData } })),
+        set((prev) => ({
+          ...prev,
+          data: { ...prev.data, ...newData } as ComposerData,
+        })),
       setEmailReplyingId: (emailId: number) =>
         set({ emailReplyingId: emailId }),
       setReplyingToAnonymous: (enabled: boolean) =>

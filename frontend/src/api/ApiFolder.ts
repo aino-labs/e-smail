@@ -1,7 +1,5 @@
-import { useAuthStore } from "../store/useAuthStore";
+import { getCSRFToken } from "./ApiAuth";
 import { FOLDER_URL } from "./config";
-
-const getCSRF = () => useAuthStore.getState().csrfToken;
 
 export async function createNewFolder(folderName: string = "Новая папка") {
   try {
@@ -9,7 +7,7 @@ export async function createNewFolder(folderName: string = "Новая папк�
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({
@@ -32,7 +30,7 @@ export async function changeFolderName(folderID: number, folderName: string) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({ folder_name: folderName }),
@@ -79,7 +77,7 @@ export async function deleteEmailsFromFolder(
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({ emails_id: emailID }),
@@ -100,7 +98,7 @@ export async function addEmailsInFolder(folderID: number, emailID: number[]) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({ emails_id: emailID }),
@@ -121,7 +119,7 @@ export async function deleteFolder(folderID: number) {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
     });

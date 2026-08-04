@@ -101,6 +101,7 @@ export default function BaseEmailPage({
 
   useLayoutEffect(() => {
     if (!isProfileLoaded) {
+      console.log("calling loadProfile()");
       loadProfile();
     }
 

@@ -1,7 +1,5 @@
+import { getCSRFToken } from "./ApiAuth";
 import { EMAIL_URL } from "./config";
-import { useAuthStore } from "../store/useAuthStore";
-
-const getCSRF = () => useAuthStore.getState().csrfToken;
 
 // private.HandleFunc("/drafts/{id}", h.UpdateDraft).Methods(http.MethodPut, http.MethodOptions);
 // private.HandleFunc("/drafts/{id}/send", h.SendDraft).Methods(http.MethodPost, http.MethodOptions);
@@ -17,7 +15,7 @@ export async function createDraft(draftData: {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({
@@ -42,7 +40,7 @@ export async function getDraftByID(ID: number) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
     });
@@ -61,7 +59,7 @@ export async function updateDraft(
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({
@@ -86,7 +84,7 @@ export async function deleteDraft(IDs: number[]) {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({ ids: IDs }),
@@ -129,7 +127,7 @@ export async function sendDraft(data = {}, draftID: number) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify(data),

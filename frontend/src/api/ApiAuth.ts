@@ -1,8 +1,6 @@
 import { USER_URL } from "./config";
 import { useAuthStore } from "../store/useAuthStore";
 
-const getCSRF = () => useAuthStore.getState().csrfToken;
-
 /**
  * Отправляет POST-запрос на эндпоинт /login с данными.
  */
@@ -209,7 +207,7 @@ export async function changePassword(data = {}) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify(data),
@@ -220,26 +218,20 @@ export async function changePassword(data = {}) {
   } catch {}
 }
 
-export async function getCSRFToken() {
+export function getCSRFToken(): string {
+  const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
+export async function initCSRFToken(): Promise<void> {
+  if (getCSRFToken() !== "") {
+    return;
+  }
+
   try {
-    const response = await fetch(`${USER_URL}/csrf`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const token = data.csrf_token || null;
-
-      useAuthStore.getState().setCSRFToken(token);
-
-      return token;
-    }
-  } catch {
-    return null;
+    await fetch(`${USER_URL}/csrf`, { credentials: "include" });
+  } catch (error) {
+    console.error("Failed to initialize CSRF token on startup:", error);
   }
 }
 
@@ -251,7 +243,7 @@ export async function uploadAvatar(file: File) {
     const response = await fetch(`${USER_URL}/profile/avatar`, {
       method: "POST",
       headers: {
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: formData,
@@ -275,7 +267,7 @@ export async function changeProfile(data: {
     const response = await fetch(`${USER_URL}/profile/change`, {
       method: "PUT",
       headers: {
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify(data),

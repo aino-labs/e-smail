@@ -1,7 +1,5 @@
-import { useAuthStore } from "../store/useAuthStore";
+import { getCSRFToken } from "./ApiAuth";
 import { EMAIL_URL } from "./config";
-
-const getCSRF = () => useAuthStore.getState().csrfToken;
 
 export async function getEmailsFavorite(offset: number) {
   try {
@@ -31,7 +29,7 @@ export async function sendFavorite(IDs: number[]) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({ ids: IDs }),
@@ -53,7 +51,7 @@ export async function unFavorite(IDs: number[]) {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": getCSRF(),
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({ ids: IDs }),

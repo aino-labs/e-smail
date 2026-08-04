@@ -73,7 +73,7 @@ const InputEmail: React.FC<InputEmailProps> = ({
   onChange,
 }) => {
   const [state, setState] = useState({
-    emails: [] as string[],
+    emails: initialEmails,
     invalidEmails: initialEmails.filter((e) => !validateEmail(e)),
     currentInput: "",
     error: "",

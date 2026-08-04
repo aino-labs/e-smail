@@ -21,7 +21,7 @@ import { initEmailNotifications } from "./utils/emailNotifications";
 import "./store/OfflineManager";
 import { useSettingsStore } from "./store/useSettingsStore";
 import { useAuthStore } from "./store/useAuthStore";
-import { getCSRFToken, getProfile } from "./api/ApiAuth";
+import { getCSRFToken, getProfile, initCSRFToken } from "./api/ApiAuth";
 
 const routes: Record<string, React.ComponentType<any>> = {
   "/login": LoginPage,
@@ -76,7 +76,7 @@ function getComponent(path: string) {
 }
 
 const App = () => {
-  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  const [isReady, setIsReady] = useState(false);
 
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [previousPath, setPreviousPath] = useState<string | null>(null);
@@ -88,16 +88,10 @@ const App = () => {
   }, [theme]);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const user = await getProfile();
-      if (user) {
-        setAuthenticated(true);
-        await getCSRFToken();
-      }
-    };
-
-    initAuth();
-  }, [setAuthenticated]);
+    initCSRFToken().finally(() => {
+      setIsReady(true);
+    });
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -117,6 +111,10 @@ const App = () => {
   };
 
   const { Component, props } = getComponent(currentPath);
+
+  if (!isReady) {
+    return <div className="app-loader">Loading application...</div>;
+  }
 
   return (
     <Component {...props} navigate={navigate} previousPath={previousPath} />

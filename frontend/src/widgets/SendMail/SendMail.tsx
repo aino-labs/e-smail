@@ -30,17 +30,12 @@ interface SendMailProps {
 
 export default function SendMail({ backToMail }: SendMailProps) {
   const { t } = useTranslation();
-  const {
-    data: composerData,
-    clearComposerData,
-  } = useComposerStore();
-
-  const { currentView } = useUIStore();
+  const { data: composerData, clearComposerData } = useComposerStore();
 
   const [subject, setSubject] = useState(composerData.subject || "");
   const [body, setBody] = useState(composerData.body || "");
   const [recipients, setRecipients] = useState<string[]>(
-    composerData.recipients || []
+    composerData.recipients || [],
   );
   const [invalidRecipients, setInvalidRecipients] = useState<string[]>([]);
   const [files, setFiles] = useState<any[]>([]);
@@ -71,13 +66,13 @@ export default function SendMail({ backToMail }: SendMailProps) {
   // Fixed recipient length check and safe union checks
   const isFormValid =
     body.trim().length > 0 &&
-    (recipients.length > 0 ||
-      (isReply && composerData.replyingToAnonymous)) &&
+    (recipients.length > 0 || (isReply && composerData.replyingToAnonymous)) &&
     invalidRecipients.length === 0;
 
   const buttonBlock = !isFormValid;
 
   useEffect(() => {
+    console.log(composerData);
     if (composerData.type !== "draft") return;
     const draftId = composerData.draftId;
 
@@ -112,7 +107,7 @@ export default function SendMail({ backToMail }: SendMailProps) {
         setFiles((prev) => {
           const existingIds = new Set(prev.map((f: any) => f.attachmentId));
           const newUniqueFiles = draftFiles.filter(
-            (f: any) => !existingIds.has(f.attachmentId)
+            (f: any) => !existingIds.has(f.attachmentId),
           );
           return [...prev, ...newUniqueFiles];
         });
@@ -134,7 +129,7 @@ export default function SendMail({ backToMail }: SendMailProps) {
 
     try {
       const uploadPromises = newFiles.map((fileItem: any) =>
-        uploadAttachment(emailId, fileItem.file)
+        uploadAttachment(emailId, fileItem.file),
       );
 
       const results = await Promise.all(uploadPromises);
@@ -177,7 +172,7 @@ export default function SendMail({ backToMail }: SendMailProps) {
           body: body.trim(),
           receivers: recipients,
         },
-        draftId
+        draftId,
       );
 
       await uploadFiles(draftId);
@@ -189,7 +184,7 @@ export default function SendMail({ backToMail }: SendMailProps) {
           receivers: recipients,
           is_anonymous: isAnonymous,
         },
-        draftId
+        draftId,
       );
     } else {
       responseSend = await sendEmail({
@@ -210,7 +205,9 @@ export default function SendMail({ backToMail }: SendMailProps) {
       const err = responseSend?.error || "";
       if (err.includes("recipient not found")) {
         toast.show("recipient_not_found", "error");
-      } else if (err.includes("some recipients do not accept anonymous emails")) {
+      } else if (
+        err.includes("some recipients do not accept anonymous emails")
+      ) {
         toast.show("anonymous_forbidden", "error");
       } else {
         toast.show("email_send_error", "error");
@@ -235,7 +232,7 @@ export default function SendMail({ backToMail }: SendMailProps) {
           body: body.trim(),
           receivers: recipients,
         },
-        draftId
+        draftId,
       );
 
       if (response) {
@@ -316,7 +313,11 @@ export default function SendMail({ backToMail }: SendMailProps) {
     const fileItem = files.find((f: any) => f.id === fileId);
     if (!fileItem) return;
 
-    if (fileItem.uploaded && fileItem.attachmentId && composerData.type === "draft") {
+    if (
+      fileItem.uploaded &&
+      fileItem.attachmentId &&
+      composerData.type === "draft"
+    ) {
       try {
         await deleteAttachments(composerData.draftId, [fileItem.attachmentId]);
       } catch (err) {
