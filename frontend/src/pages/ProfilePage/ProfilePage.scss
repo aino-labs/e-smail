@@ -398,11 +398,11 @@
                     transition: background-color 0.2s;
 
                     &:hover {
-                        background-color: #ebf0f5;
+                        background-color: var(--button-background-second);
                     }
 
                     &.active {
-                        background-color: #dbe4ee;
+                        background-color: var(--button-background-second);
                     }
 
                     .ticket-subject {
