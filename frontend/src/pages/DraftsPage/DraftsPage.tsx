@@ -1,11 +1,7 @@
 import BaseEmailPage from "../../widgets/BaseEmailPage/BaseEmailPage";
 import { getDrafts, deleteDraft } from "../../api/ApiDraft";
 
-interface DraftsPageProps {
-  navigate: (path: string) => void;
-}
-
-export default function DraftsPage({ navigate }: DraftsPageProps) {
+export default function DraftsPage() {
   return (
     <BaseEmailPage
       currentView="drafts"
@@ -15,7 +11,6 @@ export default function DraftsPage({ navigate }: DraftsPageProps) {
       showUnreadToggle={false}
       showMarkAsRead={false}
       showMoveToFolder={false}
-      navigate={navigate}
     />
   );
 }

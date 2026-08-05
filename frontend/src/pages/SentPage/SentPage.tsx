@@ -1,12 +1,12 @@
+import { useNavigate } from "react-router-dom";
+
 import BaseEmailPage from "../../widgets/BaseEmailPage/BaseEmailPage";
 import { getEmailSend, getEmailByID } from "../../api/ApiEmail";
 import { trash } from "../../api/ApiTrash";
 
-interface SentPageProps {
-  navigate: (path: string) => void;
-}
+export default function SentPage() {
+  const navigate = useNavigate();
 
-export default function SentPage({ navigate }: SentPageProps) {
   const onReadMail = async (email: any) => {
     const fullEmail = await getEmailByID(email.id);
     navigate(`/read/${fullEmail.id}`);
@@ -20,7 +20,6 @@ export default function SentPage({ navigate }: SentPageProps) {
       emptyMessage="empty_sent"
       emptySubMessage="first_email_sub"
       onReadMail={onReadMail}
-      navigate={navigate}
     />
   );
 }

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
@@ -10,11 +12,9 @@ import { useAuthStore } from "../../store/useAuthStore";
 
 const SUFFIX = "@e-smail.ru";
 
-interface LoginPageProps {
-  navigate: (path: string) => void;
-}
-
-export default function LoginPage({ navigate }: LoginPageProps) {
+export default function LoginPage() {
+  const navigate = useNavigate();
+  
   const { t } = useTranslation();
   const { setProfileData } = useUserStore();
   const { setAuthenticated } = useAuthStore();

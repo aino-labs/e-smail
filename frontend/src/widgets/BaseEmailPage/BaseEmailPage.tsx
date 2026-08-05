@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Sidebar from "../../widgets/Sidebar/Sidebar";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
@@ -33,7 +35,6 @@ interface BaseEmailProps {
   showMoveToFolder?: boolean;
   currentFolderId?: number | null;
   currentFolderName?: string;
-  navigate: (path: string) => void;
 }
 
 interface BaseEmailState {
@@ -55,8 +56,9 @@ export default function BaseEmailPage({
   showMarkAsRead = false,
   currentFolderId = null,
   currentFolderName = "",
-  navigate,
 }: BaseEmailProps) {
+  const navigate = useNavigate();
+
   const { t } = useTranslation();
   const { setCurrentView } = useUIStore();
   const {
@@ -445,7 +447,6 @@ export default function BaseEmailPage({
           newMail={handleNewMail}
           backToMail={handleGoToMain}
           selectedFolderId={currentFolderId}
-          navigate={navigate}
         />
       </aside>
 
@@ -563,7 +564,6 @@ export default function BaseEmailPage({
           onClose={handleCloseModal}
           onProfileClick={handleProfileClick}
           onSettingsClick={handleSettingsClick}
-          navigate={navigate}
         />
       </div>
 

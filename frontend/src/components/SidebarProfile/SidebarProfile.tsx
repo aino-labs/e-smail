@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import "./SidebarProfile.scss";
 import Button from "../Button/Button";
 import { logOut } from "../../api/ApiAuth";
@@ -11,7 +13,6 @@ interface SidebarProfileProps {
   avatarUrl?: string;
   variant?: string;
   textAlign?: string;
-  navigate: (path: string) => void;
 }
 
 export default function SidebarProfile({
@@ -21,8 +22,9 @@ export default function SidebarProfile({
   avatarUrl = "",
   variant = "",
   textAlign = "",
-  navigate,
 }: SidebarProfileProps) {
+  const navigate = useNavigate();
+
   const setUnreadCount = useMailStore((state) => state.setUnreadCount);
   const getAvatarUrl = useUserStore((state) => state.getAvatarUrl);
   const handleAvatar = () => {

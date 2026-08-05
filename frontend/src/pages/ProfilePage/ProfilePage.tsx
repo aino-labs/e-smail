@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+
 import "./ProfilePage.scss";
 import Sidebar from "../../widgets/Sidebar/Sidebar";
 import Button from "../../components/Button/Button";
@@ -20,13 +22,13 @@ type ProfileTabId = 0 | 1 | 2 | 3 | 4;
 
 interface ProfilePageProps {
   shouldOpenSettings?: boolean;
-  navigate: (route: string, replace?: boolean) => void;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({
+export default function ProfilePage({
   shouldOpenSettings = false,
-  navigate,
-}) => {
+}: ProfilePageProps) {
+  const navigate = useNavigate();
+
   const { t } = useTranslation();
 
   const {
@@ -305,7 +307,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
   const navigateToTab = (tabId: ProfileTabId, route: string) => {
     setProfileState(tabId);
     setIsSidebarOpen(false);
-    navigate(route, true);
+    navigate(route);
   };
 
   const handleEnableNotifs = () => {
@@ -795,7 +797,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
           handleFolder={() => navigateToTab(3, "/profile/folders")}
           handleSupport={() => navigateToTab(4, "/profile/support")}
           newMail={() => {}}
-          navigate={navigate}
         />
       </aside>
 
@@ -815,6 +816,4 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
       </div>
     </div>
   );
-};
-
-export default ProfilePage;
+}

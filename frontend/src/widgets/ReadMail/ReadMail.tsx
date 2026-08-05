@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./ReadMail.scss";
 import Input from "../../components/Input/Input";
 import Textarea from "../../components/Textarea/Textarea";
@@ -25,7 +26,6 @@ interface ReadMailProps {
   backToMail?: () => void;
   backToSent?: () => void;
   onFavoriteToggled?: (newState: boolean) => void;
-  navigate: (path: string) => void;
   selectedFolderId: number | null;
   previousPath?: string | null;
 }
@@ -37,10 +37,10 @@ export default function ReadMail({
   backToMail,
   backToSent,
   onFavoriteToggled,
-  navigate,
   selectedFolderId,
   previousPath,
 }: ReadMailProps) {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { setComposerData } = useComposerStore();
 

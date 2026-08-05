@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import Sidebar from "../../widgets/Sidebar/Sidebar"; // Adjust relative paths as needed
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
@@ -10,12 +12,6 @@ import { useMailStore } from "../../store/useMailStore";
 import { useUIStore } from "../../store/useUIStore";
 import { useComposerStore } from "../../store/useComposerStore";
 import { useUserStore } from "../../store/useUserStore";
-
-interface ReadEmailPageProps {
-  id: number | string;
-  navigate: (path: string) => void;
-  previousPath: string;
-}
 
 interface EmailState {
   id: string | number;
@@ -31,11 +27,10 @@ interface EmailState {
   is_favorite?: boolean;
 }
 
-export default function ReadEmailPage({
-  id,
-  navigate,
-  previousPath,
-}: ReadEmailPageProps) {
+export default function ReadEmailPage() {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+
   const { t } = useTranslation();
   const { setCurrentView } = useUIStore();
   const clearComposerData = useComposerStore(
@@ -45,8 +40,8 @@ export default function ReadEmailPage({
   const setCurrentFolderId = useMailStore((state) => state.setCurrentFolderId);
   const { name, surname, email: userEmail, getAvatarUrl } = useUserStore();
   const { cacheSingleEmail } = useMailStore();
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [email, setEmail] = useState<EmailState>({
     id: "",
     header: "",
@@ -153,7 +148,6 @@ export default function ReadEmailPage({
           surname={surname}
           email={userEmail}
           avatarUrl={getAvatarUrl()}
-          navigate={navigate}
         />
       </aside>
       <div className="right-part">
@@ -185,7 +179,6 @@ export default function ReadEmailPage({
             backToSent={handleBackToSent}
             selectedFolderId={currentFolderId}
             onFavoriteToggled={handleFavoriteToggled}
-            navigate={navigate}
           />
         </div>
 
@@ -194,7 +187,6 @@ export default function ReadEmailPage({
           onClose={handleCloseModal}
           onProfileClick={handleProfileClick}
           onSettingsClick={handleSettingsClick}
-          navigate={navigate}
         />
       </div>
     </div>

@@ -1,11 +1,7 @@
 import BaseEmailPage from "../../widgets/BaseEmailPage/BaseEmailPage";
 import { getInbox } from "../../api/ApiEmail";
 
-interface MainPageProps {
-  navigate: (path: string) => void;
-}
-
-export default function MainPage({ navigate }: MainPageProps) {
+export default function MainPage() {
   return (
     <BaseEmailPage
       currentView="inbox"
@@ -16,7 +12,6 @@ export default function MainPage({ navigate }: MainPageProps) {
       showMarkAsRead
       showMoveToFolder
       currentFolderId={null}
-      navigate={navigate}
     />
   );
 }

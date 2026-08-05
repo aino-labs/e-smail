@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Button from "../../components/Button/Button";
 import "./Sidebar.scss";
 import SidebarProfile from "../../components/SidebarProfile/SidebarProfile";
 import { useTranslation } from "../../hooks/useTranslation";
-import { useSettingsStore } from "../../store/useSettingsStore";
 import { useUIStore } from "../../store/useUIStore";
 import { useMailStore } from "../../store/useMailStore";
 
@@ -22,7 +23,6 @@ interface SidebarProps {
   handleFolder?: () => void;
   handleSupport?: () => void;
   selectedFolderId?: number | null;
-  navigate: (path: string) => void;
 }
 
 export default function Sidebar({
@@ -40,8 +40,9 @@ export default function Sidebar({
   handleFolder,
   handleSupport,
   selectedFolderId,
-  navigate,
 }: SidebarProps) {
+  const navigate = useNavigate();
+
   const { t } = useTranslation();
   const { currentView, setCurrentView } = useUIStore();
   const sidebarDropdownVisible = useUIStore(
@@ -247,7 +248,6 @@ export default function Sidebar({
             surname={surname}
             email={email}
             avatarUrl={avatarUrl}
-            navigate={navigate}
           />
           <div className="main-button-profile">
             <Button
@@ -321,7 +321,6 @@ export default function Sidebar({
           surname={surname}
           email={email}
           avatarUrl={avatarUrl}
-          navigate={navigate}
           variant="mobile"
           textAlign="text-left"
         />

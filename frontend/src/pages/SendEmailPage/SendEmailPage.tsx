@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Sidebar from "../../widgets/Sidebar/Sidebar";
 import Button from "../../components/Button/Button";
 import SendMail from "../../widgets/SendMail/SendMail";
@@ -12,11 +14,9 @@ import { useUserStore } from "../../store/useUserStore";
 import { useComposerStore } from "../../store/useComposerStore";
 import { useMailStore } from "../../store/useMailStore";
 
-interface SendEmailPageProps {
-  navigate: (route: string) => void;
-}
+export default function SendEmailPage() {
+  const navigate = useNavigate();
 
-const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedFolderId] = useState<number | null>(null);
 
@@ -119,7 +119,6 @@ const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
           surname={surname}
           email={email}
           avatarUrl={getAvatarUrl()}
-          navigate={navigate}
         />
       </aside>
 
@@ -135,11 +134,8 @@ const SendEmailPage: React.FC<SendEmailPageProps> = ({ navigate }) => {
           onClose={handleCloseModal}
           onProfileClick={handleProfileClick}
           onSettingsClick={handleSettingsClick}
-          navigate={navigate}
         />
       </div>
     </div>
   );
-};
-
-export default SendEmailPage;
+}

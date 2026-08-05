@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import BaseEmailPage from "../../widgets/BaseEmailPage/BaseEmailPage";
 import {
   getEmailsFromFolder,
@@ -7,11 +6,7 @@ import {
 import { useMailStore } from "../../store/useMailStore";
 import { useTranslation } from "../../hooks/useTranslation";
 
-interface FolderPageProps {
-  navigate: (path: string) => void;
-}
-
-export default function FolderPage({ navigate }: FolderPageProps) {
+export default function FolderPage() {
   const { t } = useTranslation();
   const { folders, currentFolderId } = useMailStore();
   const folderName =
@@ -33,7 +28,6 @@ export default function FolderPage({ navigate }: FolderPageProps) {
       showMoveToFolder={false}
       currentFolderId={currentFolderId}
       currentFolderName={folderName}
-      navigate={navigate}
     />
   );
 }

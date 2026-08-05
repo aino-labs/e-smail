@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
@@ -8,11 +10,8 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { useUserStore } from "../../store/useUserStore";
 import { useAuthStore } from "../../store/useAuthStore";
 
-interface RegPageProps {
-  navigate: (path: string) => void;
-}
-
-export default function RegPage({ navigate }: RegPageProps) {
+export default function RegPage() {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { setProfileData } = useUserStore();
   const { setAuthenticated } = useAuthStore();

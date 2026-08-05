@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import "./ProfileModal.scss";
 import Button from "../../components/Button/Button";
 import { logOut } from "../../api/ApiAuth";
@@ -9,7 +11,6 @@ interface ProfileModalProps {
   onClose: () => void;
   onProfileClick: () => void;
   onSettingsClick: () => void;
-  navigate: (path: string) => void;
   isOpen: boolean;
 }
 
@@ -17,9 +18,10 @@ export default function ProfileModal({
   onClose,
   onProfileClick,
   onSettingsClick,
-  navigate,
   isOpen,
 }: ProfileModalProps) {
+  const navigate = useNavigate();
+
   const { t } = useTranslation();
   const { name, email, getAvatarUrl, clearProfile } = useUserStore();
   const { setFolders, setUnreadCount } = useMailStore();
