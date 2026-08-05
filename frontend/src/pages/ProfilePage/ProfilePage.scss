@@ -473,7 +473,7 @@
                 gap: 12px;
             }
 
-            .message {
+            .chat-message {
                 display: flex;
                 max-width: 70%;
 
@@ -528,6 +528,17 @@
                 align-items: top;
                 width: 100%;
                 box-sizing: border-box;
+
+                .message-input {
+                    border-radius: 20px;
+                    border-color: var(--input-stroke);
+                    padding: 12px 20px;
+                    max-height: fit-content;
+                }
+
+                .send-message-button {
+                    align-self: center;
+                }
 
                 > div {
                     width: 100%;

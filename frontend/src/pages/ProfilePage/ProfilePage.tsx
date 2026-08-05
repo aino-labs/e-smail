@@ -750,18 +750,24 @@ export default function ProfilePage({
                     key={msg.id}
                     className={`chat-message ${msg.is_admin ? "admin" : "user"}`}
                   >
-                    <p>{msg.text}</p>
+                    <p
+                      className={`message-bubble ${msg.is_admin ? "admin" : "user"}`}
+                    >
+                      {msg.text}
+                    </p>
                   </div>
                 ))}
               </div>
               <div className="chat-input-area">
-                <input
+                <Input
+                  className="message-input"
                   type="text"
                   value={chatInputText}
                   onChange={(e) => setChatInputText(e.target.value)}
                   placeholder="Type a message..."
                 />
                 <Button
+                  className="send-message-button"
                   title="Send"
                   name="send-message"
                   onClick={handleSendMessage}
@@ -773,8 +779,6 @@ export default function ProfilePage({
       </div>
     </div>
   );
-
-  console.log(supportTickets);
 
   return (
     <div className="profile-page">
