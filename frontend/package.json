@@ -4,7 +4,7 @@
     "minimatch": "9.0.5"
   },
   "name": "2026_1_pushtomain",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "type": "module",
   "description": "Репозиторий команды PushToMain",
   "main": "server.js",

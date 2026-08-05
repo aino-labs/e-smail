@@ -9,6 +9,7 @@ import "./RegPage.scss";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useUserStore } from "../../store/useUserStore";
 import { useAuthStore } from "../../store/useAuthStore";
+import Footer from "../../widgets/Footer/Footer";
 
 export default function RegPage() {
   const navigate = useNavigate();
@@ -273,6 +274,7 @@ export default function RegPage() {
           </form>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
