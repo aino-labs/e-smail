@@ -1,13 +1,16 @@
-import { AppStorage } from "../stores/AppStorage";
+import { translate } from "../hooks/useTranslation";
+import { useSettingsStore } from "../store/useSettingsStore";
 
 export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return AppStorage.t("zero_bytes");
+  const lang = useSettingsStore.getState().language;
+
+  if (bytes === 0) return translate("zero_bytes", lang);
   const k = 1024;
   const sizes = [
-    AppStorage.t("bytes"),
-    AppStorage.t("kb"),
-    AppStorage.t("mb"),
-    AppStorage.t("gb"),
+    translate("bytes", lang),
+    translate("kb", lang),
+    translate("mb", lang),
+    translate("gb", lang),
   ];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];

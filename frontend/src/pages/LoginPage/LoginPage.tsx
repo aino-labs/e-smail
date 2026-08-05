@@ -1,22 +1,24 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import { validation } from "../../utils/validation";
-import { postDataLogin, getProfile } from "../../api/ApiAuth";
+import { postDataLogin, getProfile, getCSRFToken } from "../../api/ApiAuth";
 import "./LoginPage.scss";
-import { AppStorage } from "../../stores/AppStorage";
+import { TranslationKey, useTranslation } from "../../hooks/useTranslation";
+import { useUserStore } from "../../store/useUserStore";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const SUFFIX = "@e-smail.ru";
 
-interface LoginPageProps {
-  navigate: (path: string) => void;
-}
+export default function LoginPage() {
+  const navigate = useNavigate();
+  
+  const { t } = useTranslation();
+  const { setProfileData } = useUserStore();
+  const { setAuthenticated } = useAuthStore();
 
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
-
-export default function LoginPage({ navigate }: LoginPageProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
@@ -83,9 +85,7 @@ export default function LoginPage({ navigate }: LoginPageProps) {
     return result.isValid;
   };
 
-  const handleSubmit = async (event: React.MouseEvent) => {
-    event.preventDefault();
-
+  const handleSubmit = async () => {
     const isValid = validateAllFields();
 
     if (!isValid) {
@@ -101,8 +101,13 @@ export default function LoginPage({ navigate }: LoginPageProps) {
       });
 
       if (response && response.isValid) {
+        // 1. Fetch & save fresh session CSRF token to useAuthStore
+        await getCSRFToken();
+
+        // 2. Mark user as authenticated in store
+        setAuthenticated(true);
         const data = await getProfile();
-        AppStorage.setProfileData(data);
+        setProfileData(data);
         navigate("/");
       } else if (response && !response.isValid) {
         const serverErrors: any = {};
@@ -130,15 +135,21 @@ export default function LoginPage({ navigate }: LoginPageProps) {
           </div>
           <h1 className="auth-form__subtitle">{t("auth_subtitle")}</h1>
           <h1 className="auth-form__title">{t("auth_title")}</h1>
-          <form action="" className="auth-form">
+          <form
+            action=""
+            className="auth-form"
+            onSubmit={async (event: React.SubmitEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              await handleSubmit();
+            }}
+          >
             <div className="auth-form__inputs">
               <Input
-                type="email"
                 placeholder={t("enter_email")}
                 input_title={t("email")}
                 name="email"
                 suffix="@e-smail.ru"
-                error={errors.email}
+                error={t(errors.email as TranslationKey)}
                 value={email}
                 onInput={(e: any) => {
                   const raw = e.target.value;
@@ -153,7 +164,7 @@ export default function LoginPage({ navigate }: LoginPageProps) {
                 placeholder={t("enter_password")}
                 input_title={t("password")}
                 name="password"
-                error={errors.password}
+                error={t(errors.password as TranslationKey)}
                 value={password}
                 onInput={(e: any) => {
                   handleInputChange("password", e.target.value);
@@ -162,12 +173,9 @@ export default function LoginPage({ navigate }: LoginPageProps) {
             </div>
             <div className="auth-form__actions">
               <Button
+                type="submit"
                 title={t("enter")}
                 name="button-login-for-login"
-                onClick={async (event: React.MouseEvent<HTMLButtonElement>) => {
-                  event.preventDefault();
-                  await handleSubmit(event);
-                }}
               />
               <Button
                 title={t("register")}

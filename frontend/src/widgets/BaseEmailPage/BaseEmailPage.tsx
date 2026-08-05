@@ -1,35 +1,40 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Sidebar from "../../widgets/Sidebar/Sidebar";
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
 import MailHeader from "../../widgets/MailHeader/MailHeader";
 import MailBox from "../../widgets/MailBox/MailBox";
 import { getProfile } from "../../api/ApiAuth";
-import { readEmail, seacrhEmail, unReadEmail } from "../../api/ApiEmail";
+import { readEmail, searchEmail, unReadEmail } from "../../api/ApiEmail";
 import "./BaseEmailPage.scss";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
 import SupportModal from "../../widgets/SupportModal/SupportModal";
-import { AppStorage } from "../../stores/AppStorage";
 import { addEmailsInFolder, deleteEmailsFromFolder } from "../../api/ApiFolder";
 import { deleteDraft } from "../../api/ApiDraft";
 import { trash } from "../../api/ApiTrash";
 import { sendFavorite, unFavorite } from "../../api/ApiFavorite";
 import { formatTime } from "../../utils/date";
 import { getDraftByID } from "../../api/ApiDraft";
+import { TranslationKey, useTranslation } from "../../hooks/useTranslation";
+import { useComposerStore } from "../../store/useComposerStore";
+import { useUIStore } from "../../store/useUIStore";
+import { useUserStore } from "../../store/useUserStore";
+import { useMailStore } from "../../store/useMailStore";
 
 interface BaseEmailProps {
   currentView: string;
   fetchEmails: (offset: number) => Promise<any>;
   deleteEmails?: (ids: number[]) => Promise<boolean>;
   onReadMail?: (email: any) => void;
-  emptyMessage?: string;
-  emptySubMessage?: string;
+  emptyMessage?: TranslationKey;
+  emptySubMessage?: TranslationKey;
   showUnreadToggle?: boolean;
   showMarkAsRead?: boolean;
   showMoveToFolder?: boolean;
   currentFolderId?: number | null;
   currentFolderName?: string;
-  navigate: (path: string) => void;
 }
 
 interface BaseEmailState {
@@ -42,21 +47,31 @@ interface BaseEmailState {
   total: number;
 }
 
-const t = (key: string) => {
-  return AppStorage.t ? AppStorage.t(key) : key;
-};
-
 export default function BaseEmailPage({
   currentView = "inbox",
   fetchEmails,
-  emptyMessage = "",
-  emptySubMessage = "",
+  emptyMessage = "empty_inbox",
+  emptySubMessage,
   showUnreadToggle = false,
   showMarkAsRead = false,
   currentFolderId = null,
   currentFolderName = "",
-  navigate,
 }: BaseEmailProps) {
+  const navigate = useNavigate();
+
+  const { t } = useTranslation();
+  const { setCurrentView } = useUIStore();
+  const {
+    isProfileLoaded,
+    setProfileData,
+    name,
+    surname,
+    email,
+    getAvatarUrl,
+  } = useUserStore();
+  const { cacheEmails, setCurrentFolderId } = useMailStore();
+  const { clearComposerData, setComposerData } = useComposerStore();
+
   const lastFolderId = useRef<number | null>(null);
   const initialLoadDone = useRef<boolean>(false);
 
@@ -69,6 +84,7 @@ export default function BaseEmailPage({
     selectedEmails: new Set<number>(),
     total: 0,
   });
+  const [isSupportOpen, setIsSupportOpen] = useState<boolean>(false);
 
   const offsetRef = useRef(state.offset);
   useEffect(() => {
@@ -82,11 +98,12 @@ export default function BaseEmailPage({
   // --- Lifecycle ---
 
   useLayoutEffect(() => {
-    AppStorage.currentView = currentView;
+    setCurrentView(currentView);
   }, [currentView]);
 
   useLayoutEffect(() => {
-    if (!AppStorage.isProfileLoaded) {
+    if (!isProfileLoaded) {
+      console.log("calling loadProfile()");
       loadProfile();
     }
 
@@ -123,8 +140,7 @@ export default function BaseEmailPage({
       if (data === null) {
         navigate("/login");
       } else {
-        AppStorage.setProfileData(data);
-        AppStorage.isProfileLoaded = true;
+        setProfileData(data);
       }
     } catch (error) {
       console.error("Failed to load profile:", error);
@@ -133,7 +149,7 @@ export default function BaseEmailPage({
   };
 
   const loadEmails = async (offset: number) => {
-    if (!AppStorage.email || AppStorage.email === "") {
+    if (!isProfileLoaded) {
       return;
     }
 
@@ -150,7 +166,7 @@ export default function BaseEmailPage({
       const fetchedEmails = data.emails || data.drafts || data || [];
       const list = Array.isArray(fetchedEmails) ? fetchedEmails : [];
 
-      AppStorage.cacheEmails(list);
+      cacheEmails(list);
 
       updateState({
         emails: list,
@@ -185,7 +201,6 @@ export default function BaseEmailPage({
 
   const handleSettingsClick = () => {
     updateState({ isModalOpen: false });
-    AppStorage.setOpenSettingsOnProfile(true);
     navigate("/profile/interface");
   };
 
@@ -199,11 +214,12 @@ export default function BaseEmailPage({
         const response = await getDraftByID(email.id);
         if (response) {
           const draft = await response.json();
-          AppStorage.setDraftData({
-            id: draft.id,
-            header: draft.header,
+          setComposerData({
+            type: "draft",
+            draftId: draft.id,
+            subject: draft.header,
             body: draft.body,
-            receivers: draft.receivers || [],
+            recipients: draft.receivers || [],
           });
           navigate("/send");
         }
@@ -216,8 +232,8 @@ export default function BaseEmailPage({
     await readEmail([email.id]);
 
     if (currentView === "folder") {
-      AppStorage.setCurrentFolderId(currentFolderId);
-      AppStorage.setCurrentView("folder");
+      setCurrentFolderId(currentFolderId);
+      setCurrentView("folder");
     }
 
     navigate(`/read/${email.id}`);
@@ -225,12 +241,9 @@ export default function BaseEmailPage({
 
   const handleTrashSingle = async (emailId: number) => {
     let success = false;
-    if (AppStorage.currentView === "drafts") {
+    if (currentView === "drafts") {
       success = await deleteDraft([emailId]);
-    } else if (
-      AppStorage.currentView === "folder" &&
-      currentFolderId !== null
-    ) {
+    } else if (currentView === "folder" && currentFolderId !== null) {
       success = await deleteEmailsFromFolder(currentFolderId, [emailId]);
     } else {
       success = await trash([emailId]);
@@ -248,12 +261,9 @@ export default function BaseEmailPage({
       let success = false;
       const selectedArray = getSelectedArray();
 
-      if (AppStorage.currentView === "drafts") {
+      if (currentView === "drafts") {
         success = await deleteDraft(selectedArray);
-      } else if (
-        AppStorage.currentView === "folder" &&
-        currentFolderId !== null
-      ) {
+      } else if (currentView === "folder" && currentFolderId !== null) {
         success = await deleteEmailsFromFolder(currentFolderId, selectedArray);
       } else {
         success = await trash(selectedArray);
@@ -375,16 +385,16 @@ export default function BaseEmailPage({
 
   const handleGoToMain = () => {
     if (currentView === "inbox") return;
-    AppStorage.setCurrentView("inbox");
-    AppStorage.clearMailActionData?.();
-    AppStorage.setCurrentFolderId?.(null);
+    setCurrentView("inbox");
+    clearComposerData();
+    setCurrentFolderId(null);
     navigate("/");
   };
 
   const handleSearch = async (data: string) => {
     if (!data || data.trim() === "") return;
     try {
-      await seacrhEmail(data);
+      await searchEmail(data);
     } catch (error) {
       console.error("Search failed:", error);
     }
@@ -412,31 +422,31 @@ export default function BaseEmailPage({
     }
   };
 
-  const handleSupport = () => {
-    document.querySelector(".support-modal")?.classList.toggle("show");
-  };
-
   // --- Render Layout Setup ---
   const selectedArray = getSelectedArray();
   const mobileHeaderTitle =
-    currentView === "folder" ? currentFolderName : t(currentView);
+    currentView === "folder"
+      ? currentFolderName
+      : t(currentView as TranslationKey);
 
   return (
     <div className="main-page" onClick={handleCloseModal}>
-      <SupportModal />
+      <SupportModal
+        isOpen={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
+      />
       <div className="sidebar-overlay" onClick={toggleSidebar}></div>
 
       <aside className="sidebar">
         <Sidebar
           isProfile={0}
-          name={AppStorage.name}
-          surname={AppStorage.surname}
-          avatarUrl={AppStorage.getAvatarUrl()}
-          email={AppStorage.email}
+          name={name}
+          surname={surname}
+          avatarUrl={getAvatarUrl()}
+          email={email}
           newMail={handleNewMail}
           backToMail={handleGoToMain}
           selectedFolderId={currentFolderId}
-          navigate={navigate}
         />
       </aside>
 
@@ -461,9 +471,9 @@ export default function BaseEmailPage({
             />
           </div>
           <div className="top-right-menu">
-            <div className="support" onClick={handleSupport} />
+            <div className="support" onClick={() => setIsSupportOpen(true)} />
             <Button
-              svg={AppStorage.getAvatarUrl()}
+              svg={getAvatarUrl()}
               name="avatar"
               help="Аккаунт"
               onClick={handleAvatar}
@@ -498,8 +508,10 @@ export default function BaseEmailPage({
             {state.emails.length === 0 && (
               <div className="mail-box-container-form__placeholder">
                 <div className="mail-box-container-form__placeholder__icon"></div>
-                <span>{emptyMessage || "Нет писем"}</span>
-                {emptySubMessage && <span>{emptySubMessage}</span>}
+                <span>{t(emptyMessage) || "Нет писем"}</span>
+                {emptySubMessage
+                  ? t(emptySubMessage) && <span>{t(emptySubMessage)}</span>
+                  : null}
               </div>
             )}
 
@@ -552,7 +564,6 @@ export default function BaseEmailPage({
           onClose={handleCloseModal}
           onProfileClick={handleProfileClick}
           onSettingsClick={handleSettingsClick}
-          navigate={navigate}
         />
       </div>
 

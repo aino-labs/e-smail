@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./SelectDate.scss";
 import Select from "../Select/Select";
-import { AppStorage } from "../../stores/AppStorage";
+import { useTranslation } from "../../hooks/useTranslation";
 
 const daysInMonth = (month: number, year: number): number => {
   return new Date(year, month, 0).getDate();
@@ -11,10 +11,6 @@ const isValidDay = (day: number, month: number, year: number): boolean => {
   if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
   const max = daysInMonth(month, year);
   return day >= 1 && day <= max;
-};
-
-const t = (key: string): string => {
-  return AppStorage.t(key);
 };
 
 interface DateObject {
@@ -36,6 +32,8 @@ export default function SelectDate({
   birthYear = "",
   onChange,
 }: SelectDateProps) {
+  const { t } = useTranslation();
+
   const [day, setDay] = useState(birthDay);
   const [month, setMonth] = useState(birthMonth);
   const [year, setYear] = useState(birthYear);

@@ -1,9 +1,13 @@
 // src/utils/emailNotifications.ts
 import { getInbox } from "../api/ApiEmail";
-import { AppStorage } from "../stores/AppStorage";
+import { translate } from "../hooks/useTranslation";
+import { useAuthStore } from "../store/useAuthStore";
+import { useSettingsStore } from "../store/useSettingsStore";
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 let lastEmailId: string | number | null = null;
+
+const getLang = () => useSettingsStore.getState().language;
 
 // В Safari iOS (вне установленной PWA) window.Notification не существует:
 // прямое обращение к Notification.permission кидает ReferenceError.
@@ -32,8 +36,8 @@ async function sendNotificationToSW(email: any) {
 
     sw.postMessage({
       emailId: email.id,
-      title: `${AppStorage.t("new_email_from")} ${email.sender_email || AppStorage.t("from_unknown")}`,
-      body: email.header || AppStorage.t("empty_subject"),
+      title: `${translate("new_email_from", getLang())} ${email.sender_email || translate("from_unknown", getLang())}`,
+      body: email.header || translate("empty_subject", getLang()),
       icon: "/assets/svg/favicon.svg",
       url: `/read/${email.id}`,
     });
@@ -62,7 +66,11 @@ async function checkForNewEmails() {
 function startPolling() {
   if (pollingInterval) return;
   if (!notificationsGranted()) return;
-  if (!AppStorage.notificationsEnabled) return;
+
+  // Read notifications preference directly from Zustand
+  const { notificationsEnabled } = useSettingsStore.getState();
+  if (!notificationsEnabled) return;
+
   lastEmailId = null;
   checkForNewEmails();
   pollingInterval = setInterval(checkForNewEmails, 30000);
@@ -73,49 +81,56 @@ function stopPolling() {
     clearInterval(pollingInterval);
     pollingInterval = null;
   }
+  lastEmailId = null;
 }
 
 export async function requestNotificationPermission() {
   if (!("Notification" in window)) {
-    alert(AppStorage.t("notifs_not_supported"));
+    alert(translate("notifs_not_supported", getLang()));
     return;
   }
   const permission = await Notification.requestPermission();
   if (permission === "granted") {
-    if (AppStorage.email) {
+    const { isAuthenticated } = useAuthStore.getState();
+    if (isAuthenticated) {
       startPolling();
     }
   }
 }
 
-let unsubscribe: (() => void) | null = null;
+let unsubscribeAuth: (() => void) | null = null;
+let unsubscribeSettings: (() => void) | null = null;
 
 export function initEmailNotifications() {
   if (!("serviceWorker" in navigator)) return;
 
-  unsubscribe = AppStorage.subscribe(() => {
-    const isLoggedIn = !!AppStorage.email && AppStorage.email !== "";
-    if (
-      isLoggedIn &&
-      notificationsGranted() &&
-      AppStorage.notificationsEnabled
-    ) {
+  const checkAndTogglePolling = () => {
+    const { isAuthenticated } = useAuthStore.getState();
+    const { notificationsEnabled } = useSettingsStore.getState();
+
+    if (isAuthenticated && notificationsGranted() && notificationsEnabled) {
       startPolling();
     } else {
       stopPolling();
     }
-  });
+  };
 
-  if (
-    AppStorage.email &&
-    notificationsGranted() &&
-    AppStorage.notificationsEnabled
-  ) {
-    startPolling();
-  }
+  // Subscribe to Zustand store changes
+  unsubscribeAuth = useAuthStore.subscribe(checkAndTogglePolling);
+  unsubscribeSettings = useSettingsStore.subscribe(checkAndTogglePolling);
+
+  // Initial check
+  checkAndTogglePolling();
 }
 
 export function destroyEmailNotifications() {
   stopPolling();
-  if (unsubscribe) unsubscribe();
+  if (unsubscribeAuth) {
+    unsubscribeAuth();
+    unsubscribeAuth = null;
+  }
+  if (unsubscribeSettings) {
+    unsubscribeSettings();
+    unsubscribeSettings = null;
+  }
 }

@@ -1,4 +1,5 @@
-import { AppStorage } from "../stores/AppStorage";
+import { translate } from "../hooks/useTranslation";
+import { useSettingsStore } from "../store/useSettingsStore";
 
 export function formatTime(dateString: string) {
   if (!dateString) return "";
@@ -26,7 +27,7 @@ export function formatTime(dateString: string) {
   const yesterday = new Date(currentTime);
   yesterday.setDate(currentTime.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) {
-    return AppStorage.t("yesterday");
+    return translate("yesterday", useSettingsStore.getState().language);
   }
 
   return date.toLocaleDateString("ru-RU", {

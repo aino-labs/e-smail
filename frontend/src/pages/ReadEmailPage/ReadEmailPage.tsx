@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import Sidebar from "../../widgets/Sidebar/Sidebar"; // Adjust relative paths as needed
 import Input from "../../components/Input/Input";
 import Button from "../../components/Button/Button";
 import ReadMail from "../../widgets/ReadMail/ReadMail";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
 import { getEmailByID } from "../../api/ApiEmail";
-import { AppStorage } from "../../stores/AppStorage";
-
-interface ReadEmailPageProps {
-  id: number | string;
-  navigate: (path: string) => void;
-  previousPath: string;
-}
+import { useTranslation } from "../../hooks/useTranslation";
+import { useMailStore } from "../../store/useMailStore";
+import { useUIStore } from "../../store/useUIStore";
+import { useComposerStore } from "../../store/useComposerStore";
+import { useUserStore } from "../../store/useUserStore";
 
 interface EmailState {
   id: string | number;
@@ -27,22 +27,21 @@ interface EmailState {
   is_favorite?: boolean;
 }
 
-const t = (key: string): string => AppStorage.t(key);
+export default function ReadEmailPage() {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
 
-export default function ReadEmailPage({
-  id,
-  navigate,
-  previousPath,
-}: ReadEmailPageProps) {
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isPress, setIsPress] = useState<number>(0);
-  const [currentView] = useState<string>("read");
-
-  // Lazy state initialization prevents calling AppStorage on every single render
-  const [selectedFolderId] = useState<any>(
-    () => AppStorage.getCurrentFolderId?.() || null,
+  const { t } = useTranslation();
+  const { setCurrentView } = useUIStore();
+  const clearComposerData = useComposerStore(
+    (state) => state.clearComposerData,
   );
+  const currentFolderId = useMailStore((state) => state.currentFolderId);
+  const setCurrentFolderId = useMailStore((state) => state.setCurrentFolderId);
+  const { name, surname, email: userEmail, getAvatarUrl } = useUserStore();
+  const { cacheSingleEmail } = useMailStore();
 
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [email, setEmail] = useState<EmailState>({
     id: "",
     header: "",
@@ -66,9 +65,8 @@ export default function ReadEmailPage({
         return;
       }
 
-      AppStorage.cacheSingleEmail(data);
+      cacheSingleEmail(data);
 
-      setIsPress(previousPath === "/sent" ? 1 : 0);
       setEmail({
         id: data.id,
         header: data.header,
@@ -107,35 +105,10 @@ export default function ReadEmailPage({
     navigate("/settings");
   };
 
-  const handleGetSpam = () => {
-    AppStorage.setCurrentView("spam");
-    navigate("/");
-  };
-
-  const handleGetTrash = () => {
-    AppStorage.setCurrentView("trash");
-    navigate("/");
-  };
-
-  const handleGetFavorite = () => {
-    AppStorage.setCurrentView("favorite");
-    navigate("/");
-  };
-
-  const handleGetDrafts = () => {
-    AppStorage.setCurrentView("drafts");
-    navigate("/");
-  };
-
-  const handleGetSendEmail = () => {
-    AppStorage.setCurrentView("sent");
-    navigate("/sent");
-  };
-
   const handleGoToMain = () => {
-    AppStorage.setCurrentView("inbox");
-    AppStorage.clearMailActionData();
-    AppStorage.setCurrentFolderId(null);
+    setCurrentView("inbox");
+    clearComposerData();
+    setCurrentFolderId(null);
     navigate("/");
   };
 
@@ -144,21 +117,15 @@ export default function ReadEmailPage({
   };
 
   const handleBackToMail = () => {
-    AppStorage.clearMailActionData();
-    AppStorage.setCurrentFolderId(null);
+    clearComposerData();
+    setCurrentFolderId(null);
     navigate("/");
   };
 
   const handleBackToSent = () => {
-    AppStorage.clearMailActionData();
-    AppStorage.setCurrentFolderId(null);
+    clearComposerData();
+    setCurrentFolderId(null);
     navigate("/sent");
-  };
-
-  const loadEmailFromFolder = async (offset: number, folderID: number) => {
-    AppStorage.setCurrentFolderId(folderID);
-    AppStorage.setCurrentView("folder");
-    navigate("/");
   };
 
   const handleFavoriteToggled = (newIsFavorite: boolean) => {
@@ -176,12 +143,11 @@ export default function ReadEmailPage({
           isPressProfile={0}
           newMail={handleNewMail}
           backToMail={handleGoToMain}
-          selectedFolderId={selectedFolderId}
-          name={AppStorage.name}
-          surname={AppStorage.surname}
-          email={AppStorage.email}
-          avatarUrl={AppStorage.getAvatarUrl()}
-          navigate={navigate}
+          selectedFolderId={currentFolderId}
+          name={name}
+          surname={surname}
+          email={userEmail}
+          avatarUrl={getAvatarUrl()}
         />
       </aside>
       <div className="right-part">
@@ -198,7 +164,7 @@ export default function ReadEmailPage({
 
           <div className="top-right-menu">
             <Button
-              svg={AppStorage.getAvatarUrl()}
+              svg={getAvatarUrl()}
               name="avatar"
               help="Аккаунт"
               onClick={handleAvatar}
@@ -211,9 +177,8 @@ export default function ReadEmailPage({
             email={email}
             backToMail={handleBackToMail}
             backToSent={handleBackToSent}
-            selectedFolderId={selectedFolderId}
+            selectedFolderId={currentFolderId}
             onFavoriteToggled={handleFavoriteToggled}
-            navigate={navigate}
           />
         </div>
 
@@ -222,7 +187,6 @@ export default function ReadEmailPage({
           onClose={handleCloseModal}
           onProfileClick={handleProfileClick}
           onSettingsClick={handleSettingsClick}
-          navigate={navigate}
         />
       </div>
     </div>

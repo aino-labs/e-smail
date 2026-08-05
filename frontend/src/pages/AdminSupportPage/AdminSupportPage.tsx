@@ -9,11 +9,7 @@ import {
   updateTicketStatus,
 } from "../../api/ApiSupport";
 
-interface AdminSupportPageProps {
-  navigate: (path: string) => void;
-}
-
-export default function AdminSupportPage({ navigate }: AdminSupportPageProps) {
+export default function AdminSupportPage() {
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [chatMessages, setChatMessages] = useState<any[]>([]);

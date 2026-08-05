@@ -1,64 +1,66 @@
+import { getCSRFToken } from "./ApiAuth";
 import { EMAIL_URL } from "./config";
-import { AppStorage } from "../stores/AppStorage";
-
 
 export async function getEmailsTrash(offset: number) {
-    try {
-        const response = await fetch(`${EMAIL_URL}/emails/trash?limit=50&offset=${offset}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            credentials: "include",
-        });
+  try {
+    const response = await fetch(
+      `${EMAIL_URL}/emails/trash?limit=50&offset=${offset}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      },
+    );
 
-        if (response.ok) {
-            const data = await response.json();
-            return data;
-        }
-    } catch {
-        return null;
+    if (response.ok) {
+      const data = await response.json();
+      return data;
     }
+  } catch {
+    return null;
+  }
 }
 
 export async function trash(IDs: number[]) {
-    try {
-        const response = await fetch(`${EMAIL_URL}/emails/trash`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-Token": AppStorage.csrfToken,
-            },
-            credentials: "include",
-            body: JSON.stringify({ ids: IDs }),
-        });
+  try {
+    const response = await fetch(`${EMAIL_URL}/emails/trash`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": getCSRFToken(),
+      },
+      credentials: "include",
+      body: JSON.stringify({ ids: IDs }),
+    });
 
-        if (response.ok) {
-            return true;
-        }
-        return false;
-    } catch {
-        return false;
+    if (response.ok) {
+      return true;
     }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 export async function untrash(IDs: number[]) {
-    try {
-        const response = await fetch(`${EMAIL_URL}/emails/untrash`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-Token": AppStorage.csrfToken,
-            },
-            credentials: "include",
-            body: JSON.stringify({ ids: IDs }),
-        });
+  try {
+    const response = await fetch(`${EMAIL_URL}/emails/untrash`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": getCSRFToken(),
+      },
+      credentials: "include",
+      body: JSON.stringify({ ids: IDs }),
+    });
 
-        if (response.ok) {
-            return true;
-        }
-        return false;
-    } catch {
-        return false;
+    if (response.ok) {
+      return true;
     }
+    return false;
+  } catch {
+    return false;
+  }
 }

@@ -1,7 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import "./SupportModal.scss";
 
-export default function SupportModal() {
+interface SupportModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function SupportModal({
+  isOpen = false,
+  onClose,
+}: SupportModalProps) {
   const [iframeKey, setIframeKey] = useState(0);
 
   const closeModal = () => {
@@ -9,9 +17,10 @@ export default function SupportModal() {
     if (supportModal) {
       supportModal.classList.toggle("show");
       if (!supportModal.classList.contains("show")) {
-        setIframeKey((prev) => prev + 1)
+        setIframeKey((prev) => prev + 1);
       }
     }
+    onClose?.();
   };
 
   useEffect(() => {
@@ -21,24 +30,26 @@ export default function SupportModal() {
       }
     };
 
-    window.addEventListener("message", handleMessage)
+    window.addEventListener("message", handleMessage);
 
     return () => {
-      window.removeEventListener("message", handleMessage)
-    }
-  }, [])
+      window.removeEventListener("message", handleMessage);
+    };
+  }, []);
 
   const url = new URL(document.URL);
 
-  return (<div className="support-modal">
-    <div className="support-modal-overlay" onClick={closeModal}></div>
-    <iframe
-      key={iframeKey}
-      title="Support Modal"
-      className="support-iframe"
-      src={`${url.origin}/support`}
-      height="200"
-      width="200"
-    ></iframe>
-  </div>);
+  return (
+    <div className={`support-modal${isOpen ? " show" : ""}`}>
+      <div className="support-modal-overlay" onClick={closeModal}></div>
+      <iframe
+        key={iframeKey}
+        title="Support Modal"
+        className="support-iframe"
+        src={`${url.origin}/support`}
+        height="200"
+        width="200"
+      ></iframe>
+    </div>
+  );
 }

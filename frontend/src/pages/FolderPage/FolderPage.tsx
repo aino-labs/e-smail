@@ -1,44 +1,33 @@
-import { useEffect } from "react";
 import BaseEmailPage from "../../widgets/BaseEmailPage/BaseEmailPage";
 import {
   getEmailsFromFolder,
   deleteEmailsFromFolder,
 } from "../../api/ApiFolder";
-import { AppStorage } from "../../stores/AppStorage";
+import { useMailStore } from "../../store/useMailStore";
+import { useTranslation } from "../../hooks/useTranslation";
 
-interface FolderPageProps {
-  folderId?: string | number;
-  navigate: (path: string) => void;
-}
-
-export default function FolderPage({ folderId, navigate }: FolderPageProps) {
-  const activeFolderId =
-    Number(folderId) || AppStorage.getCurrentFolderId?.() || 0;
+export default function FolderPage() {
+  const { t } = useTranslation();
+  const { folders, currentFolderId } = useMailStore();
   const folderName =
-    AppStorage.folders?.find((f: any) => f.id === activeFolderId)?.name ||
-    "Папка";
-
-  useEffect(() => {
-    AppStorage.setCurrentFolderId(activeFolderId);
-  }, [activeFolderId]);
+    folders.find((f: any) => f.id === currentFolderId)?.name || t("folder");
 
   return (
     <BaseEmailPage
       currentView="folder"
       fetchEmails={(offset: number) =>
-        getEmailsFromFolder(offset, activeFolderId)
+        getEmailsFromFolder(offset, currentFolderId)
       }
       deleteEmails={(ids: number[]) =>
-        deleteEmailsFromFolder(activeFolderId, ids)
+        deleteEmailsFromFolder(currentFolderId, ids)
       }
-      emptyMessage={`Папка "${folderName}" пуста`}
-      emptySubMessage={"Переместите письма в эту папку"}
+      emptyMessage="empty_folder"
+      emptySubMessage="empty_folder_sub"
       showUnreadToggle={false}
       showMarkAsRead={false}
       showMoveToFolder={false}
-      currentFolderId={activeFolderId}
+      currentFolderId={currentFolderId}
       currentFolderName={folderName}
-      navigate={navigate}
     />
   );
 }

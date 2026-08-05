@@ -1,11 +1,8 @@
 import { useState } from "react";
 import "./UploadAvatar.scss";
-import { AppStorage } from "../../stores/AppStorage";
 import { uploadAvatar } from "../../api/ApiAuth";
-
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
+import { useUserStore } from "../../store/useUserStore";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface UploadAvatarProps {
   image?: string;
@@ -13,9 +10,11 @@ interface UploadAvatarProps {
 }
 
 export default function UploadAvatar({
-  image = AppStorage.getAvatarUrl() || "../../assets/svg/Avatar.svg",
+  image = "../../assets/svg/Avatar.svg",
   onAvatarUpdate,
 }: UploadAvatarProps) {
+  const { t } = useTranslation();
+  const { setImagePath, getAvatarUrl } = useUserStore();
   const [isLoading, setIsLoading] = useState(false);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
 
@@ -36,7 +35,7 @@ export default function UploadAvatar({
     try {
       const imagePath = await uploadAvatar(file);
       if (imagePath) {
-        AppStorage.setImagePath(imagePath);
+        setImagePath(imagePath);
         setLocalPreview(null);
 
         onAvatarUpdate?.();
@@ -49,10 +48,7 @@ export default function UploadAvatar({
   };
 
   const src =
-    localPreview ||
-    image ||
-    AppStorage.getAvatarUrl() ||
-    "../../assets/svg/Avatar.svg";
+    localPreview || image || getAvatarUrl() || "../../assets/svg/Avatar.svg";
 
   return (
     <div className="upload">

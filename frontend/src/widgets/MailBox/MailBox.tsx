@@ -1,9 +1,6 @@
-import { AppStorage } from "../../stores/AppStorage";
+import { useEffect, useState } from "react";
+import { useTranslation } from "../../hooks/useTranslation";
 import "./MailBox.scss";
-
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
 
 const trimEmailAddress = (email: string): string => {
   return email.substring(0, email.lastIndexOf("@"));
@@ -53,6 +50,16 @@ export default function MailBox({
   isFavorite,
   isAnonymous,
 }: MailBoxProps) {
+  const { t } = useTranslation();
+
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 769);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 769);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  });
+
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     const isChecked = e.target.checked;
@@ -75,7 +82,6 @@ export default function MailBox({
     onToggleFavorite?.(id, e.target.checked);
   };
 
-  const isMobile = window.innerWidth < 769;
   const isSentView = currentView === "sent";
   const isDraftsView = currentView === "drafts";
   const showSenderInfo = !isSentView && (sender_name || sender_email);
