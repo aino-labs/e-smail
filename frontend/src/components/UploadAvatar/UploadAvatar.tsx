@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./UploadAvatar.scss";
 import { uploadAvatar } from "../../api/ApiAuth";
-import { useUserStore } from "../../store/useUserStore";
+import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 import { useTranslation } from "../../hooks/useTranslation";
 
 interface UploadAvatarProps {
@@ -14,7 +14,8 @@ export default function UploadAvatar({
   onAvatarUpdate,
 }: UploadAvatarProps) {
   const { t } = useTranslation();
-  const { setImagePath, getAvatarUrl } = useUserStore();
+  const { setImagePath } = useUserStore();
+  const avatarUrl = useUserStore(selectAvatarUrl);
   const [isLoading, setIsLoading] = useState(false);
   //const [localPreview, setLocalPreview] = useState<string | null>(null);
 
@@ -49,7 +50,7 @@ export default function UploadAvatar({
   return (
     <div className="upload">
       <div className="upload__preview">
-        <img id="upload-image" src={getAvatarUrl()} alt="avatar" />
+        <img id="upload-image" src={avatarUrl} alt="avatar" />
         {isLoading && (
           <div className="upload__overlay">
             <div className="upload__spinner"></div>

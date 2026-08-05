@@ -142,7 +142,6 @@ export default function ProfilePage({
       birthDay: bDay,
       birthMonth: bMonth,
       birthYear: bYear,
-      anonymousEnabled: data.accept_anonymous,
     });
   };
 
@@ -244,7 +243,7 @@ export default function ProfilePage({
     toast.show(t("saved_successfully"), "success");
   };
 
-  const handleChangePassword = async (event: React.FormEvent) => {
+  const handleChangePassword = async (event: React.SubmitEvent) => {
     event.preventDefault();
     try {
       const response = await changePassword({
@@ -264,8 +263,7 @@ export default function ProfilePage({
     }
   };
 
-  const handleChangeProfileData = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const generateBirthdateString = (): string | null => {
     let birthDate = null;
 
     if (
@@ -277,6 +275,14 @@ export default function ProfilePage({
       const day = birthDay.padStart(2, "0");
       birthDate = `${birthYear}-${month}-${day}T00:00:00Z`;
     }
+
+    return birthDate;
+  };
+
+  const handleChangeProfileData = async (event: React.SyntheticEvent) => {
+    event.preventDefault();
+
+    const birthDate = generateBirthdateString();
 
     try {
       const payload: any = { name, surname, is_male, email };
@@ -293,7 +299,6 @@ export default function ProfilePage({
           birthDay,
           birthMonth,
           birthYear,
-          anonymousEnabled,
         });
         toast.show(t("saved_successfully"), "success");
       } else {
@@ -322,10 +327,17 @@ export default function ProfilePage({
   };
 
   const toggleAnonymousMode = async (enabled: boolean) => {
+    let birthDate = generateBirthdateString();
+    if (!birthDate) {
+      toast.show(t("profile_unfinished"), "error");
+      return;
+    }
+
     await changeProfile({
       name,
       surname,
-      is_male: is_male ? "true" : "false",
+      birthdate: birthDate,
+      is_male,
       accept_anonymous: enabled,
     });
     setAnonymousEnabled(enabled);
@@ -439,7 +451,7 @@ export default function ProfilePage({
                   type="radio"
                   name="radio-gender"
                   checked={is_male}
-                  onInput={() => setProfileData({ is_male: true })}
+                  onChange={() => setProfileData({ is_male: true })}
                 />
                 <label htmlFor="male">{t("male")}</label>
               </div>
@@ -449,7 +461,7 @@ export default function ProfilePage({
                   type="radio"
                   name="radio-gender"
                   checked={!is_male}
-                  onInput={() => setProfileData({ is_male: false })}
+                  onChange={() => setProfileData({ is_male: false })}
                 />
                 <label htmlFor="female">{t("female")}</label>
               </div>
@@ -619,7 +631,10 @@ export default function ProfilePage({
                   type="radio"
                   name="radio-anonymous"
                   checked={anonymousEnabled === true}
-                  onChange={() => toggleAnonymousMode(true)}
+                  onChange={() => {
+                    toggleAnonymousMode(true);
+                    console.log("anon true");
+                  }}
                 />
                 <label htmlFor="anon-on">{t("allow")}</label>
               </div>
@@ -629,7 +644,10 @@ export default function ProfilePage({
                   type="radio"
                   name="radio-anonymous"
                   checked={anonymousEnabled === false}
-                  onChange={() => toggleAnonymousMode(false)}
+                  onChange={() => {
+                    toggleAnonymousMode(false);
+                    console.log("anon false");
+                  }}
                 />
                 <label htmlFor="anon-off">{t("not_allow")}</label>
               </div>

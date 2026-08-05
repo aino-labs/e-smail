@@ -12,14 +12,13 @@ interface UserState {
   birthYear: string;
   image_path: string;
   updatedAt: number | null;
-  anonymousEnabled: boolean;
   isProfileLoaded: boolean;
 
-  setProfileData: (profileData: Partial<UserState>) => void;
+  setProfileData: (
+    profileData: Partial<UserState> & { birthdate?: string },
+  ) => void;
   setImagePath: (path: string) => void;
-  setAnonymousEnabled: (enabled: boolean) => void;
   clearProfile: () => void;
-  getAvatarUrl: () => string;
 }
 
 const initialState = {
@@ -32,47 +31,66 @@ const initialState = {
   birthYear: "",
   image_path: "",
   updatedAt: null as number | null,
-  anonymousEnabled: true,
   isProfileLoaded: false,
 };
 
 export const useUserStore = create<UserState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       ...initialState,
 
       setProfileData: (profileData) =>
-        set((state) => ({ ...state, ...profileData, isProfileLoaded: true })),
-      setImagePath: (path) => set({ image_path: path }),
-      setAnonymousEnabled: (enabled) => set({ anonymousEnabled: enabled }),
-      clearProfile: () => set({ ...initialState }),
-      getAvatarUrl: () => {
-        const { image_path, updatedAt } = get();
+        set((state) => {
+          let { birthDay, birthMonth, birthYear } = state;
 
-        if (image_path) {
-          // Return full external or data URLs as-is
-          if (/^(https?:|data:|\/\/)/i.test(image_path)) {
-            return image_path;
+          // Handle ISO format ("2020-10-06T00:00:00Z")
+          if (profileData.birthdate) {
+            const [datePart] = profileData.birthdate.split("T"); // "2020-10-06"
+            if (datePart) {
+              const [year, month, day] = datePart.split("-");
+              if (year && month && day) {
+                birthYear = year;
+                birthMonth = month;
+                birthDay = day; // Use day.replace(/^0/, "") if you need unpadded numbers ("6" instead of "06")
+              }
+            }
           }
 
-          // Clean slash collisions between domain and path
-          const cleanBase = (URLMINIO || "").replace(/\/$/, "");
-          const cleanPath = image_path.replace(/^\//, "");
-          const baseUrl = `${cleanBase}/${cleanPath}`;
+          // Omit raw `birthdate` from state payload
+          const { birthdate, ...restProfileData } = profileData;
 
-          // Append timestamp parameter only if available
-          return updatedAt ? `${baseUrl}?t=${updatedAt}` : baseUrl;
-        }
-
-        return "/assets/svg/Avatar.svg";
-      },
+          return {
+            ...state,
+            ...restProfileData,
+            birthDay: profileData.birthDay ?? birthDay,
+            birthMonth: profileData.birthMonth ?? birthMonth,
+            birthYear: profileData.birthYear ?? birthYear,
+            isProfileLoaded: true,
+          };
+        }),
+      setImagePath: (path) => set({ image_path: path, updatedAt: Date.now() }),
+      clearProfile: () => set({ ...initialState }),
     }),
     {
       name: "user-profile",
-      partialize: (state) => {
-        const { getAvatarUrl, ...persistedState } = state;
-        return persistedState;
-      },
     },
   ),
 );
+
+export const selectAvatarUrl = (state: UserState): string => {
+  const { image_path, updatedAt } = state;
+
+  if (image_path) {
+    if (/^(https?:|data:|\/\/)/i.test(image_path)) {
+      return image_path;
+    }
+
+    const cleanBase = (URLMINIO || "").replace(/\/$/, "");
+    const cleanPath = image_path.replace(/^\//, "");
+    const baseUrl = `${cleanBase}/${cleanPath}`;
+
+    return updatedAt ? `${baseUrl}?t=${updatedAt}` : baseUrl;
+  }
+
+  return "/assets/svg/Avatar.svg";
+};

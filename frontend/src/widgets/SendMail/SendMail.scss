@@ -111,12 +111,13 @@
         display: flex;
         flex-direction: row;
         gap: 5px;
+        margin-top: 10px;
         padding: 10px;
         overflow: hidden;
         scrollbar-width: none;
         overscroll-behavior: none;
         scroll-behavior: auto;
-        height: 90px;
+        min-height: fit-content;
 
         .file-item {
             display: flex;
@@ -128,7 +129,7 @@
             padding: 10px 20px;
             flex-shrink: 0;
             max-width: 400px;
-            height: fit-content;
+            min-height: fit-content;
 
             .file-icon {
                 height: 28px;

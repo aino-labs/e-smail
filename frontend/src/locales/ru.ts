@@ -106,6 +106,8 @@ export const ru = {
   file_too_large: "Файл слишком большой (макс. 25 Мбайт)",
   file_upload_error: "Не удалось загрузить файл",
   anonymous_forbidden: "Кто-то из получателей запретил анонимные письма себе",
+  profile_unfinished:
+    'Чтобы изменить эту настройку, заполните вкладку "Личные данные"',
 
   // ProfilePage
   theme: "Тема",

@@ -51,7 +51,12 @@ export async function getDraftByID(ID: number) {
 }
 
 export async function updateDraft(
-  draftData: { header: string; body: string; receivers: string[] },
+  draftData: {
+    header: string;
+    body: string;
+    receivers: string[];
+    isAnonymous: boolean;
+  },
   ID: number,
 ) {
   try {
@@ -66,6 +71,7 @@ export async function updateDraft(
         header: draftData.header,
         body: draftData.body,
         receivers: draftData.receivers,
+        is_anonymous: draftData.isAnonymous,
       }),
     });
 
@@ -121,7 +127,15 @@ export async function getDrafts(offset: number) {
   }
 }
 
-export async function sendDraft(data = {}, draftID: number) {
+export async function sendDraft(
+  data: {
+    header: string;
+    body: string;
+    receivers: string[];
+    is_anonymous: boolean;
+  },
+  draftID: number,
+) {
   try {
     const response = await fetch(`${EMAIL_URL}/drafts/${draftID}/send`, {
       method: "POST",

@@ -20,7 +20,7 @@ import { getDraftByID } from "../../api/ApiDraft";
 import { TranslationKey, useTranslation } from "../../hooks/useTranslation";
 import { useComposerStore } from "../../store/useComposerStore";
 import { useUIStore } from "../../store/useUIStore";
-import { useUserStore } from "../../store/useUserStore";
+import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 import { useMailStore } from "../../store/useMailStore";
 
 interface BaseEmailProps {
@@ -61,14 +61,9 @@ export default function BaseEmailPage({
 
   const { t } = useTranslation();
   const { setCurrentView } = useUIStore();
-  const {
-    isProfileLoaded,
-    setProfileData,
-    name,
-    surname,
-    email,
-    getAvatarUrl,
-  } = useUserStore();
+  const { isProfileLoaded, setProfileData, name, surname, email } =
+    useUserStore();
+  const avatarUrl = useUserStore(selectAvatarUrl);
   const { cacheEmails, setCurrentFolderId } = useMailStore();
   const { clearComposerData, setComposerData } = useComposerStore();
 
@@ -442,7 +437,7 @@ export default function BaseEmailPage({
           isProfile={0}
           name={name}
           surname={surname}
-          avatarUrl={getAvatarUrl()}
+          avatarUrl={avatarUrl}
           email={email}
           newMail={handleNewMail}
           backToMail={handleGoToMain}
@@ -473,7 +468,7 @@ export default function BaseEmailPage({
           <div className="top-right-menu">
             <div className="support" onClick={() => setIsSupportOpen(true)} />
             <Button
-              svg={getAvatarUrl()}
+              svg={avatarUrl}
               name="avatar"
               help="Аккаунт"
               onClick={handleAvatar}

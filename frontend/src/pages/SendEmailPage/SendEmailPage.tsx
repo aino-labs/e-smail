@@ -10,7 +10,7 @@ import Input from "../../components/Input/Input";
 import { getProfile } from "../../api/ApiAuth";
 import { toast } from "../../store/toastStore";
 import { useTranslation } from "../../hooks/useTranslation";
-import { useUserStore } from "../../store/useUserStore";
+import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 import { useComposerStore } from "../../store/useComposerStore";
 import { useMailStore } from "../../store/useMailStore";
 
@@ -21,14 +21,9 @@ export default function SendEmailPage() {
   const [selectedFolderId] = useState<number | null>(null);
 
   const { t } = useTranslation();
-  const {
-    isProfileLoaded,
-    setProfileData,
-    getAvatarUrl,
-    name,
-    surname,
-    email,
-  } = useUserStore();
+  const { isProfileLoaded, setProfileData, name, surname, email } =
+    useUserStore();
+  const avatarUrl = useUserStore(selectAvatarUrl);
   const { setCurrentFolderId } = useMailStore();
   const { data: composerData, clearComposerData } = useComposerStore();
 
@@ -98,7 +93,7 @@ export default function SendEmailPage() {
 
       <div className="top-right-menu">
         <Button
-          svg={getAvatarUrl()}
+          svg={avatarUrl}
           name="avatar"
           help="Аккаунт"
           onClick={handleAvatar}
@@ -118,7 +113,7 @@ export default function SendEmailPage() {
           name={name}
           surname={surname}
           email={email}
-          avatarUrl={getAvatarUrl()}
+          avatarUrl={avatarUrl}
         />
       </aside>
 

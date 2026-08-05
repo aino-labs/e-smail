@@ -21,7 +21,7 @@ export const useSettingsStore = create<UserSettingsState>()(
       theme: "light",
       language: "ru",
       notificationsEnabled: false,
-      anonymousEnabled: true,
+      anonymousEnabled: false,
       sidebarDropdownVisible: false,
 
       setTheme: (theme: "light" | "dark") => set({ theme }),

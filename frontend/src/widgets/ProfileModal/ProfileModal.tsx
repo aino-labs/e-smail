@@ -4,7 +4,7 @@ import "./ProfileModal.scss";
 import Button from "../../components/Button/Button";
 import { logOut } from "../../api/ApiAuth";
 import { useTranslation } from "../../hooks/useTranslation";
-import { useUserStore } from "../../store/useUserStore";
+import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 import { useMailStore } from "../../store/useMailStore";
 
 interface ProfileModalProps {
@@ -23,7 +23,8 @@ export default function ProfileModal({
   const navigate = useNavigate();
 
   const { t } = useTranslation();
-  const { name, email, getAvatarUrl, clearProfile } = useUserStore();
+  const { name, email, clearProfile } = useUserStore();
+  const avatarUrl = useUserStore(selectAvatarUrl);
   const { setFolders, setUnreadCount } = useMailStore();
 
   const handleExit = async () => {
@@ -64,7 +65,7 @@ export default function ProfileModal({
         </div>
       </div>
       <div className="overlay__avatar">
-        <img src={getAvatarUrl()} alt="Avatar"></img>
+        <img src={avatarUrl} alt="Avatar"></img>
       </div>
       <div className="overlay__email">
         <p>{email}</p>

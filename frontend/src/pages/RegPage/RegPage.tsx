@@ -10,6 +10,7 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { useUserStore } from "../../store/useUserStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import Footer from "../../widgets/Footer/Footer";
+import SelectDate from "../../components/SelectDate/SelectDate";
 
 export default function RegPage() {
   const navigate = useNavigate();

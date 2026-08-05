@@ -260,7 +260,8 @@ export async function uploadAvatar(file: File) {
 export async function changeProfile(data: {
   name: string;
   surname: string;
-  is_male: string;
+  birthdate: string;
+  is_male: boolean;
   accept_anonymous: boolean;
 }) {
   try {

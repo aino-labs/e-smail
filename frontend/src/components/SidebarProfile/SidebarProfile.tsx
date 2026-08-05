@@ -4,7 +4,7 @@ import "./SidebarProfile.scss";
 import Button from "../Button/Button";
 import { logOut } from "../../api/ApiAuth";
 import { useMailStore } from "../../store/useMailStore";
-import { useUserStore } from "../../store/useUserStore";
+import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 
 interface SidebarProfileProps {
   name?: string;
@@ -24,7 +24,7 @@ export default function SidebarProfile({
   const navigate = useNavigate();
 
   const setUnreadCount = useMailStore((state) => state.setUnreadCount);
-  const getAvatarUrl = useUserStore((state) => state.getAvatarUrl);
+  const avatarUrl = useUserStore(selectAvatarUrl);
   const handleAvatar = () => {
     navigate("/profile");
   };
@@ -42,13 +42,13 @@ export default function SidebarProfile({
       {variant === "mobile" ? (
         <Button
           className="sidebar-profile__profile-btn"
-          svg={getAvatarUrl()}
+          svg={avatarUrl}
           name="avatar"
           help="Аккаунт"
           onClick={handleAvatar}
         />
       ) : (
-        <img src={getAvatarUrl() || "../../assets/svg/Avatar.svg"}></img>
+        <img src={avatarUrl}></img>
       )}
       <div
         className={`sidebar-profile__text ${textAlign}`}

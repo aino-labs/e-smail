@@ -11,7 +11,7 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { useMailStore } from "../../store/useMailStore";
 import { useUIStore } from "../../store/useUIStore";
 import { useComposerStore } from "../../store/useComposerStore";
-import { useUserStore } from "../../store/useUserStore";
+import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 
 interface EmailState {
   id: string | number;
@@ -38,7 +38,8 @@ export default function ReadEmailPage() {
   );
   const currentFolderId = useMailStore((state) => state.currentFolderId);
   const setCurrentFolderId = useMailStore((state) => state.setCurrentFolderId);
-  const { name, surname, email: userEmail, getAvatarUrl } = useUserStore();
+  const { name, surname, email: userEmail } = useUserStore();
+  const avatarUrl = useUserStore(selectAvatarUrl);
   const { cacheSingleEmail } = useMailStore();
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -147,7 +148,7 @@ export default function ReadEmailPage() {
           name={name}
           surname={surname}
           email={userEmail}
-          avatarUrl={getAvatarUrl()}
+          avatarUrl={avatarUrl}
         />
       </aside>
       <div className="right-part">
@@ -164,7 +165,7 @@ export default function ReadEmailPage() {
 
           <div className="top-right-menu">
             <Button
-              svg={getAvatarUrl()}
+              svg={avatarUrl}
               name="avatar"
               help="Аккаунт"
               onClick={handleAvatar}

@@ -108,6 +108,8 @@ export const en = {
   file_too_large: "File is too large (25 MB max)",
   file_upload_error: "Could not upload file, try again later",
   anonymous_forbidden: "One of the recipients does not accept anonymous emails",
+  profile_unfinished:
+    'To change this setting, finish your profile in "Personal info" tab',
 
   // ProfilePage
   theme: "Theme",

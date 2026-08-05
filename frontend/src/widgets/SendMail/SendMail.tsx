@@ -21,7 +21,6 @@ import {
 } from "../../utils/files";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useComposerStore } from "../../store/useComposerStore";
-import { useUIStore } from "../../store/useUIStore";
 
 interface SendMailProps {
   actionData?: any;
@@ -150,9 +149,11 @@ export default function SendMail({ backToMail }: SendMailProps) {
     }
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.SyntheticEvent) => {
     if (e) e.preventDefault();
     setSending(true);
+
+    console.log(isAnonymous);
 
     let responseSend;
 
@@ -166,17 +167,22 @@ export default function SendMail({ backToMail }: SendMailProps) {
     } else if (composerData.type === "draft") {
       const draftId = composerData.draftId;
 
+      console.log("updating draft...");
+      console.log(isAnonymous);
       await updateDraft(
         {
           header: subject.trim(),
           body: body.trim(),
           receivers: recipients,
+          isAnonymous,
         },
         draftId,
       );
 
       await uploadFiles(draftId);
 
+      console.log("sending draft");
+      console.log(isAnonymous);
       responseSend = await sendDraft(
         {
           header: subject.trim(),
@@ -231,6 +237,7 @@ export default function SendMail({ backToMail }: SendMailProps) {
           header: subject.trim(),
           body: body.trim(),
           receivers: recipients,
+          isAnonymous,
         },
         draftId,
       );
@@ -340,6 +347,8 @@ export default function SendMail({ backToMail }: SendMailProps) {
     }
     setShowDraftConfirm(true);
   };
+
+  console.log(isAnonymous);
 
   return (
     <div className="send-mail">
@@ -474,7 +483,9 @@ export default function SendMail({ backToMail }: SendMailProps) {
                   type="checkbox"
                   name="radio-anonymous"
                   checked={isAnonymous}
-                  onChange={() => setIsAnonymous((prev) => !prev)}
+                  onChange={() => {
+                    setIsAnonymous((prev) => !prev);
+                  }}
                 />
                 <label htmlFor="anon-toggle-desktop">{t("toggle_anon")}</label>
               </div>
