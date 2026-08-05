@@ -9,12 +9,13 @@ import "./LoginPage.scss";
 import { TranslationKey, useTranslation } from "../../hooks/useTranslation";
 import { useUserStore } from "../../store/useUserStore";
 import { useAuthStore } from "../../store/useAuthStore";
+import Footer from "../../widgets/Footer/Footer";
 
 const SUFFIX = "@e-smail.ru";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  
+
   const { t } = useTranslation();
   const { setProfileData } = useUserStore();
   const { setAuthenticated } = useAuthStore();
@@ -189,6 +190,7 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -10,7 +10,6 @@ interface SidebarProfileProps {
   name?: string;
   surname?: string;
   email?: string;
-  avatarUrl?: string;
   variant?: string;
   textAlign?: string;
 }
@@ -19,7 +18,6 @@ export default function SidebarProfile({
   name = "",
   surname = "",
   email = "",
-  avatarUrl = "",
   variant = "",
   textAlign = "",
 }: SidebarProfileProps) {
@@ -50,7 +48,7 @@ export default function SidebarProfile({
           onClick={handleAvatar}
         />
       ) : (
-        <img src={avatarUrl || "../../assets/svg/Avatar.svg"}></img>
+        <img src={getAvatarUrl() || "../../assets/svg/Avatar.svg"}></img>
       )}
       <div
         className={`sidebar-profile__text ${textAlign}`}

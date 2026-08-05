@@ -243,12 +243,7 @@ export default function Sidebar({
       )}
       {isProfile === 1 && (
         <div className="sidebar-content">
-          <SidebarProfile
-            name={name}
-            surname={surname}
-            email={email}
-            avatarUrl={avatarUrl}
-          />
+          <SidebarProfile name={name} surname={surname} email={email} />
           <div className="main-button-profile">
             <Button
               title={t("mailbox")}
@@ -320,7 +315,6 @@ export default function Sidebar({
           name={name}
           surname={surname}
           email={email}
-          avatarUrl={avatarUrl}
           variant="mobile"
           textAlign="text-left"
         />
