@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./ReadMail.scss";
 import Input from "../../components/Input/Input";
 import Textarea from "../../components/Textarea/Textarea";
 import HorizontalScroller from "../../components/HorizontalScroller/HorizontalScroller";
 import MailTools from "../MailTools/MailTools";
-import { AppStorage } from "../../stores/AppStorage";
 import { URLMINIO } from "../../api/config";
 import { deleteEmailsFromFolder } from "../../api/ApiFolder";
 import { sendSpam } from "../../api/ApiSpam";
@@ -16,6 +16,8 @@ import {
   getIconByContentType,
   trimFileName,
 } from "../../utils/files";
+import { useTranslation } from "../../hooks/useTranslation";
+import { useComposerStore } from "../../store/useComposerStore";
 
 interface ReadMailProps {
   email?: any;
@@ -24,14 +26,9 @@ interface ReadMailProps {
   backToMail?: () => void;
   backToSent?: () => void;
   onFavoriteToggled?: (newState: boolean) => void;
-  navigate: (path: string) => void;
   selectedFolderId: number | null;
   previousPath?: string | null;
 }
-
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
 
 export default function ReadMail({
   email,
@@ -40,10 +37,13 @@ export default function ReadMail({
   backToMail,
   backToSent,
   onFavoriteToggled,
-  navigate,
   selectedFolderId,
   previousPath,
 }: ReadMailProps) {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { setComposerData } = useComposerStore();
+
   const [attachments, setAttachments] = useState<any[]>([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState<boolean>(false);
 
@@ -130,26 +130,23 @@ export default function ReadMail({
   };
 
   const handleReply = () => {
-    AppStorage.setReplyData({
+    setComposerData({
       type: "reply",
-      to: email.senderEmail || "",
+      recipients: [email.senderEmail || ""],
       subject: `Re: ${email.header}`,
       body: `\n\n${t("original_email")}\n${t("from")} ${email.is_anonymous ? t("anonymous") : email.senderEmail || ""}\n${t("date")} ${email.createdAt ? new Date(email.createdAt).toLocaleString("ru-RU") : t("unknown")} \n\n${email.body}`,
-      originalEmail: email,
+      replyingToAnonymous: email.is_anonymous,
+      replyToId: email.id,
     });
-
-    AppStorage.replyingToAnonymous = email.is_anonymous;
-    AppStorage.emailReplyingId = email.id;
 
     navigate("/send");
   };
 
   const handleForward = () => {
-    AppStorage.setForwardData({
+    setComposerData({
       type: "forward",
       subject: `Fwd: ${email.header || "Без темы"}`,
       body: `\n\n${t("forwarded_email")}\n${t("from")} ${email.senderEmail}\n${t("date")} ${email.createdAt ? new Date(email.createdAt).toLocaleString("ru-RU") : t("unknown")}\n${t("subject")} ${email.header || t("empty_subject")}\n${t("to")} ${email.receiverList}\n\n${email.body || ""}`,
-      originalEmail: email,
     });
 
     navigate("/send");

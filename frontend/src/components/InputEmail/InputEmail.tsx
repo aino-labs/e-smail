@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import "./InputEmail.scss";
-import { AppStorage } from "../../stores/AppStorage";
 import { measureTextWidth } from "../../utils/textTruncation";
 
 // ────────────── Types & helpers ──────────────
@@ -74,7 +73,7 @@ const InputEmail: React.FC<InputEmailProps> = ({
   onChange,
 }) => {
   const [state, setState] = useState({
-    emails: [] as string[],
+    emails: initialEmails,
     invalidEmails: initialEmails.filter((e) => !validateEmail(e)),
     currentInput: "",
     error: "",

@@ -1,19 +1,15 @@
 import Button from "../../components/Button/Button";
-import { AppStorage } from "../../stores/AppStorage";
+import { TranslationKey, useTranslation } from "../../hooks/useTranslation";
 import "./ConfirmationDialog.scss";
 
 interface ConfirmationDialogProps {
   callbackConfirm: () => void;
   callbackCancel: () => void;
   text: string;
-  cancelButtonTitle?: string;
-  confirmButtonTitle?: string;
+  cancelButtonTitle?: TranslationKey;
+  confirmButtonTitle?: TranslationKey;
   highlightCancel?: boolean;
 }
-
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
 
 export default function ConfirmationDialog({
   callbackConfirm,
@@ -23,6 +19,7 @@ export default function ConfirmationDialog({
   confirmButtonTitle = "action_confirm",
   highlightCancel = false,
 }: ConfirmationDialogProps) {
+  const { t, language } = useTranslation();
   return (
     <div className="confirmation-dialog">
       <div className="__overlay" />

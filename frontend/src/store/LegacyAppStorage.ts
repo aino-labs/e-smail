@@ -1,6 +1,6 @@
 import { URLMINIO } from "../api/config";
 
-export const AppStorage = {
+export const LegacyAppStorage = {
   csrfToken: "",
   isProfileLoaded: false,
   sidebarDropdownVisible: false as boolean,
@@ -528,11 +528,11 @@ export const AppStorage = {
   },
 
   setCurrentFolderId(folderId: number | null) {
-    AppStorage.currentFolderId = folderId;
+    LegacyAppStorage.currentFolderId = folderId;
   },
 
   getCurrentFolderId(): number | null {
-    return AppStorage.currentFolderId;
+    return LegacyAppStorage.currentFolderId;
   },
 
   setUnReadCount(count: number) {
@@ -542,31 +542,31 @@ export const AppStorage = {
   },
 
   setCSRF(token: string) {
-    AppStorage.csrfToken = token;
+    LegacyAppStorage.csrfToken = token;
   },
 
   setCurrentView(view: string) {
-    AppStorage.currentView = view;
+    LegacyAppStorage.currentView = view;
   },
 
   getCurrentView(): string {
-    const view = AppStorage.currentView;
-    AppStorage.currentView = "inbox";
+    const view = LegacyAppStorage.currentView;
+    LegacyAppStorage.currentView = "inbox";
     return view;
   },
 
   setDraftData(data: any) {
-    AppStorage.draftData = data;
+    LegacyAppStorage.draftData = data;
   },
 
   getDraftData(): any {
-    const data = AppStorage.draftData;
-    AppStorage.draftData = null;
+    const data = LegacyAppStorage.draftData;
+    LegacyAppStorage.draftData = null;
     return data;
   },
 
   learDraftData() {
-    AppStorage.draftData = null;
+    LegacyAppStorage.draftData = null;
   },
 
   setLanguage(lang: "ru" | "en") {
@@ -625,12 +625,12 @@ export const AppStorage = {
   },
 
   setSidebarDropdownVisible(visible: boolean) {
-    AppStorage.sidebarDropdownVisible = visible;
-    AppStorage._notify();
+    LegacyAppStorage.sidebarDropdownVisible = visible;
+    LegacyAppStorage._notify();
   },
 
   getSidebarDropdownVisible(): boolean {
-    return AppStorage.sidebarDropdownVisible;
+    return LegacyAppStorage.sidebarDropdownVisible;
   },
 
   clearMailActionData() {

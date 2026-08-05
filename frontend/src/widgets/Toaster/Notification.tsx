@@ -1,10 +1,5 @@
 import { useRef, useEffect } from "react";
-import { AppStorage } from "../../stores/AppStorage";
 import "./Notification.scss";
-
-const t = (key: string): string => {
-  return AppStorage.t(key);
-};
 
 interface NotificationProps {
   onClose: () => void;
@@ -66,9 +61,7 @@ export default function Notification({
       style={{ bottom: `${bottomOffset}px` }}
     >
       <div className="__title">
-        {isStatus
-          ? t(message || "saved_successfully")
-          : t(message || "server_error")}
+        {isStatus ? message || "saved_successfully" : message || "server_error"}
       </div>
     </div>
   );

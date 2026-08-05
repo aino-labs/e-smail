@@ -28,6 +28,8 @@ export default {
   resolve: {
     extensions: [".tsx", ".jsx", ".ts", ".js"],
     alias: {
+      react: path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
       "@react": path.resolve(__dirname, "src/react"),
     },
   },

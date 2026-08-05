@@ -4,7 +4,12 @@
  * @returns {{isValid: boolean, errors: Array<{field: string, message: string}>}}
  */
 
-export function validation(dataForm: object, t: (_key: string) => string) {
+import { TranslationKey } from "../hooks/useTranslation";
+
+export function validation(
+  dataForm: object,
+  t: (_key: TranslationKey) => string,
+) {
   const errors = [];
 
   for (const [type, data] of Object.entries(dataForm)) {

@@ -1,5 +1,6 @@
+import { translate } from "../hooks/useTranslation";
 import "../styles/OfflineBanner.scss";
-import { AppStorage } from "./AppStorage";
+import { useSettingsStore } from "./useSettingsStore";
 
 class OfflineManager {
   private banner: HTMLDivElement | null = null;
@@ -27,7 +28,10 @@ class OfflineManager {
 
     this.banner = document.createElement("div");
     this.banner.className = "offline-banner";
-    this.banner.textContent = AppStorage.t("no_internet");
+    this.banner.textContent = translate(
+      "no_internet",
+      useSettingsStore.getState().language,
+    );
     document.body.insertBefore(this.banner, document.body.firstChild);
   }
 

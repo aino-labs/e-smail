@@ -80,6 +80,7 @@ const Input: React.FC<InputProps> = (props) => {
           onInput={onInput ? (e: any) => onInput(e) : undefined}
           readOnly={readonly || false}
           maxLength={maxLength || 100}
+          checked={checked}
           value={!isCheckbox && !isRadio ? value || "" : undefined}
         />
         {isPassword && (

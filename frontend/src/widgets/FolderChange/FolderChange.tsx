@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import "./FolderChange.scss";
 import Button from "../../components/Button/Button";
-import { AppStorage } from "../../stores/AppStorage";
-import { toast } from "../../stores/toastStore";
+import { toast } from "../../store/toastStore";
 import { getProfile } from "../../api/ApiAuth";
 import {
   createNewFolder,
@@ -10,20 +9,16 @@ import {
   deleteFolder,
 } from "../../api/ApiFolder";
 import ConfirmationDialog from "../../widgets/ConfirmationDialog/ConfirmationDialog";
+import { useTranslation } from "../../hooks/useTranslation";
+import { useMailStore } from "../../store/useMailStore";
 
-interface FolderChangeProps {
-  isEditMode: boolean;
-}
+export default function FolderChange() {
+  const { t } = useTranslation();
+  const { folders: initialFolders, setFolders: setStoreFolders } =
+    useMailStore();
 
-const t = (key: string) => {
-  return AppStorage.t ? AppStorage.t(key) : key;
-};
-
-export default function FolderChange({
-  isEditMode = false,
-}: FolderChangeProps) {
   const [folders, setFolders] = useState<any[]>(() => {
-    return Array.isArray(AppStorage.folders) ? AppStorage.folders : [];
+    return Array.isArray(initialFolders) ? initialFolders : [];
   });
   const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
   const [editingFolderName, setEditingFolderName] = useState<string>("");
@@ -53,18 +48,12 @@ export default function FolderChange({
         name: folder.folder_name,
       }));
       setFolders(folders);
-      AppStorage.setFolders(folders);
+      setStoreFolders(folders);
     }
   };
 
   useEffect(() => {
     loadFolders();
-
-    AppStorage.folderChangeInstance = { loadFolders };
-
-    return () => {
-      AppStorage.folderChangeInstance = null;
-    };
   }, []);
 
   const startEditing = (folderId: number, currentName: string) => {
@@ -107,7 +96,7 @@ export default function FolderChange({
       );
       setFolders(updatedFolders);
       cancelEditing();
-      AppStorage.setFolders(updatedFolders);
+      setStoreFolders(updatedFolders);
     } catch (error) {
       console.error("Error saving folder name:", error);
       cancelEditing();
@@ -154,7 +143,7 @@ export default function FolderChange({
         { id: response.folder_id, name: newFolderName },
       ];
       setFolders(updatedFolders);
-      AppStorage.setFolders(updatedFolders);
+      setStoreFolders(updatedFolders);
     } else {
       await loadFolders();
     }
@@ -188,7 +177,7 @@ export default function FolderChange({
     setFolders(updatedFolders);
     cancelEditing();
     setDeleteConfirm({ show: false, id: null, name: "" });
-    AppStorage.setFolders(updatedFolders);
+    setStoreFolders(updatedFolders);
   };
 
   const cancelDelete = () => {
@@ -229,7 +218,7 @@ export default function FolderChange({
               </span>
             )}
 
-            {isEditMode && editingFolderId !== folder.id && (
+            {editingFolderId !== folder.id && (
               <button
                 className="folder-drag-btn"
                 onClick={(e: any) => e.preventDefault()}

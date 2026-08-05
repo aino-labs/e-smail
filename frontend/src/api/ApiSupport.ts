@@ -1,14 +1,13 @@
-import { SUPPORT_URL } from "./config";
 import { getCSRFToken } from "./ApiAuth";
+import { SUPPORT_URL } from "./config";
 
 export async function sendSupportTicket(payload: any) {
   try {
-    const csrfToken = await getCSRFToken();
     const response = await fetch(`${SUPPORT_URL}/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken,
+        "X-CSRF-Token": getCSRFToken(),
       },
       body: JSON.stringify(payload),
       credentials: "include",
@@ -30,12 +29,11 @@ export async function sendSupportTicket(payload: any) {
 
 export async function getMyTickets() {
   try {
-    const csrfToken = await getCSRFToken();
     const response = await fetch(`${SUPPORT_URL}/myquestions`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken,
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
     });
@@ -80,12 +78,11 @@ export async function getAdminTickets() {
 
 export async function getMessages(ticket_id: number) {
   try {
-    const csrfToken = await getCSRFToken();
     const response = await fetch(`${SUPPORT_URL}/${ticket_id}/chat`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken,
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
     });
@@ -106,12 +103,11 @@ export async function getMessages(ticket_id: number) {
 
 export async function answerTicket(ticket_id: number, message: string) {
   try {
-    const csrfToken = await getCSRFToken();
     const response = await fetch(`${SUPPORT_URL}/answer`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken,
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({
@@ -136,12 +132,11 @@ export async function answerTicket(ticket_id: number, message: string) {
 
 export async function updateTicketStatus(ticket_id: number, status: string) {
   try {
-    const csrfToken = await getCSRFToken();
     const response = await fetch(`${SUPPORT_URL}/changestatus`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken,
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import Notification from "./Notification";
-import { toast } from "../../stores/toastStore";
+import { toast } from "../../store/toastStore";
 
 export default function Toaster() {
   const toasts = useSyncExternalStore(toast.subscribe, toast.getSnapshot);

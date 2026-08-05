@@ -1,5 +1,5 @@
+import { getCSRFToken } from "./ApiAuth";
 import { EMAIL_URL } from "./config";
-import { AppStorage } from "../stores/AppStorage";
 
 export async function getAttachments(emailId: number) {
   try {
@@ -29,7 +29,7 @@ export async function uploadAttachment(emailId: number, file: File) {
     const response = await fetch(`${EMAIL_URL}/emails/${emailId}/attachments`, {
       method: "POST",
       headers: {
-        "X-CSRF-Token": AppStorage.csrfToken,
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: formData,
@@ -55,7 +55,7 @@ export async function downloadAttachment(
       {
         method: "GET",
         headers: {
-          "X-CSRF-Token": AppStorage.csrfToken,
+          "X-CSRF-Token": getCSRFToken(),
         },
         credentials: "include",
       },
@@ -80,7 +80,7 @@ export async function deleteAttachments(
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": AppStorage.csrfToken,
+        "X-CSRF-Token": getCSRFToken(),
       },
       credentials: "include",
       body: JSON.stringify({ ids: attachmentIds }),

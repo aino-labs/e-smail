@@ -1,5 +1,7 @@
-import React, { useState, useEffect, StrictMode } from "react";
+import { useState, useEffect, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import LoginPage from "./pages/LoginPage/LoginPage";
 import RegPage from "./pages/RegPage/RegPage";
 import "../public/index.scss";
@@ -18,86 +20,53 @@ import SupportPage from "./pages/SupportPage/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage/AdminSupportPage";
 import Toaster from "./widgets/Toaster/Toaster";
 import { initEmailNotifications } from "./utils/emailNotifications";
-import { AppStorage } from "./stores/AppStorage";
-import "./stores/OfflineManager";
+import "./store/OfflineManager";
+import { useSettingsStore } from "./store/useSettingsStore";
+import { initCSRFToken } from "./api/ApiAuth";
 
-const routes: Record<string, React.ComponentType<any>> = {
-  "/login": LoginPage,
-  "/register": RegPage,
-  "/profile": ProfilePage,
-  "/send": SendEmailPage,
-  "/sent": SentPage,
-  "/": MainPage,
-  "/trash": TrashPage,
-  "/drafts": DraftsPage,
-  "/spam": SpamPage,
-  "/favorite": FavoritePage,
-  "/all-emails": AllEmailsPage,
-  "/admin-support": AdminSupportPage,
-  "/support": SupportPage,
-};
+const AppContent = () => {
+  const [isReady, setIsReady] = useState(false);
 
-const dynamicRoutes = [
-  {
-    pattern: /^\/read\/(\d+)$/,
-    component: ReadEmailPage,
-    paramName: "id",
-  },
-  {
-    pattern: /^\/folder\/(\d+)$/,
-    component: FolderPage,
-    paramName: "folderId",
-  },
-  {
-    pattern: /^\/profile\/(personal|password|interface|folders|support)$/,
-    component: ProfilePage,
-    paramName: "tab",
-  },
-];
-
-function getComponent(path: string) {
-  let Component = routes[path];
-  const props: any = {};
-
-  if (!Component) {
-    for (const route of dynamicRoutes) {
-      const match = path.match(route.pattern);
-      if (match) {
-        Component = route.component;
-        props[route.paramName] = match[1];
-        break;
-      }
-    }
-  }
-
-  return { Component: Component || routes["/"], props };
-}
-
-const App = () => {
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
-  const [previousPath, setPreviousPath] = useState<string | null>(null);
+  const theme = useSettingsStore((state) => state.theme);
 
   useEffect(() => {
-    const handlePopState = () => {
-      setPreviousPath(currentPath);
-      setCurrentPath(window.location.pathname);
-    };
-    window.addEventListener("popstate", handlePopState);
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
-    return () => window.removeEventListener("popstate", handlePopState);
+  useEffect(() => {
+    initCSRFToken().finally(() => {
+      setIsReady(true);
+    });
   }, []);
 
-  const navigate = (path: string) => {
-    if (path === currentPath) return;
-    setPreviousPath(currentPath);
-    window.history.pushState({}, "", path);
-    setCurrentPath(path);
-  };
-
-  const { Component, props } = getComponent(currentPath);
+  if (!isReady) {
+    return <div className="app-loader">Loading application...</div>;
+  }
 
   return (
-    <Component {...props} navigate={navigate} previousPath={previousPath} />
+    <Routes>
+      <Route path="/" element={<MainPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegPage />} />
+      <Route path="/send" element={<SendEmailPage />} />
+      <Route path="/sent" element={<SentPage />} />
+      <Route path="/trash" element={<TrashPage />} />
+      <Route path="/drafts" element={<DraftsPage />} />
+      <Route path="/spam" element={<SpamPage />} />
+      <Route path="/favorite" element={<FavoritePage />} />
+      <Route path="/all-emails" element={<AllEmailsPage />} />
+      <Route path="/admin-support" element={<AdminSupportPage />} />
+      <Route path="/support" element={<SupportPage />} />
+
+      {/* Dynamic Routes */}
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/profile/:tab" element={<ProfilePage />} />
+      <Route path="/read/:id" element={<ReadEmailPage />} />
+      <Route path="/folder/:folderId" element={<FolderPage />} />
+
+      {/* Fallback Catch-All */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 
@@ -105,9 +74,6 @@ const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("Root element not found");
 }
-
-AppStorage.init();
-(window as any).AppStorage = AppStorage;
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -122,7 +88,9 @@ initEmailNotifications();
 const root = createRoot(rootElement);
 root.render(
   <StrictMode>
-    <App />
-    <Toaster />
+    <BrowserRouter>
+      <AppContent />
+      <Toaster />
+    </BrowserRouter>
   </StrictMode>,
 );

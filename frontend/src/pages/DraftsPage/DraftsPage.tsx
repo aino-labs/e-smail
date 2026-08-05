@@ -1,40 +1,16 @@
 import BaseEmailPage from "../../widgets/BaseEmailPage/BaseEmailPage";
-import { getDrafts, getDraftByID, deleteDraft } from "../../api/ApiDraft";
-import { AppStorage } from "../../stores/AppStorage";
+import { getDrafts, deleteDraft } from "../../api/ApiDraft";
 
-interface DraftsPageProps {
-  navigate: (path: string) => void;
-}
-
-export default function DraftsPage({ navigate }: DraftsPageProps) {
-  const handleReadMail = async (email: any) => {
-    try {
-      const response = await getDraftByID(email.id);
-      if (response) {
-        const draft = await response.json();
-        AppStorage.setDraftData({
-          id: draft.id,
-          header: draft.header,
-          body: draft.body,
-          receivers: draft.receivers || [],
-        });
-        navigate("/send");
-      }
-    } catch (error) {
-      console.error("Failed to load draft:", error);
-    }
-  };
-
+export default function DraftsPage() {
   return (
     <BaseEmailPage
       currentView="drafts"
       fetchEmails={getDrafts}
       deleteEmails={deleteDraft}
-      emptyMessage="Нет черновиков"
+      emptyMessage="empty_drafts"
       showUnreadToggle={false}
       showMarkAsRead={false}
       showMoveToFolder={false}
-      navigate={navigate}
     />
   );
 }

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+
 import "./ProfilePage.scss";
 import Sidebar from "../../widgets/Sidebar/Sidebar";
 import Button from "../../components/Button/Button";
@@ -7,53 +9,64 @@ import UploadAvatar from "../../components/UploadAvatar/UploadAvatar";
 import { validation } from "../../utils/validation";
 import { changePassword, getProfile, changeProfile } from "../../api/ApiAuth";
 import { getMyTickets, getMessages, answerTicket } from "../../api/ApiSupport";
-import { AppStorage } from "../../stores/AppStorage";
 import FolderChange from "../../widgets/FolderChange/FolderChange";
-import NotificationManager from "../../widgets/Toaster/Toaster";
 import SupportModal from "../../widgets/SupportModal/SupportModal";
 import SelectDate from "../../components/SelectDate/SelectDate";
 import { requestNotificationPermission } from "../../utils/emailNotifications";
-import { toast } from "../../stores/toastStore";
+import { toast } from "../../store/toastStore";
+import { useTranslation } from "../../hooks/useTranslation";
+import { useSettingsStore } from "../../store/useSettingsStore";
+import { useUserStore } from "../../store/useUserStore";
 
 type ProfileTabId = 0 | 1 | 2 | 3 | 4;
 
 interface ProfilePageProps {
-  navigate: (route: string, replace?: boolean) => void;
+  shouldOpenSettings?: boolean;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
-  const shouldOpenSettings = AppStorage.getOpenSettingsOnProfile();
+export default function ProfilePage({
+  shouldOpenSettings = false,
+}: ProfilePageProps) {
+  const navigate = useNavigate();
+
+  const { t } = useTranslation();
+
+  const {
+    theme,
+    setTheme,
+    language,
+    setLanguage,
+    notificationsEnabled,
+    setNotificationsEnabled,
+    anonymousEnabled,
+    setAnonymousEnabled,
+  } = useSettingsStore();
 
   // State Declarations
   const [profileState, setProfileState] = useState<ProfileTabId>(
     shouldOpenSettings ? 2 : 0,
   );
-  const [language, setLanguage] = useState<string>(AppStorage.language);
-  const [name, setName] = useState<string>(AppStorage.name || "");
-  const [surname, setSurname] = useState<string>(AppStorage.surname || "");
-  const [email, setEmail] = useState<string>(AppStorage.email || "");
-  const [isMale, setIsMale] = useState<boolean>(AppStorage.is_male ?? true);
-  const [birthDay, setBirthDay] = useState<string>(AppStorage.birthDay || "");
-  const [birthMonth, setBirthMonth] = useState<string>(
-    AppStorage.birthMonth || "",
-  );
-  const [birthYear, setBirthYear] = useState<string>(
-    AppStorage.birthYear || "",
-  );
+  const {
+    name,
+    surname,
+    email,
+    is_male,
+    birthDay,
+    birthMonth,
+    birthYear,
+    setProfileData,
+    image_path,
+  } = useUserStore();
 
   const [oldPassword, setOldPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [avatarKey, setAvatarKey] = useState<number>(0);
-  const [avatarUrl, setAvatarUrl] = useState<string>(AppStorage.getAvatarUrl());
 
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isConfirm, setIsConfirm] = useState<boolean>(false);
-  const [isStatus, setIsStatus] = useState<boolean>(false);
-  const [isFolderEditMode, setIsFolderEditMode] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
 
   // Support section state
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
@@ -67,10 +80,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
 
   // Keep a mutable ref of selectedTicketId for the polling interval closure
   const selectedTicketIdRef = useRef<number | null>(null);
-  selectedTicketIdRef.current = selectedTicketId;
+  useEffect(() => {
+    selectedTicketIdRef.current = selectedTicketId;
+  }, [selectedTicketId]);
 
-  const t = (key: string): string => AppStorage.t(key);
-  const isMobile = window.innerWidth < 769;
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 769);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 769);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Sync tab layout based on current URL path
   const syncTabFromUrl = () => {
@@ -114,7 +133,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       }
     }
 
-    AppStorage.setProfileData({
+    setProfileData({
       is_male: data.is_male ?? true,
       name: data.name || "",
       surname: data.surname || "",
@@ -125,16 +144,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       birthYear: bYear,
       anonymousEnabled: data.accept_anonymous,
     });
-
-    setName(data.name || "");
-    setSurname(data.surname || "");
-    setEmail(data.email || "");
-    setIsMale(data.is_male ?? true);
-    setAvatarUrl(AppStorage.getAvatarUrl());
-    setIsStatus(false);
-    setBirthDay(bDay);
-    setBirthMonth(bMonth);
-    setBirthYear(bYear);
   };
 
   // Setup synchronization hooks and event listeners
@@ -143,13 +152,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     syncTabFromUrl();
 
     window.addEventListener("popstate", syncTabFromUrl);
-    const unsubscribeStorage = AppStorage.subscribe(() => {
-      setLanguage(AppStorage.language);
-    });
 
     return () => {
       window.removeEventListener("popstate", syncTabFromUrl);
-      unsubscribeStorage();
     };
   }, []);
 
@@ -215,8 +220,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   const handleInputChange = (field: string, value: string) => {
     const error = validateField(field, value);
 
-    if (field === "name") setName(value);
-    if (field === "surname") setSurname(value);
+    if (field === "name") setProfileData({ name: value });
+    if (field === "surname") setProfileData({ surname: value });
     if (field === "oldPassword") setOldPassword(value);
     if (field === "newPassword") setNewPassword(value);
 
@@ -236,8 +241,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
 
   const handleAvatarUpdate = () => {
     setAvatarKey((prev) => prev + 1);
-    setAvatarUrl(AppStorage.getAvatarUrl());
-    toast.show("saved_successfully", "success");
+    toast.show(t("saved_successfully"), "success");
   };
 
   const handleChangePassword = async (event: React.FormEvent) => {
@@ -251,12 +255,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
         setOldPassword("");
         setNewPassword("");
 
-        toast.show("saved_successfully", "success");
+        toast.show(t("saved_successfully"), "success");
       } else {
-        toast.show("passwords_dont_match", "error");
+        toast.show(t("passwords_dont_match"), "error");
       }
     } catch {
-      toast.show("client_error", "error");
+      toast.show(t("client_error"), "error");
     }
   };
 
@@ -275,68 +279,60 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
     }
 
     try {
-      const payload: any = { name, surname, is_male: isMale, email };
+      const payload: any = { name, surname, is_male, email };
       if (birthDate) payload.birthdate = birthDate;
 
       const response = await changeProfile(payload);
       if (response) {
-        AppStorage.setProfileData({
+        setProfileData({
           name,
           surname,
           email,
-          is_male: isMale,
-          image_path: AppStorage.image_path,
+          is_male,
+          image_path,
           birthDay,
           birthMonth,
           birthYear,
-          anonymousEnabled: AppStorage.anonymousEnabled,
+          anonymousEnabled,
         });
-        setIsConfirm(false);
-        setIsStatus(false);
-        toast.show("saved_successfully", "success");
+        toast.show(t("saved_successfully"), "success");
       } else {
-        toast.show("client_error", "error");
+        toast.show(t("client_error"), "error");
       }
     } catch (error) {
       console.error("Profile change error:", error);
-      setIsConfirm(true);
-      setIsStatus(false);
     }
   };
 
   const navigateToTab = (tabId: ProfileTabId, route: string) => {
     setProfileState(tabId);
     setIsSidebarOpen(false);
-    navigate(route, true);
-  };
-
-  const handleToggleFolderEditMode = async () => {
-    if (isFolderEditMode && AppStorage.folderChangeInstance) {
-      await AppStorage.folderChangeInstance.saveAllPendingChanges();
-    }
-    setIsFolderEditMode((prev) => !prev);
+    navigate(route);
   };
 
   const handleEnableNotifs = () => {
-    AppStorage.setNotificationsEnabled(true);
+    setNotificationsEnabled(true);
     requestNotificationPermission();
-    toast.show("notifications_enabled", "success");
+    toast.show(t("notifications_enabled"), "success");
   };
 
   const handleDisableNotifs = () => {
-    AppStorage.setNotificationsEnabled(false);
-    toast.show("notifications_disabled", "success");
+    setNotificationsEnabled(false);
+    toast.show(t("notifications_disabled"), "success");
   };
 
   const toggleAnonymousMode = async (enabled: boolean) => {
     await changeProfile({
       name,
       surname,
-      is_male: isMale ? "true" : "false",
+      is_male: is_male ? "true" : "false",
       accept_anonymous: enabled,
     });
-    AppStorage.setAnonymousEnabled(enabled);
-    toast.show(enabled ? "anonymous_enabled" : "anonymous_disabled", "success");
+    setAnonymousEnabled(enabled);
+    toast.show(
+      enabled ? t("anonymous_enabled") : t("anonymous_disabled"),
+      "success",
+    );
   };
 
   const handleSupport = () => {
@@ -396,7 +392,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       <div className="profile-content">
         <div className="profile-avatar">
           <UploadAvatar
-            image={avatarUrl}
+            image={image_path}
             onAvatarUpdate={handleAvatarUpdate}
             key={avatarKey}
           />
@@ -424,9 +420,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
           />
           <SelectDate
             onChange={(date) => {
-              setBirthDay(date.day);
-              setBirthMonth(date.month);
-              setBirthYear(date.year);
+              setProfileData({
+                birthDay: date.day,
+                birthMonth: date.month,
+                birthYear: date.year,
+              });
             }}
             birthDay={birthDay}
             birthMonth={birthMonth}
@@ -440,8 +438,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="male"
                   type="radio"
                   name="radio-gender"
-                  checked={isMale === true}
-                  onInput={() => setIsMale(true)}
+                  checked={is_male}
+                  onInput={() => setProfileData({ is_male: true })}
                 />
                 <label htmlFor="male">{t("male")}</label>
               </div>
@@ -450,8 +448,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="female"
                   type="radio"
                   name="radio-gender"
-                  checked={isMale !== true}
-                  onInput={() => setIsMale(false)}
+                  checked={!is_male}
+                  onInput={() => setProfileData({ is_male: false })}
                 />
                 <label htmlFor="female">{t("female")}</label>
               </div>
@@ -545,8 +543,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="dark"
                   type="radio"
                   name="radio-theme"
-                  checked={AppStorage.theme === "dark"}
-                  onChange={() => AppStorage.setTheme("dark")}
+                  checked={theme === "dark"}
+                  onChange={() => setTheme("dark")}
                 />
                 <label htmlFor="dark">{t("dark_theme")}</label>
               </div>
@@ -555,8 +553,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="light"
                   type="radio"
                   name="radio-theme"
-                  checked={AppStorage.theme === "light"}
-                  onChange={() => AppStorage.setTheme("light")}
+                  checked={theme === "light"}
+                  onChange={() => setTheme("light")}
                 />
                 <label htmlFor="light">{t("light_theme")}</label>
               </div>
@@ -570,8 +568,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="ru"
                   type="radio"
                   name="radio-language"
-                  checked={AppStorage.language === "ru"}
-                  onChange={() => AppStorage.setLanguage("ru")}
+                  checked={language === "ru"}
+                  onChange={() => setLanguage("ru")}
                 />
                 <label htmlFor="ru">{t("russian")}</label>
               </div>
@@ -580,8 +578,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="en"
                   type="radio"
                   name="radio-language"
-                  checked={AppStorage.language === "en"}
-                  onChange={() => AppStorage.setLanguage("en")}
+                  checked={language === "en"}
+                  onChange={() => setLanguage("en")}
                 />
                 <label htmlFor="en">{t("english")}</label>
               </div>
@@ -595,7 +593,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="notif-on"
                   type="radio"
                   name="radio-notifications"
-                  checked={AppStorage.notificationsEnabled === true}
+                  checked={notificationsEnabled}
                   onChange={handleEnableNotifs}
                 />
                 <label htmlFor="notif-on">{t("on")}</label>
@@ -605,7 +603,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="notif-off"
                   type="radio"
                   name="radio-notifications"
-                  checked={AppStorage.notificationsEnabled === false}
+                  checked={!notificationsEnabled}
                   onChange={handleDisableNotifs}
                 />
                 <label htmlFor="notif-off">{t("off")}</label>
@@ -620,7 +618,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="anon-on"
                   type="radio"
                   name="radio-anonymous"
-                  checked={AppStorage.anonymousEnabled === true}
+                  checked={anonymousEnabled === true}
                   onChange={() => toggleAnonymousMode(true)}
                 />
                 <label htmlFor="anon-on">{t("allow")}</label>
@@ -630,7 +628,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                   id="anon-off"
                   type="radio"
                   name="radio-anonymous"
-                  checked={AppStorage.anonymousEnabled === false}
+                  checked={anonymousEnabled === false}
                   onChange={() => toggleAnonymousMode(false)}
                 />
                 <label htmlFor="anon-off">{t("not_allow")}</label>
@@ -656,7 +654,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       <h1>{t("folder")}</h1>
       <div className="profile-content">
         <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
-          <FolderChange isEditMode={isFolderEditMode} />
+          <FolderChange />
         </form>
       </div>
     </div>
@@ -691,13 +689,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
             <div className="tickets-list">
               {supportTickets.map((ticket) => (
                 <div
-                  key={ticket.id}
-                  className={`ticket-item ${selectedTicketId === ticket.id ? "active" : ""}`}
-                  onClick={() => handleSelectTicket(ticket.id)}
+                  key={ticket.ticket_id}
+                  className={`ticket-item ${selectedTicketId === ticket.ticket_id ? "active" : ""}`}
+                  onClick={() => handleSelectTicket(ticket.ticket_id)}
                 >
-                  <div className="ticket-subject">{ticket.subject}</div>
-                  <div className="ticket-preview">
-                    {ticket.lastMessagePreview}
+                  <div className="ticket-subject">{ticket.header}</div>
+                  <div className="ticket-status" data-status={ticket.status}>
+                    {t(ticket.status)}
                   </div>
                 </div>
               ))}
@@ -752,18 +750,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
                     key={msg.id}
                     className={`chat-message ${msg.is_admin ? "admin" : "user"}`}
                   >
-                    <p>{msg.text}</p>
+                    <p
+                      className={`message-bubble ${msg.is_admin ? "admin" : "user"}`}
+                    >
+                      {msg.text}
+                    </p>
                   </div>
                 ))}
               </div>
-              <div className="chat-input-wrapper">
-                <input
+              <div className="chat-input-area">
+                <Input
+                  className="message-input"
                   type="text"
                   value={chatInputText}
                   onChange={(e) => setChatInputText(e.target.value)}
                   placeholder="Type a message..."
                 />
                 <Button
+                  className="send-message-button"
                   title="Send"
                   name="send-message"
                   onClick={handleSendMessage}
@@ -777,16 +781,19 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
   );
 
   return (
-    <div className="profile-page" onClick={() => setIsModalOpen(false)}>
-      <SupportModal />
+    <div className="profile-page">
+      <SupportModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+      />
       <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
         <Sidebar
           isProfile={1}
           isPressProfile={profileState}
-          avatarUrl={AppStorage.getAvatarUrl()}
-          name={AppStorage.name}
-          surname={AppStorage.surname}
-          email={AppStorage.email}
+          avatarUrl={image_path}
+          name={name}
+          surname={surname}
+          email={email}
           backToMail={() => navigate("/")}
           changeProfile={() => navigateToTab(0, "/profile/personal")}
           changePassword={() => navigateToTab(1, "/profile/password")}
@@ -794,7 +801,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
           handleFolder={() => navigateToTab(3, "/profile/folders")}
           handleSupport={() => navigateToTab(4, "/profile/support")}
           newMail={() => {}}
-          navigate={navigate}
         />
       </aside>
 
@@ -802,17 +808,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
         {!isMobile && (
           <div className="top-bar">
             <div className="search-bar" />
-            <div className="top-right-menu">
-              <Button
-                svg={AppStorage.getAvatarUrl()}
-                name="avatar"
-                help="Аккаунт"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  setIsModalOpen(true);
-                }}
-              />
-            </div>
           </div>
         )}
         <div className="profile-content-area">
@@ -825,6 +820,4 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigate }) => {
       </div>
     </div>
   );
-};
-
-export default ProfilePage;
+}
