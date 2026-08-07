@@ -8,6 +8,8 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { useUIStore } from "../../store/useUIStore";
 import { useMailStore } from "../../store/useMailStore";
 
+import DraftsIcon from "@icons/Draft.svg";
+
 interface SidebarProps {
   isProfile: number;
   isPressProfile?: number;
@@ -161,7 +163,9 @@ export default function Sidebar({
               title={t("new_letter")}
               name="button-new-letter"
               onClick={newMail}
-            />
+            >
+              {t("new_letter")}
+            </Button>
           </div>
           <div className="main-button-container">
             <Button
@@ -170,14 +174,20 @@ export default function Sidebar({
               isSelect={currentView === "inbox" && !selectedFolderId}
               count={unreadCount}
               onClick={handleInboxClick}
-            />
+            >
+              {t("inbox")}
+            </Button>
 
             <Button
-              name="button-drafs"
+              icon={DraftsIcon}
+              iconSize={28}
+              name="button-drafts"
               title={t("drafts")}
               isSelect={currentView === "drafts"}
               onClick={handleDraftsClick}
-            />
+            >
+              {t("drafts")}
+            </Button>
 
             <Button
               name="button-sends"

@@ -23,6 +23,9 @@ import { useUIStore } from "../../store/useUIStore";
 import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 import { useMailStore } from "../../store/useMailStore";
 
+import ComposeIcon from "@icons/Compose.svg";
+import SupportIcon from "@icons/Support.svg";
+
 interface BaseEmailProps {
   currentView: string;
   fetchEmails: (offset: number) => Promise<any>;
@@ -466,13 +469,16 @@ export default function BaseEmailPage({
             />
           </div>
           <div className="top-right-menu">
-            <div className="support" onClick={() => setIsSupportOpen(true)} />
             <Button
-              svg={avatarUrl}
-              name="avatar"
-              help="Аккаунт"
-              onClick={handleAvatar}
+              icon={SupportIcon}
+              iconSize="28"
+              title={t("support")}
+              className="text-tertiary-text"
+              onClick={() => setIsSupportOpen(true)}
             />
+            <Button name="avatar" title="Аккаунт" onClick={handleAvatar}>
+              <img src={avatarUrl}></img>
+            </Button>
           </div>
         </div>
 
@@ -565,7 +571,8 @@ export default function BaseEmailPage({
       <Button
         className="button-new-letter-mobile"
         name="button-new-letter-mobile"
-        svg="../../assets/svg/Compose.svg"
+        icon={ComposeIcon}
+        iconSize="28"
         onClick={(event: React.MouseEvent) => {
           event.preventDefault();
           handleNewMail();

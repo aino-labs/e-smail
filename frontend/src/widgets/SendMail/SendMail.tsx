@@ -21,6 +21,7 @@ import {
 } from "../../utils/files";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useComposerStore } from "../../store/useComposerStore";
+import TextEditor from "../../components/TextEditor/TextEditor";
 
 interface SendMailProps {
   actionData?: any;
@@ -442,11 +443,9 @@ export default function SendMail({ backToMail }: SendMailProps) {
             <label htmlFor="anon-toggle">{t("toggle_anon")}</label>
           </div>
         )}
-        <Textarea
-          readonly={false}
-          value={body}
-          onInput={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-            setBody(e.target.value);
+        <TextEditor
+          onContentChange={(html: string) => {
+            setBody(html);
           }}
         />
       </form>
@@ -493,16 +492,20 @@ export default function SendMail({ backToMail }: SendMailProps) {
                 title={t("save")}
                 name="save-mail"
                 onClick={handleSaveDraft}
-                block={sending}
-              />
+                disabled={sending}
+              >
+                {t("save")}
+              </Button>
               <Button
                 title={t("send")}
                 name="send-mail"
-                block={buttonBlock || sending}
+                disabled={buttonBlock || sending}
                 onClick={(event: any) => {
                   handleSubmit(event);
                 }}
-              />
+              >
+                {t("send")}
+              </Button>
             </div>
           )
         ) : null}

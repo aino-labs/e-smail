@@ -6,6 +6,7 @@ import Button from "../../components/Button/Button";
 import SendMail from "../../widgets/SendMail/SendMail";
 import "./SendEmailPage.scss";
 import ProfileModal from "../../widgets/ProfileModal/ProfileModal";
+import SupportModal from "../../widgets/SupportModal/SupportModal";
 import Input from "../../components/Input/Input";
 import { getProfile } from "../../api/ApiAuth";
 import { toast } from "../../store/toastStore";
@@ -14,10 +15,13 @@ import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 import { useComposerStore } from "../../store/useComposerStore";
 import { useMailStore } from "../../store/useMailStore";
 
+import SupportIcon from "@icons/Support.svg";
+
 export default function SendEmailPage() {
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isSupportOpen, setIsSupportOpen] = useState<boolean>(false);
   const [selectedFolderId] = useState<number | null>(null);
 
   const { t } = useTranslation();
@@ -93,17 +97,26 @@ export default function SendEmailPage() {
 
       <div className="top-right-menu">
         <Button
-          svg={avatarUrl}
-          name="avatar"
-          help="Аккаунт"
-          onClick={handleAvatar}
+          icon={SupportIcon}
+          iconSize="28"
+          title={t("support")}
+          className="text-tertiary-text"
+          onClick={() => setIsSupportOpen(true)}
         />
+        <Button name="avatar" title="Аккаунт" onClick={handleAvatar}>
+          <img src={avatarUrl}></img>
+        </Button>
       </div>
     </div>
   );
 
   return (
     <div className="send-email-page" onClick={handleCloseModal}>
+      <SupportModal
+        isOpen={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
+      />
+
       <aside className="sidebar">
         <Sidebar
           isProfile={0}

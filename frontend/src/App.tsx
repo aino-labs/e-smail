@@ -2,9 +2,11 @@ import { useState, useEffect, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import "../public/tailwind.css";
+import "../public/index.scss";
+
 import LoginPage from "./pages/LoginPage/LoginPage";
 import RegPage from "./pages/RegPage/RegPage";
-import "../public/index.scss";
 import MainPage from "./pages/MainPage/MainPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import SentPage from "./pages/SentPage/SentPage";

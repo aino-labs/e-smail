@@ -1,51 +1,54 @@
 import React from "react";
-import "./Button.scss";
+import { cn } from "../../utils/cn";
 
-interface ButtonProps {
-  svg?: string; // URL of the icon
-  className?: string; // additional CSS class
-  size?: string | number; // icon size (default "20")
-  title?: string; // button text (used inside a <span>)
-  count?: number; // badge count (rendered if not 0)
-  block?: boolean; // if true, disables the button
-  isSelect?: boolean; // sets data-is-select attribute
-  active?: boolean; // sets data-active to "true" or "false"
-  type?: "button" | "submit" | "reset"; // button type
-  name?: string; // HTML name attribute
-  help?: string; // tooltip (HTML title attribute)
-  onClick?: (_event: React.MouseEvent<HTMLButtonElement>) => void;
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  icon?: React.FC<React.SVGProps<SVGSVGElement>>;
+  iconSize?: number | string;
+  count?: number;
+  isSelect?: boolean;
+  active?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = (props: ButtonProps) => {
   const {
-    svg,
+    icon: Icon,
+    children,
     className,
-    size = "20",
+    iconSize = "20",
     title,
     count,
-    block,
+    disabled,
     isSelect,
     active,
     type = "button",
     name,
-    help,
     onClick,
   } = props;
 
   return (
     <button
-      className={className}
-      disabled={block}
-      data-is-select={isSelect}
-      data-active={active ? "true" : "false"}
+      disabled={disabled}
+      data-is-select={isSelect || undefined}
+      data-active={active || undefined}
       type={type}
       name={name}
-      title={help || ""}
+      title={title}
       onClick={onClick}
+      className={cn(
+        "h-12 px-7 rounded-[20px] text-[18px] border-0 cursor-pointer transition-all duration-100 flex items-center justify-center gap-2",
+        "bg-button-background text-primary-text",
+        "hover:bg-button-hover-background active:bg-button-active-background",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        className,
+      )}
     >
-      {svg && <img src={svg} width={size} height={size} alt="" />}
-      <span>{title || ""}</span>
-      {count !== 0 && <span className="button-count">{count}</span>}
+      {Icon && (
+        <Icon width={iconSize} height={iconSize} className="button-icon" />
+      )}
+      {children && <span>{children}</span>}
+      {typeof count === "number" && count > 0 && (
+        <span className="button-count">{count}</span>
+      )}
     </button>
   );
 };

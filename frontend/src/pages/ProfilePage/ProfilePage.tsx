@@ -18,6 +18,8 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useUserStore } from "../../store/useUserStore";
 
+import ComposeIcon from "@icons/Compose.svg";
+
 type ProfileTabId = 0 | 1 | 2 | 3 | 4;
 
 interface ProfilePageProps {
@@ -697,7 +699,7 @@ export default function ProfilePage({
             <div className="support-tickets-header">
               <h2>Поддержка</h2>
               <Button
-                svg="../../assets/svg/Compose.svg"
+                icon={ComposeIcon}
                 className="small-text"
                 name="new-ticket"
                 onClick={handleSupport}

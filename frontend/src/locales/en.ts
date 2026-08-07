@@ -71,6 +71,7 @@ export const en = {
   delete_draft: "Delete",
   save_draft: "Save",
   toggle_anon: "Send as anonymous",
+  body_placeholder: "Start typing here...",
 
   //File sizes
   zero_bytes: "0 Bytes",

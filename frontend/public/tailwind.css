@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+    /* Font Families -> enables 'font-ubuntu' and 'font-shantell' */
+    --font-ubuntu: "Ubuntu Sans", sans-serif;
+    --font-shantell: "Shantell Sans", sans-serif;
+
+    /* Palette & Text -> enables 'bg-accent', 'text-primary-text', etc. */
+    --color-accent: var(--accent);
+    --color-accent-2: var(--accent-2);
+
+    --color-primary-text: var(--primary-text);
+    --color-secondary-text: var(--secondary-text);
+    --color-error-text: var(--error-text);
+    --color-tertiary-text: var(--tertiary-text);
+    --color-muted-text: var(--muted-text);
+
+    /* Backgrounds */
+    --color-main-background: var(--color-main-background);
+    --color-sidebar-background: var(--color-sidebar-background);
+
+    /* Buttons */
+    --color-button-background: var(--button-background);
+    --color-button-hover-background: var(--button-hover-background);
+    --color-button-active-background: var(--button-active-background);
+    --color-button-background-second: var(--button-background-second);
+
+    /* Inputs */
+    --color-input-error-background: var(--input-error-background);
+    --color-input-background: var(--input-background);
+    --color-input-success-background: var(--input-success-background);
+    --color-input-stroke: var(--input-stroke);
+
+    /* Mail */
+    --color-mail-stroke: var(--mail-stroke);
+    --color-mail-read-background: var(--mail-read-background);
+}

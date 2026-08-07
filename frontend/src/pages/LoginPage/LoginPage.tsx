@@ -177,7 +177,9 @@ export default function LoginPage() {
                 type="submit"
                 title={t("enter")}
                 name="button-login-for-login"
-              />
+              >
+                {t("enter")}
+              </Button>
               <Button
                 title={t("register")}
                 name="button-reg-for-login"
@@ -185,7 +187,9 @@ export default function LoginPage() {
                   event.preventDefault();
                   navigate("/register");
                 }}
-              />
+              >
+                {t("register")}
+              </Button>
             </div>
           </form>
         </div>

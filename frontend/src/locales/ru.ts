@@ -70,6 +70,7 @@ export const ru = {
   delete_draft: "Удалить",
   save_draft: "Сохранить",
   toggle_anon: "Отправить как аноним",
+  body_placeholder: "Начните писать здесь...",
 
   //File sizes
   zero_bytes: "0 байт",

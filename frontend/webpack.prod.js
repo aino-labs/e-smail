@@ -3,79 +3,47 @@ import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import CssMinimizerPlugin from "css-minimizer-webpack-plugin";
 import ImageMinimizerPlugin from "image-minimizer-webpack-plugin";
 import common from "./webpack.common.js";
+import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 
-export default merge(common, {
-  mode: "production",
-  devtool: "source-map",
+export default (env, argv) =>
+  merge(common(env, { ...argv, mode: "production" }), {
+    mode: "production",
+    devtool: "source-map",
 
-  output: {
-    filename: "js/[name].[contenthash].js",
-    chunkFilename: "js/[name].[contenthash].chunk.js",
-    assetModuleFilename: "assets/[name].[contenthash][ext]",
-  },
-
-  optimization: {
-    minimize: true,
-    minimizer: [
-      new CssMinimizerPlugin(),
-      new ImageMinimizerPlugin({
-        minimizer: {
-          implementation: ImageMinimizerPlugin.imageminMinify,
-          options: {
-            plugins: [
-              ["imagemin-mozjpeg", { quality: 80 }],
-              ["imagemin-pngquant", { quality: [0.6, 0.8] }],
-              ["imagemin-svgo", {}],
-            ],
-          },
-        },
-      }),
-    ],
-    splitChunks: {
-      chunks: "all",
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: "vendors",
-          priority: 10,
-        },
-      },
+    output: {
+      filename: "js/[name].[contenthash].js",
+      chunkFilename: "js/[name].[contenthash].chunk.js",
+      assetModuleFilename: "assets/[name].[contenthash][ext]",
     },
-  },
 
-  module: {
-    rules: [
-      {
-        test: /\.s[ac]ss$/i,
-        use: [
-          MiniCssExtractPlugin.loader,
-          {
-            loader: "css-loader",
+    optimization: {
+      minimize: true,
+      minimizer: [
+        new CssMinimizerPlugin(),
+        new ImageMinimizerPlugin({
+          minimizer: {
+            implementation: ImageMinimizerPlugin.imageminMinify,
             options: {
-              url: { filter: (url) => !url.startsWith("/assets/") },
+              plugins: [
+                ["imagemin-mozjpeg", { quality: 80 }],
+                ["imagemin-pngquant", { quality: [0.6, 0.8] }],
+              ],
             },
           },
-          {
-            loader: "sass-loader",
-            options: {
-              sassOptions: {
-                charset: false,
-              },
-            },
-          },
-        ],
-      },
-      {
-        test: /\.css$/,
-        use: [MiniCssExtractPlugin.loader, "css-loader"],
-      },
-    ],
-  },
+        }),
+      ],
+    },
 
-  plugins: [
-    new MiniCssExtractPlugin({
-      filename: "css/[name].[contenthash].css",
-      chunkFilename: "css/[name].[contenthash].css",
-    }),
-  ],
-});
+    plugins: [
+      new MiniCssExtractPlugin({
+        filename: "css/[name].[contenthash].css",
+        chunkFilename: "css/[name].[contenthash].css",
+      }),
+      process.env.ANALYZE &&
+        new BundleAnalyzerPlugin({
+          analyzerMode: "server",
+          analyzerPort: 8888,
+          openAnalyzer: true,
+        }),
+    ].filter(Boolean),
+  });

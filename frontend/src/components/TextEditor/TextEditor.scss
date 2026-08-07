@@ -1,0 +1,66 @@
+.tiptap-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    overflow-y: auto;
+
+    .ProseMirror {
+        height: 100%;
+        overflow-y: auto;
+        padding: 1rem;
+        outline: none;
+        box-sizing: border-box;
+
+        /* Firefox Scrollbar */
+        scrollbar-width: thin;
+        scrollbar-color: var(--secondary-text) transparent;
+
+        /* WebKit Scrollbar (Chrome/Safari/Edge) */
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        &::-webkit-scrollbar-thumb {
+            background-color: var(--secondary-text);
+            border-radius: 9999px;
+
+            &:hover {
+                background-color: var(--tertiary-text);
+            }
+        }
+
+        /* Placeholder styling */
+        p.is-editor-empty:first-child::before {
+            color: var(--muted-text);
+            content: attr(data-placeholder);
+            float: left;
+            pointer-events: none;
+            height: 0;
+        }
+
+        // Bullet & Numbered lists
+        ul {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+            margin: 0.5rem 0;
+        }
+
+        ol {
+            list-style-type: decimal;
+            padding-left: 1.25rem;
+            margin: 0.5rem 0;
+        }
+
+        li {
+            margin-bottom: 0.25rem;
+
+            p {
+                margin: 0;
+            }
+        }
+    }
+}

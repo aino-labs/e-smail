@@ -1,4 +1,4 @@
-button {
+.ui-button {
     background-color: var(--button-background);
     height: 48px;
     color: var(--primary-text);
@@ -20,10 +20,6 @@ button {
     &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
-    }
-
-    img {
-        align-self: center;
     }
 
     .button-count {
