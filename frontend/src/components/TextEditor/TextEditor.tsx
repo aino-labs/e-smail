@@ -9,14 +9,16 @@ import { useTranslation } from "../../hooks/useTranslation";
 
 import "./TextEditor.scss";
 
-import BoldRus from "@icons/BoldRus.svg";
-import BoldEng from "@icons/BoldEng.svg";
-import ItalicRus from "@icons/ItalicRus.svg";
-import ItalicEng from "@icons/ItalicEng.svg";
-import UnderlineRus from "@icons/UnderlineRus.svg";
-import UnderlineEng from "@icons/UnderlineEng.svg";
-import ListBullet from "@icons/ListBullet.svg";
-import LinkIcon from "@icons/Link.svg";
+import {
+  BoldRusIcon,
+  BoldEngIcon,
+  ItalicRusIcon,
+  ItalicEngIcon,
+  UnderlineEngIcon,
+  UnderlineRusIcon,
+  ListBulletIcon,
+  LinkIcon,
+} from "@icons";
 
 interface TextEditorProps {
   onContentChange: (html: string) => void;
@@ -68,26 +70,26 @@ export default function TextEditor({
       {/* Toolbar */}
       <div className="w-fit shrink-0 flex flex-row gap-0.5 p-2 py-1 bg-button-background-second rounded-[20px]">
         <Button
-          icon={language === "ru" ? BoldRus : BoldEng}
+          icon={language === "ru" ? BoldRusIcon : BoldEngIcon}
           iconSize="24"
           className="bg-transparent hover:bg-transparent h-auto p-2 text-slate-700"
           onClick={() => editor.chain().focus().toggleBold().run()}
         />
         <Button
-          icon={language === "ru" ? ItalicRus : ItalicEng}
+          icon={language === "ru" ? ItalicRusIcon : ItalicEngIcon}
           className="bg-transparent hover:bg-transparent h-auto p-2 text-slate-700"
           iconSize="24"
           onClick={() => editor.chain().focus().toggleItalic().run()}
           style={{ fontStyle: editor.isActive("italic") ? "italic" : "normal" }}
         ></Button>
         <Button
-          icon={language === "ru" ? UnderlineRus : UnderlineEng}
+          icon={language === "ru" ? UnderlineRusIcon : UnderlineEngIcon}
           iconSize="24"
           className="bg-transparent hover:bg-transparent h-auto p-2 text-slate-700"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         />
         <Button
-          icon={ListBullet}
+          icon={ListBulletIcon}
           iconSize="24"
           className="bg-transparent hover:bg-transparent h-auto p-2 text-slate-700"
           onClick={() => editor.chain().focus().toggleBulletList().run()}

@@ -18,7 +18,7 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useUserStore } from "../../store/useUserStore";
 
-import ComposeIcon from "@icons/Compose.svg";
+import { ComposeIcon } from "@icons";
 
 type ProfileTabId = 0 | 1 | 2 | 3 | 4;
 

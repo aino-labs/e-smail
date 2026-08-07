@@ -15,7 +15,7 @@ import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 import { useComposerStore } from "../../store/useComposerStore";
 import { useMailStore } from "../../store/useMailStore";
 
-import SupportIcon from "@icons/Support.svg";
+import { SupportIcon } from "@icons";
 
 export default function SendEmailPage() {
   const navigate = useNavigate();

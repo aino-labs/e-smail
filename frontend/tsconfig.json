@@ -6,10 +6,10 @@
     "jsx": "react-jsx",
     "paths": {
       "@react/*": ["./src/react/*"],
-      "@icons/*": ["./public/assets/svg/*"],
+      "@icons": ["./public/assets/svg/_index.ts"],
     },
     "typeRoots": ["./node_modules/@types", "./src/types"],
   },
-  "include": ["src/**/*", "src/App.tsx"],
+  "include": ["src/**/*", "src/App.tsx", "public/assets/svg/**/*"],
   "exclude": ["node_modules"],
 }

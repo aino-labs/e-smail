@@ -8,7 +8,7 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { useUIStore } from "../../store/useUIStore";
 import { useMailStore } from "../../store/useMailStore";
 
-import DraftsIcon from "@icons/Draft.svg";
+import { DraftIcon } from "@icons";
 
 interface SidebarProps {
   isProfile: number;
@@ -179,7 +179,7 @@ export default function Sidebar({
             </Button>
 
             <Button
-              icon={DraftsIcon}
+              icon={DraftIcon}
               iconSize={28}
               name="button-drafts"
               title={t("drafts")}

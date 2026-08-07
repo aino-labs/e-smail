@@ -23,8 +23,7 @@ import { useUIStore } from "../../store/useUIStore";
 import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 import { useMailStore } from "../../store/useMailStore";
 
-import ComposeIcon from "@icons/Compose.svg";
-import SupportIcon from "@icons/Support.svg";
+import { ComposeIcon, SupportIcon } from "@icons";
 
 interface BaseEmailProps {
   currentView: string;

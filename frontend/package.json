@@ -12,9 +12,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint ./src",
     "lint:fix": "eslint --fix ./src",
+    "generate:icons": "node scripts/generate-icons.js",
     "analyze": "cross-env ANALYZE=true NODE_ENV=production webpack --config webpack.prod.js --mode production",
-    "preview-dev": "webpack serve --config webpack.dev.js",
-    "preview-prod": "npm run build && serve -s build -l 3000",
+    "preview-dev": "npm run generate:icons && webpack serve --config webpack.dev.js",
+    "preview-prod": "npm run prebuild && npm run build && serve -s build -l 3000",
+    "prebuild": "npm run generate:icons",
     "build": "cross-env NODE_ENV=production webpack --config webpack.prod.js --mode production && node scripts/check-build.js"
   },
   "repository": {

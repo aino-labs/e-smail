@@ -39,7 +39,7 @@ export default (env, argv) => {
         react: path.resolve(__dirname, "node_modules/react"),
         "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
         "@react": path.resolve(__dirname, "src/react"),
-        "@icons": path.resolve(__dirname, "public/assets/svg"),
+        "@icons": path.resolve(__dirname, "public/assets/svg/_index.ts"),
         ...(isProd && {
           "react-router": path.resolve(
             __dirname,
