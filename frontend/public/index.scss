@@ -2,16 +2,16 @@
 
 @font-face {
     font-family: "Ubuntu Sans";
-    src: url("/assets/font/Ubuntu_Sans/UbuntuSans-VariableFont_wdth,wght.ttf")
-        format("truetype");
+    src: url("/assets/font/UbuntuSans.woff2") format("woff2-variations");
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "Shantell Sans";
-    src: url("/assets/font/Shantell_Sans/ShantellSans-VariableFont_BNCE\,INFM\,SPAC\,wght.ttf")
-        format("truetype");
+    src: url("/assets/font/ShantellSans.woff2") format("woff2-variations");
     font-style: normal;
+    font-display: swap;
 }
 
 * {
