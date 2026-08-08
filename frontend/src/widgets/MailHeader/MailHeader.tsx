@@ -171,7 +171,7 @@ export default function MailHeader({
   return (
     <div className="mail-header">
       <div className="mail-header__left-container">
-        <div className="left-container__select-all">
+        <div className="left-container__select-all" aria-label="Select all">
           <Input
             type="checkbox"
             className={`checkbox-all ${isSelectAll ? "isSelect" : ""}`}
