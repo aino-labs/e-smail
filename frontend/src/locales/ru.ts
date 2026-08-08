@@ -36,6 +36,7 @@ export const ru = {
   yesterday: "Вчера",
   anonymous: "<Аноним>",
   folder: "Папка",
+  account: "Аккаунт",
 
   // Empty messages
   empty_inbox: "Ваш почтовый ящик пуст :(",

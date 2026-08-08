@@ -1,7 +1,7 @@
 import { getCSRFToken } from "./ApiAuth";
 import { EMAIL_URL } from "./config";
 
-export async function getEmailsFavorite(offset: number) {
+export async function getFavoriteEmails(offset: number) {
   try {
     const response = await fetch(
       `${EMAIL_URL}/emails/favorite?limit=50&offset=${offset}`,

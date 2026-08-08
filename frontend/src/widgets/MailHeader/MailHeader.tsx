@@ -2,9 +2,9 @@ import { useState, useTransition } from "react";
 import Button from "../../components/Button/Button";
 import Input from "../../components/Input/Input";
 import "./MailHeader.scss";
-import { getEmailsSpam, sendSpam, unSpam } from "../../api/ApiSpam";
+import { getSpamEmails, sendSpam, unSpam } from "../../api/ApiSpam";
 import { sendFavorite, unFavorite } from "../../api/ApiFavorite";
-import { getEmailsTrash, untrash } from "../../api/ApiTrash";
+import { getTrashEmails, untrash } from "../../api/ApiTrash";
 import { readEmail, unReadEmail } from "../../api/ApiEmail";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useMailStore } from "../../store/useMailStore";
@@ -130,10 +130,10 @@ export default function MailHeader({
     if (selectedEmails && selectedEmails.length > 0) {
       if (currentView === "trash") {
         await untrash(selectedEmails);
-        await getEmailsTrash(0);
+        await getTrashEmails(0);
       } else if (currentView === "spam") {
         await unSpam(selectedEmails);
-        await getEmailsSpam(0);
+        await getSpamEmails(0);
       }
       reloadMail?.();
     }
@@ -181,7 +181,6 @@ export default function MailHeader({
           />
           <Button
             name="arrow-down"
-            help="Выбрать"
             onClick={(event: any) => {
               event.preventDefault();
             }}
@@ -192,8 +191,8 @@ export default function MailHeader({
           <Button
             name="refresh"
             className={isLoading ? "refreshing" : ""}
-            block={isLoading}
-            help={t("refresh")}
+            disabled={isLoading}
+            title={t("refresh")}
             onClick={(event: any) => {
               event.preventDefault();
               reloadMail?.();
@@ -209,7 +208,7 @@ export default function MailHeader({
               {isSpamOrTrash && (
                 <Button
                   name="move-to-inbox"
-                  help={t("move_to_inbox")}
+                  title={t("move_to_inbox")}
                   onClick={handleMoveToInbox}
                 />
               )}
@@ -219,20 +218,20 @@ export default function MailHeader({
                   {hasFavoriteSelected() ? (
                     <Button
                       name="unfavorite"
-                      help={t("unstarred")}
+                      title={t("unstarred")}
                       onClick={handleUnMarkAsFavorite}
                     />
                   ) : (
                     <Button
                       name="favorites"
-                      help={t("starred")}
+                      title={t("starred")}
                       onClick={handleMarkAsFavorite}
                     />
                   )}
                   {!isSent && (
                     <Button
                       name="spam"
-                      help={t("spam")}
+                      title={t("spam")}
                       onClick={handleMarkAsSpam}
                     />
                   )}
@@ -241,7 +240,7 @@ export default function MailHeader({
 
               <Button
                 name="trash"
-                help={t("trash")}
+                title={t("trash")}
                 onClick={(event: any) => {
                   event.preventDefault();
                   onDelete?.();
@@ -254,13 +253,13 @@ export default function MailHeader({
                   {hasOnlyUnread ? (
                     <Button
                       name="read-all-mail"
-                      help={t("mark_as_read")}
+                      title={t("mark_as_read")}
                       onClick={handleMarkAsRead}
                     />
                   ) : hasReadSelected() ? (
                     <Button
                       name="unread-all-mail"
-                      help={t("mark_as_unread")}
+                      title={t("mark_as_unread")}
                       onClick={handleMarkAsUnread}
                     />
                   ) : null}
@@ -270,7 +269,7 @@ export default function MailHeader({
                 <div className="move-to-folder-container">
                   <Button
                     name="move-to-folder"
-                    help={t("move_to_folder")}
+                    title={t("move_to_folder")}
                     onClick={handleMoveToFolder}
                   />
                   {showFolderList && (
@@ -307,14 +306,14 @@ export default function MailHeader({
           </div>
           <Button
             name="left"
-            help="Пред."
-            block={offset === 0}
+            title="Пред."
+            disabled={offset === 0}
             onClick={handlePrevPage}
           />
           <Button
             name="right"
-            help="След."
-            block={offset + 50 >= total}
+            title="След."
+            disabled={offset + 50 >= total}
             onClick={handleNextPage}
           />
         </div>

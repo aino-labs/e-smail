@@ -1,7 +1,7 @@
 import { getCSRFToken } from "./ApiAuth";
 import { EMAIL_URL } from "./config";
 
-export async function getEmailsTrash(offset: number) {
+export async function getTrashEmails(offset: number) {
   try {
     const response = await fetch(
       `${EMAIL_URL}/emails/trash?limit=50&offset=${offset}`,

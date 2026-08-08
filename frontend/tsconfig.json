@@ -6,7 +6,7 @@
     "jsx": "react-jsx",
     "paths": {
       "@react/*": ["./src/react/*"],
-      "@icons": ["./public/assets/svg/_index.ts"],
+      "@icons": ["./src/assets/svg/index.ts"],
     },
     "typeRoots": ["./node_modules/@types", "./src/types"],
   },

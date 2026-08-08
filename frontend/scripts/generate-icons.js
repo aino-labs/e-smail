@@ -4,7 +4,8 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SVG_DIR = path.resolve(__dirname, "../public/assets/svg");
-const INDEX_FILE = path.join(SVG_DIR, "_index.ts");
+const IDX_FILE_DIR = path.resolve(__dirname, "../src/assets/svg");
+const INDEX_FILE = path.join(IDX_FILE_DIR, "index.ts");
 
 // Converts file-name, file_name, or FileName to PascalCase
 function toPascalCase(str) {
@@ -28,7 +29,7 @@ async function generate() {
         iconName += "Icon";
       }
 
-      return `export { default as ${iconName} } from "./${file}";`;
+      return `export { default as ${iconName} } from "../../../public/assets/svg/${file}";`;
     });
 
     const fileContent = [

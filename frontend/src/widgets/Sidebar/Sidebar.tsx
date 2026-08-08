@@ -8,10 +8,21 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { useUIStore } from "../../store/useUIStore";
 import { useMailStore } from "../../store/useMailStore";
 
-import { DraftIcon } from "@icons";
+import {
+  DraftIcon,
+  ComposeIcon,
+  InboxIcon,
+  SentIcon,
+  StarOffIcon,
+  DropdownArrowIcon,
+  SpamIcon,
+  TrashIcon,
+  FolderIcon,
+} from "@icons";
+import SidebarItem from "../../components/SidebarItem/SidebarItem";
 
 interface SidebarProps {
-  isProfile: number;
+  isProfile: boolean;
   isPressProfile?: number;
   backToMail: () => void;
   changeProfile?: () => void;
@@ -28,7 +39,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({
-  isProfile = 0,
+  isProfile = false,
   isPressProfile,
   backToMail,
   changeProfile,
@@ -53,7 +64,14 @@ export default function Sidebar({
   const setSidebarDropdownVisible = useUIStore(
     (state) => state.setSidebarDropdownVisible,
   );
-  const { unreadCount, folders, setCurrentFolderId } = useMailStore();
+  const {
+    unreadCount,
+    draftCount,
+    spamCount,
+    folders,
+    setCurrentFolderId,
+    currentFolderId,
+  } = useMailStore();
 
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 769);
   useEffect(() => {
@@ -142,7 +160,7 @@ export default function Sidebar({
 
   return (
     <div className="sidebar-widget">
-      {isMobile && isProfile === 1 ? (
+      {isMobile && isProfile ? (
         <div
           className="sidebar-settings-back-button-mobile"
           onClick={backToMail}
@@ -156,73 +174,85 @@ export default function Sidebar({
         <img src="../../assets/svg/Logo.svg" alt="SMail logo" />
         <h1 className="logo__title">SMail</h1>
       </div>
-      {isProfile !== 1 && (
+      {!isProfile && (
         <div className="sidebar-content">
           <div className="main-button">
-            <Button
-              title={t("new_letter")}
-              name="button-new-letter"
-              onClick={newMail}
-            >
-              {t("new_letter")}
-            </Button>
+            <SidebarItem
+              to="/send"
+              icon={ComposeIcon}
+              iconSize="28"
+              label={t("new_letter")}
+              variant="highlight"
+            />
           </div>
           <div className="main-button-container">
-            <Button
-              name="button-inbox"
-              title={t("inbox")}
-              isSelect={currentView === "inbox" && !selectedFolderId}
-              count={unreadCount}
-              onClick={handleInboxClick}
-            >
-              {t("inbox")}
-            </Button>
-
-            <Button
-              icon={DraftIcon}
-              iconSize={28}
-              name="button-drafts"
-              title={t("drafts")}
-              isSelect={currentView === "drafts"}
-              onClick={handleDraftsClick}
-            >
-              {t("drafts")}
-            </Button>
-
-            <Button
-              name="button-sends"
-              title={t("sent")}
-              isSelect={currentView === "sent"}
-              onClick={handleSentClick}
+            <SidebarItem
+              to="/"
+              icon={InboxIcon}
+              iconSize="28"
+              label={t("inbox")}
+              variant="regular"
+              badge={unreadCount > 0 ? unreadCount : undefined}
+              isActive={currentView === "inbox"}
             />
-
-            <Button
-              name="button-favorites"
-              title={t("starred")}
-              isSelect={currentView === "favorite"}
-              onClick={handleFavoriteClick}
+            <SidebarItem
+              to="/drafts"
+              icon={DraftIcon}
+              iconSize="28"
+              label={t("drafts")}
+              variant="regular"
+              badge={spamCount > 0 ? spamCount : undefined}
+              isActive={currentView === "drafts"}
+            />
+            <SidebarItem
+              to="/sent"
+              icon={SentIcon}
+              iconSize="28"
+              label={t("sent")}
+              variant="regular"
+              isActive={currentView === "sent"}
+            />
+            <SidebarItem
+              to="/favorite"
+              icon={StarOffIcon}
+              iconSize="28"
+              label={t("favorite")}
+              variant="regular"
+              isActive={currentView === "favorite"}
             />
           </div>
 
           <div className="drop-down">
             <Button
+              icon={DropdownArrowIcon}
+              iconSize="28"
+              variant="sidebar"
               name="button-drop-down"
               title={sidebarDropdownVisible ? t("hide") : t("yet")}
               onClick={toggleDropdown}
-            />
+              active={sidebarDropdownVisible}
+            >
+              {sidebarDropdownVisible ? t("hide") : t("yet")}
+            </Button>
             {sidebarDropdownVisible && (
               <div className="extra-button-container">
-                <Button
-                  name="button-spam"
-                  title={t("spam")}
-                  isSelect={currentView === "spam"}
-                  onClick={handleSpamClick}
+                <SidebarItem
+                  to="/spam"
+                  icon={SpamIcon}
+                  iconSize="28"
+                  label={t("spam")}
+                  variant="regular"
+                  nestedLevel={"1"}
+                  isActive={currentView === "spam"}
                 />
-                <Button
-                  name="button-trash"
-                  title={t("trash")}
-                  isSelect={currentView === "trash"}
-                  onClick={handleTrashClick}
+                <SidebarItem
+                  to="/trash"
+                  icon={TrashIcon}
+                  iconSize="28"
+                  label={t("trash")}
+                  variant="regular"
+                  nestedLevel={"1"}
+                  isActive={currentView === "trash"}
                 />
                 {/*
               <Button
@@ -235,14 +265,14 @@ export default function Sidebar({
                 {folders &&
                   folders.map((folder: any) => (
                     <div key={folder.id} className="folder-item">
-                      <Button
-                        name="button-folder"
-                        title={folder.name}
-                        isSelect={selectedFolderId === folder.id}
-                        onClick={(event: any) => {
-                          event.preventDefault();
-                          handleFolderClick(folder.id);
-                        }}
+                      <SidebarItem
+                        to={`/folder/${folder.id}`}
+                        icon={FolderIcon}
+                        iconSize="28"
+                        label={folder.name}
+                        variant="regular"
+                        nestedLevel={"1"}
+                        isActive={currentFolderId === folder.id}
                       />
                     </div>
                   ))}
@@ -251,7 +281,7 @@ export default function Sidebar({
           </div>
         </div>
       )}
-      {isProfile === 1 && (
+      {isProfile && (
         <div className="sidebar-content">
           <SidebarProfile name={name} surname={surname} email={email} />
           <div className="main-button-profile">
@@ -320,7 +350,7 @@ export default function Sidebar({
           </div>
         </div>
       )}
-      {isProfile === 0 ? (
+      {!isProfile ? (
         <SidebarProfile
           name={name}
           surname={surname}

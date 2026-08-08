@@ -1,6 +1,6 @@
 import BaseEmailPage from "../../widgets/BaseEmailPage/BaseEmailPage";
 import {
-  getEmailsFromFolder,
+  getFolderEmails,
   deleteEmailsFromFolder,
 } from "../../api/ApiFolder";
 import { useMailStore } from "../../store/useMailStore";
@@ -16,7 +16,7 @@ export default function FolderPage() {
     <BaseEmailPage
       currentView="folder"
       fetchEmails={(offset: number) =>
-        getEmailsFromFolder(offset, currentFolderId)
+        getFolderEmails(offset, currentFolderId)
       }
       deleteEmails={(ids: number[]) =>
         deleteEmailsFromFolder(currentFolderId, ids)

@@ -4,7 +4,7 @@ import { EMAIL_URL } from "./config";
 /**
  * Отправляет GET-запрос на эндпоинт /inbox.
  */
-export async function getInbox(offset: number) {
+export async function getInboxEmails(offset: number) {
   try {
     const response = await fetch(
       `${EMAIL_URL}/inbox?limit=50&offset=${offset}`,
@@ -197,7 +197,7 @@ export async function getEmailByID(ID: number) {
   }
 }
 
-export async function getEmailSend(offset: number) {
+export async function getSentEmails(offset: number) {
   try {
     const response = await fetch(
       `${EMAIL_URL}/sent?limit=50&offset=${offset}`,

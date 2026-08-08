@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
 import BaseEmailPage from "../../widgets/BaseEmailPage/BaseEmailPage";
-import { getEmailSend, getEmailByID } from "../../api/ApiEmail";
+import { getSentEmails, getEmailByID } from "../../api/ApiEmail";
 import { trash } from "../../api/ApiTrash";
 
 export default function SentPage() {
@@ -15,7 +15,7 @@ export default function SentPage() {
   return (
     <BaseEmailPage
       currentView="sent"
-      fetchEmails={getEmailSend}
+      fetchEmails={getSentEmails}
       deleteEmails={trash}
       emptyMessage="empty_sent"
       emptySubMessage="first_email_sub"

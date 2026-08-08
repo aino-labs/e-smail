@@ -36,6 +36,7 @@ export const en = {
   yesterday: "Yesterday",
   anonymous: "<Anonymous>",
   folder: "Folder",
+  account: "Account",
 
   // Empty messages
   empty_inbox: "Your inbox is empty :(",

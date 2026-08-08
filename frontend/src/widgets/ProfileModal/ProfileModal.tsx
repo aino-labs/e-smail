@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 import "./ProfileModal.scss";
 import Button from "../../components/Button/Button";
@@ -7,25 +7,22 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
 import { useMailStore } from "../../store/useMailStore";
 
+import { CloseIcon, UserIcon, SettingsIcon } from "@icons";
+import { useAuthStore } from "../../store/useAuthStore";
+
 interface ProfileModalProps {
   onClose: () => void;
-  onProfileClick: () => void;
-  onSettingsClick: () => void;
   isOpen: boolean;
 }
 
-export default function ProfileModal({
-  onClose,
-  onProfileClick,
-  onSettingsClick,
-  isOpen,
-}: ProfileModalProps) {
+export default function ProfileModal({ onClose, isOpen }: ProfileModalProps) {
   const navigate = useNavigate();
 
   const { t } = useTranslation();
   const { name, email, clearProfile } = useUserStore();
   const avatarUrl = useUserStore(selectAvatarUrl);
   const { setFolders, setUnreadCount } = useMailStore();
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
 
   const handleExit = async () => {
     await logOut();
@@ -33,20 +30,9 @@ export default function ProfileModal({
     clearProfile();
     setUnreadCount(0);
     setFolders([]);
+    setAuthenticated(false);
 
     navigate("/login");
-  };
-
-  const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
-    event.preventDefault();
-    onProfileClick();
-    onClose();
-  };
-
-  const handleSettingsClick = (event: React.MouseEvent<HTMLElement>) => {
-    event.preventDefault();
-    onSettingsClick();
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -61,7 +47,7 @@ export default function ProfileModal({
           {t("hello")}, {name}!
         </p>
         <div className="overlay__close">
-          <Button svg="../../assets/svg/Close.svg" onClick={onClose} />
+          <Button icon={CloseIcon} onClick={onClose} />
         </div>
       </div>
       <div className="overlay__avatar">
@@ -71,18 +57,24 @@ export default function ProfileModal({
         <p>{email}</p>
       </div>
       <div className="overlay-actions">
-        <Button
+        <Link
+          to="/profile/personal"
+          className="action-button"
+          data-name="profile"
           title={t("profile")}
-          name="profile"
-          svg="../../assets/svg/User.svg"
-          onClick={handleProfileClick}
-        />
-        <Button
+        >
+          <UserIcon />
+          <span>{t("profile")}</span>
+        </Link>
+        <Link
+          to="/profile/interface"
+          className="action-button"
+          data-name="settings"
           title={t("settings")}
-          name="settings"
-          svg="../../assets/svg/Settings.svg"
-          onClick={handleSettingsClick}
-        />
+        >
+          <SettingsIcon />
+          <span>{t("settings")}</span>
+        </Link>
       </div>
       <div className="button-exit">
         <Button
@@ -91,7 +83,9 @@ export default function ProfileModal({
             event.preventDefault();
             handleExit();
           }}
-        />
+        >
+          {t("exit")}
+        </Button>
       </div>
     </div>
   );

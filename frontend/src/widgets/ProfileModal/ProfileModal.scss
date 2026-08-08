@@ -81,14 +81,16 @@
 .overlay-actions {
     display: flex;
     flex-direction: column;
-    button {
+
+    .action-button {
         background-color: var(--color-sidebar-background);
         color: var(--tertiary-text);
         display: flex;
         gap: 10px;
         align-items: center;
+        padding: 0.625rem 1.5rem;
 
-        &[name="profile"] {
+        &[data-name="profile"] {
             border: 2px solid var(--input-stroke);
             border-radius: 20px 20px 0 0;
 
@@ -97,7 +99,7 @@
             }
         }
 
-        &[name="settings"] {
+        &[data-name="settings"] {
             border-bottom: 2px solid var(--input-stroke);
             border-left: 2px solid var(--input-stroke);
             border-right: 2px solid var(--input-stroke);

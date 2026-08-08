@@ -41,7 +41,7 @@ export async function changeFolderName(folderID: number, folderName: string) {
   } catch {}
 }
 
-export async function getEmailsFromFolder(
+export async function getFolderEmails(
   offset: number,
   folderID: number | null,
 ) {

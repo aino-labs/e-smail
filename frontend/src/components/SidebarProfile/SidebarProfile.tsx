@@ -5,6 +5,8 @@ import Button from "../Button/Button";
 import { logOut } from "../../api/ApiAuth";
 import { useMailStore } from "../../store/useMailStore";
 import { selectAvatarUrl, useUserStore } from "../../store/useUserStore";
+import { useAuthStore } from "../../store/useAuthStore";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface SidebarProfileProps {
   name?: string;
@@ -21,10 +23,13 @@ export default function SidebarProfile({
   variant = "",
   textAlign = "",
 }: SidebarProfileProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-
-  const setUnreadCount = useMailStore((state) => state.setUnreadCount);
+  const { clearProfile } = useUserStore();
   const avatarUrl = useUserStore(selectAvatarUrl);
+  const { setFolders, setUnreadCount } = useMailStore();
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+
   const handleAvatar = () => {
     navigate("/profile");
   };
@@ -32,7 +37,10 @@ export default function SidebarProfile({
   const handleExit = async () => {
     await logOut();
 
+    clearProfile();
     setUnreadCount(0);
+    setFolders([]);
+    setAuthenticated(false);
 
     navigate("/login");
   };
@@ -42,9 +50,8 @@ export default function SidebarProfile({
       {variant === "mobile" ? (
         <Button
           className="sidebar-profile__profile-btn"
-          svg={avatarUrl}
           name="avatar"
-          help="Аккаунт"
+          title={t("account")}
           onClick={handleAvatar}
         />
       ) : (

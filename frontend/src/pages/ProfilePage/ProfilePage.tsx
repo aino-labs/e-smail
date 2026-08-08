@@ -808,7 +808,7 @@ export default function ProfilePage({
       />
       <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
         <Sidebar
-          isProfile={1}
+          isProfile={true}
           isPressProfile={profileState}
           avatarUrl={image_path}
           name={name}

@@ -134,12 +134,9 @@ export default function RegPage() {
       const response = await postDataReg(payload);
 
       if (response && response.isValid) {
-        // 1. Fetch & save fresh session CSRF token to useAuthStore
-        await getCSRFToken();
-
-        // 2. Mark user as authenticated in store
-        setAuthenticated(true);
         const data = await getProfile();
+
+        setAuthenticated(true);
         setProfileData(data);
         navigate("/");
       } else if (response && !response.isValid) {

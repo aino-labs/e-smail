@@ -436,7 +436,7 @@ export default function BaseEmailPage({
 
       <aside className="sidebar">
         <Sidebar
-          isProfile={0}
+          isProfile={false}
           name={name}
           surname={surname}
           avatarUrl={avatarUrl}
@@ -559,12 +559,7 @@ export default function BaseEmailPage({
           </div>
         </div>
 
-        <ProfileModal
-          isOpen={state.isModalOpen}
-          onClose={handleCloseModal}
-          onProfileClick={handleProfileClick}
-          onSettingsClick={handleSettingsClick}
-        />
+        <ProfileModal isOpen={state.isModalOpen} onClose={handleCloseModal} />
       </div>
 
       <Button

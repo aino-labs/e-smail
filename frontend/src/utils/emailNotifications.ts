@@ -1,5 +1,5 @@
 // src/utils/emailNotifications.ts
-import { getInbox } from "../api/ApiEmail";
+import { getInboxEmails } from "../api/ApiEmail";
 import { translate } from "../hooks/useTranslation";
 import { useAuthStore } from "../store/useAuthStore";
 import { useSettingsStore } from "../store/useSettingsStore";
@@ -17,7 +17,7 @@ function notificationsGranted(): boolean {
 
 async function fetchLatestEmail() {
   try {
-    const data = await getInbox(0);
+    const data = await getInboxEmails(0);
     if (data && data.emails && data.emails.length > 0) {
       return data.emails[0];
     }

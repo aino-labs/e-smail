@@ -1,7 +1,7 @@
 import { getCSRFToken } from "./ApiAuth";
 import { EMAIL_URL } from "./config";
 
-export async function getEmailsSpam(offset: number) {
+export async function getSpamEmails(offset: number) {
   try {
     const response = await fetch(
       `${EMAIL_URL}/emails/spam?limit=50&offset=${offset}`,

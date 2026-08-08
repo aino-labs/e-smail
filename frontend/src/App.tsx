@@ -7,17 +7,10 @@ import "../public/index.scss";
 
 import LoginPage from "./pages/LoginPage/LoginPage";
 import RegPage from "./pages/RegPage/RegPage";
-import MainPage from "./pages/MainPage/MainPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
-import SentPage from "./pages/SentPage/SentPage";
 import SendEmailPage from "./pages/SendEmailPage/SendEmailPage";
 import ReadEmailPage from "./pages/ReadEmailPage/ReadEmailPage";
-import TrashPage from "./pages/TrashPage/TrashPage";
-import FavoritePage from "./pages/FavoritePage/FavoritePage";
-import SpamPage from "./pages/SpamPage/SpamPage";
-import DraftsPage from "./pages/DraftsPage/DraftsPage";
 import FolderPage from "./pages/FolderPage/FolderPage";
-import AllEmailsPage from "./pages/AllEmailsPage/AllEmailsPage";
 import SupportPage from "./pages/SupportPage/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage/AdminSupportPage";
 import Toaster from "./widgets/Toaster/Toaster";
@@ -25,11 +18,18 @@ import { initEmailNotifications } from "./utils/emailNotifications";
 import "./store/OfflineManager";
 import { useSettingsStore } from "./store/useSettingsStore";
 import { initCSRFToken } from "./api/ApiAuth";
+import EmailPage from "./pages/EmailPage/EmailPage";
+import MainLayout from "./layouts/MainLayout";
+import { useAuthStore } from "./store/useAuthStore";
+import { useUserStore } from "./store/useUserStore";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 
 const AppContent = () => {
   const [isReady, setIsReady] = useState(false);
 
   const theme = useSettingsStore((state) => state.theme);
+  const { isAuthenticated } = useAuthStore();
+  const { isProfileLoaded } = useUserStore();
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -47,16 +47,28 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<MainPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<MainLayout />}>
+          {/* Default redirect: / -> /inbox */}
+          <Route path="/" element={<Navigate to="/inbox" replace />} />
+
+          {/* Standard Folders: /inbox, /sent, /trash, /drafts, /starred, /spam */}
+          <Route path=":folder" element={<EmailPage />} />
+
+          {/* Custom Folders: /folder/123 */}
+          <Route path="folder/:folderId" element={<EmailPage />} />
+
+          {/*{/* Single Email View
+          <Route path="read/:id" element={<ReadEmailPage />} />
+
+          {/* Composer View
+          <Route path="send" element={<SendEmailPage />} />*/}
+        </Route>
+      </Route>
+
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegPage />} />
       <Route path="/send" element={<SendEmailPage />} />
-      <Route path="/sent" element={<SentPage />} />
-      <Route path="/trash" element={<TrashPage />} />
-      <Route path="/drafts" element={<DraftsPage />} />
-      <Route path="/spam" element={<SpamPage />} />
-      <Route path="/favorite" element={<FavoritePage />} />
-      <Route path="/all-emails" element={<AllEmailsPage />} />
       <Route path="/admin-support" element={<AdminSupportPage />} />
       <Route path="/support" element={<SupportPage />} />
 

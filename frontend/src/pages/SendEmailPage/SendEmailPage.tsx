@@ -119,7 +119,7 @@ export default function SendEmailPage() {
 
       <aside className="sidebar">
         <Sidebar
-          isProfile={0}
+          isProfile={false}
           newMail={clearComposerData}
           backToMail={handleGoToMain}
           selectedFolderId={selectedFolderId}
@@ -137,12 +137,7 @@ export default function SendEmailPage() {
           <SendMail backToMail={handleBackToMail} actionData={composerData} />
         </div>
 
-        <ProfileModal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onProfileClick={handleProfileClick}
-          onSettingsClick={handleSettingsClick}
-        />
+        <ProfileModal isOpen={isModalOpen} onClose={handleCloseModal} />
       </div>
     </div>
   );
