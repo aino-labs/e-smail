@@ -62,5 +62,15 @@
                 margin: 0;
             }
         }
+
+        a {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: underline;
+
+            &:hover {
+                color: var(--accent-2);
+            }
+        }
     }
 }
