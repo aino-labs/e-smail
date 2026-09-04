@@ -5,8 +5,8 @@
 
 > **Link**: [e-smail.ru](https://e-smail.ru)
 
-<img width="450" alt="Main page" src="https://github.com/user-attachments/assets/cf80aa36-28c5-49bb-8410-13ef2da4449c" />
-<img width="450" alt="Mail compose" src="https://github.com/user-attachments/assets/f769f126-c48a-4ff3-a419-e0554711121a" />
+<img width="600" alt="Main page" src="https://github.com/user-attachments/assets/cf80aa36-28c5-49bb-8410-13ef2da4449c" />
+<img width="600" alt="Mail compose" src="https://github.com/user-attachments/assets/f769f126-c48a-4ff3-a419-e0554711121a" />
 
 ## О проекте
 
