@@ -3,7 +3,10 @@
 ![Version](https://img.shields.io/badge/version-1.4.1-blue)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
 
-> **Link**: [e-smail.ru](e-smail.ru)
+> **Link**: [e-smail.ru](https://e-smail.ru)
+
+<img width="450" alt="Main page" src="https://github.com/user-attachments/assets/cf80aa36-28c5-49bb-8410-13ef2da4449c" />
+<img width="450" alt="Mail compose" src="https://github.com/user-attachments/assets/f769f126-c48a-4ff3-a419-e0554711121a" />
 
 ## О проекте
 
@@ -50,6 +53,12 @@ cd frontend && npm install && npm run build
 
 cd ../backend && make docker-up
 ```
+
+## Что дальше?
+- Полноценный редактор текста (rich text)
+- Поддержка WebSocket для мгновенной доставки писем 
+- Поиск, сортировка писем
+- Полноценный web app (PWA)
 
 ## Контакты
 
